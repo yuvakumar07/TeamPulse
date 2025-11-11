@@ -1,59 +1,32 @@
-import React, { useState } from 'react';
-import EmployeeList from './components/EmployeeList';
-import EmployeeForm from './components/EmployeeForm';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Navigation from './components/Navigation';
+import Home from './pages/Home';
+import Employees from './pages/Employees';
+import AddEmployee from './pages/AddEmployee';
+import EditEmployee from './pages/EditEmployee';
 import './App.css';
 
 function App() {
-  const [showForm, setShowForm] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  const handleAdd = () => {
-    setSelectedEmployee(null);
-    setShowForm(true);
-  };
-
-  const handleEdit = (employee) => {
-    setSelectedEmployee(employee);
-    setShowForm(true);
-  };
-
-  const handleClose = () => {
-    setShowForm(false);
-    setSelectedEmployee(null);
-  };
-
-  const handleSuccess = () => {
-    setRefreshKey(prev => prev + 1);
-  };
-
   return (
-    <div className="App">
-      <header className="app-header">
-        <h1>Employee Management Portal</h1>
-        <p>Manage your workforce efficiently</p>
-      </header>
+    <Router>
+      <div className="App">
+        <Navigation />
 
-      <main className="app-main">
-        <EmployeeList
-          key={refreshKey}
-          onEdit={handleEdit}
-          onAdd={handleAdd}
-        />
+        <main className="app-main">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/employees" element={<Employees />} />
+            <Route path="/employees/add" element={<AddEmployee />} />
+            <Route path="/employees/edit/:id" element={<EditEmployee />} />
+          </Routes>
+        </main>
 
-        {showForm && (
-          <EmployeeForm
-            employee={selectedEmployee}
-            onClose={handleClose}
-            onSuccess={handleSuccess}
-          />
-        )}
-      </main>
-
-      <footer className="app-footer">
-        <p>&copy; 2024 Employee Management System. All rights reserved.</p>
-      </footer>
-    </div>
+        <footer className="app-footer">
+          <p>&copy; 2024 Employee Management System. All rights reserved.</p>
+        </footer>
+      </div>
+    </Router>
   );
 }
 

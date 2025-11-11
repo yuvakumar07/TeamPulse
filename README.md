@@ -6,15 +6,20 @@ A full-stack web application for managing employee information built with React.
 
 - **Employee CRUD Operations**: Create, Read, Update, and Delete employee records
 - **Search Functionality**: Search employees by name, email, department, or position
+- **Routing**: Multi-page application with React Router for seamless navigation
+- **State Management**: Redux Toolkit for centralized and predictable state management
 - **Responsive Design**: Mobile-friendly interface
 - **Real-time Updates**: Instant feedback on all operations
 - **Form Validation**: Client-side validation for data integrity
-- **Clean UI**: Modern and intuitive user interface
+- **Clean UI**: Modern and intuitive user interface with navigation bar
 
 ## Tech Stack
 
 ### Frontend
 - React.js 18
+- React Router DOM v6 for routing
+- Redux Toolkit for state management
+- React-Redux for React bindings
 - Axios for API calls
 - CSS3 for styling
 
@@ -47,15 +52,28 @@ TeamPulse/
     │   └── index.html
     ├── src/
     │   ├── components/
+    │   │   ├── Navigation.js      # Navigation bar
+    │   │   ├── Navigation.css
     │   │   ├── EmployeeList.js
     │   │   ├── EmployeeList.css
     │   │   ├── EmployeeForm.js
     │   │   └── EmployeeForm.css
+    │   ├── pages/
+    │   │   ├── Home.js            # Home page
+    │   │   ├── Home.css
+    │   │   ├── Employees.js       # Employees list page
+    │   │   ├── Employees.css
+    │   │   ├── AddEmployee.js     # Add employee page
+    │   │   ├── EditEmployee.js    # Edit employee page
+    │   │   └── EmployeeFormPage.css
+    │   ├── redux/
+    │   │   ├── store.js           # Redux store configuration
+    │   │   └── employeeSlice.js   # Employee slice with actions/reducers
     │   ├── services/
-    │   │   └── api.js        # API service layer
-    │   ├── App.js
+    │   │   └── api.js             # API service layer
+    │   ├── App.js                 # Main app with routing
     │   ├── App.css
-    │   ├── index.js
+    │   ├── index.js               # Entry point with Redux Provider
     │   └── index.css
     ├── .gitignore
     └── package.json
@@ -208,30 +226,64 @@ The frontend application will open in your browser at `http://localhost:3000`
 }
 ```
 
+## Application Routes
+
+The application uses React Router for navigation with the following routes:
+
+- `/` - Home page with dashboard and statistics
+- `/employees` - View all employees in a table
+- `/employees/add` - Add a new employee
+- `/employees/edit/:id` - Edit an existing employee
+
+## State Management
+
+The application uses Redux Toolkit for centralized state management:
+
+- **Store**: Configured in `redux/store.js`
+- **Employee Slice**: Manages employee state with async thunks for API calls
+- **Selectors**: Optimized selectors for filtered data
+- **Actions**: Async actions for CRUD operations (fetchEmployees, addEmployee, modifyEmployee, removeEmployee)
+
 ## Usage
 
-1. **View Employees**: The main page displays a list of all employees
-2. **Search**: Use the search bar to filter employees
-3. **Add Employee**: Click "Add New Employee" button to open the form
-4. **Edit Employee**: Click the "Edit" button on any employee row
-5. **Delete Employee**: Click the "Delete" button and confirm the action
+1. **Home Page**: View statistics and navigate to different sections
+2. **View Employees**: Navigate to /employees to see all employees in a table
+3. **Search**: Use the search bar to filter employees in real-time
+4. **Add Employee**: Click "Add New Employee" in the navigation or on the employees page
+5. **Edit Employee**: Click the "Edit" button on any employee row
+6. **Delete Employee**: Click the "Delete" button and confirm the action
 
 ## Features in Detail
 
+### Navigation
+- Sticky navigation bar with gradient design
+- Active route highlighting
+- Responsive mobile menu
+- Quick access to all major sections
+
+### Home Page
+- Dashboard with statistics (total employees, active employees, departments, positions)
+- Feature highlights
+- Quick action buttons for common tasks
+- Modern card-based layout
+
 ### Employee List
 - Sortable table with all employee information
-- Real-time search across multiple fields
+- Real-time search across multiple fields (Redux-powered)
 - Status indicators (Active/Inactive)
 - Formatted salary and dates
 - Responsive design for mobile devices
+- Navigate to edit page via routing
 
-### Employee Form
+### Employee Forms (Add/Edit)
+- Dedicated pages for adding and editing employees
 - Form validation for required fields
 - Email format validation
 - Duplicate email prevention
 - Date picker for hire date
 - Status dropdown (Active/Inactive)
 - Error handling and user feedback
+- Redux integration for state management
 
 ## Development
 
