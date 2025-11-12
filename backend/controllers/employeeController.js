@@ -71,30 +71,41 @@ const getEmployeeById = async (req, res) => {
 const createEmployee = async (req, res) => {
   try {
     const {
-      first_name,
-      last_name,
-      email,
+      sso,
+      name,
+      role,
+      role_type,
       phone,
-      department,
-      position,
-      salary,
-      hire_date,
-      status
+      location,
+      criticality,
+      status,
+      skills,
+      last_working_day,
+      possible_candidate,
+      asset_id,
+      asset_return_id,
+      comments,
+      attrition,
+      offshore_manager_id,
+      onsite_manager_id
     } = req.body;
 
     // Validation
-    if (!first_name || !last_name || !email) {
+    if (!name) {
       return res.status(400).json({
         success: false,
-        message: 'First name, last name, and email are required'
+        message: 'Name is required'
       });
     }
 
     const [result] = await db.query(
       `INSERT INTO employees
-      (first_name, last_name, email, phone, department, position, salary, hire_date, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [first_name, last_name, email, phone, department, position, salary, hire_date, status || 'active']
+      (sso, name, role, role_type, phone, location, criticality, status, skills, last_working_day,
+       possible_candidate, asset_id, asset_return_id, comments, attrition, offshore_manager_id, onsite_manager_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [sso, name, role, role_type, phone, location, criticality || 'Medium', status || 'Active',
+       skills, last_working_day, possible_candidate, asset_id, asset_return_id, comments,
+       attrition || 'No', offshore_manager_id, onsite_manager_id]
     );
 
     res.status(201).json({
@@ -102,19 +113,18 @@ const createEmployee = async (req, res) => {
       message: 'Employee created successfully',
       data: {
         id: result.insertId,
-        first_name,
-        last_name,
-        email
+        sso,
+        name
       }
     });
   } catch (error) {
     console.error('Error creating employee:', error);
 
-    // Handle duplicate email error
+    // Handle duplicate SSO error
     if (error.code === 'ER_DUP_ENTRY') {
       return res.status(400).json({
         success: false,
-        message: 'Email already exists'
+        message: 'SSO already exists'
       });
     }
 
@@ -131,15 +141,23 @@ const updateEmployee = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      first_name,
-      last_name,
-      email,
+      sso,
+      name,
+      role,
+      role_type,
       phone,
-      department,
-      position,
-      salary,
-      hire_date,
-      status
+      location,
+      criticality,
+      status,
+      skills,
+      last_working_day,
+      possible_candidate,
+      asset_id,
+      asset_return_id,
+      comments,
+      attrition,
+      offshore_manager_id,
+      onsite_manager_id
     } = req.body;
 
     // Check if employee exists
@@ -157,10 +175,14 @@ const updateEmployee = async (req, res) => {
 
     const [result] = await db.query(
       `UPDATE employees
-      SET first_name = ?, last_name = ?, email = ?, phone = ?,
-          department = ?, position = ?, salary = ?, hire_date = ?, status = ?
+      SET sso = ?, name = ?, role = ?, role_type = ?, phone = ?, location = ?,
+          criticality = ?, status = ?, skills = ?, last_working_day = ?,
+          possible_candidate = ?, asset_id = ?, asset_return_id = ?, comments = ?,
+          attrition = ?, offshore_manager_id = ?, onsite_manager_id = ?
       WHERE id = ?`,
-      [first_name, last_name, email, phone, department, position, salary, hire_date, status, id]
+      [sso, name, role, role_type, phone, location, criticality, status, skills,
+       last_working_day, possible_candidate, asset_id, asset_return_id, comments,
+       attrition, offshore_manager_id, onsite_manager_id, id]
     );
 
     res.json({
@@ -168,9 +190,8 @@ const updateEmployee = async (req, res) => {
       message: 'Employee updated successfully',
       data: {
         id,
-        first_name,
-        last_name,
-        email
+        sso,
+        name
       }
     });
   } catch (error) {
@@ -179,7 +200,7 @@ const updateEmployee = async (req, res) => {
     if (error.code === 'ER_DUP_ENTRY') {
       return res.status(400).json({
         success: false,
-        message: 'Email already exists'
+        message: 'SSO already exists'
       });
     }
 

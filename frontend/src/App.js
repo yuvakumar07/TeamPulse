@@ -2,9 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navigation from './components/Navigation';
 import Home from './pages/Home';
-import Employees from './pages/Employees';
-import AddEmployee from './pages/AddEmployee';
-import EditEmployee from './pages/EditEmployee';
+import EmployeesPage from './pages/EmployeesPage';
 import './App.css';
 
 function App() {
@@ -16,9 +14,7 @@ function App() {
         <main className="app-main">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/employees" element={<Employees />} />
-            <Route path="/employees/add" element={<AddEmployee />} />
-            <Route path="/employees/edit/:id" element={<EditEmployee />} />
+            <Route path="/employees" element={<EmployeesPage />} />
           </Routes>
         </main>
 

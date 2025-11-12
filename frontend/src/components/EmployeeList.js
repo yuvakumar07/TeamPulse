@@ -68,11 +68,11 @@ const EmployeeList = ({ onEdit, onAdd }) => {
   };
 
   const filteredEmployees = employees.filter(emp =>
-    emp.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (emp.department && emp.department.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (emp.position && emp.position.toLowerCase().includes(searchTerm.toLowerCase()))
+    (emp.name && emp.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (emp.sso && emp.sso.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (emp.role && emp.role.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (emp.location && emp.location.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (emp.skills && emp.skills.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const renderPagination = () => {
@@ -159,9 +159,23 @@ const EmployeeList = ({ onEdit, onAdd }) => {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const formatSalary = (salary) => {
-    if (!salary) return 'N/A';
-    return `$${parseFloat(salary).toLocaleString()}`;
+  const getCriticalityClass = (criticality) => {
+    const classes = {
+      'Low': 'criticality-low',
+      'Medium': 'criticality-medium',
+      'High': 'criticality-high',
+      'Critical': 'criticality-critical'
+    };
+    return classes[criticality] || '';
+  };
+
+  const getAttritionClass = (attrition) => {
+    const classes = {
+      'No': 'attrition-no',
+      'Yes': 'attrition-yes',
+      'At Risk': 'attrition-risk'
+    };
+    return classes[attrition] || '';
   };
 
   if (loading) return <div className="loading">Loading employees...</div>;
@@ -199,14 +213,16 @@ const EmployeeList = ({ onEdit, onAdd }) => {
               <thead>
                 <tr>
                   <th>ID</th>
+                  <th>SSO</th>
                   <th>Name</th>
-                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Role Type</th>
                   <th>Phone</th>
-                  <th>Department</th>
-                  <th>Position</th>
-                  <th>Salary</th>
-                  <th>Hire Date</th>
+                  <th>Location</th>
+                  <th>Criticality</th>
                   <th>Status</th>
+                  <th>Skills</th>
+                  <th>Attrition</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -214,16 +230,28 @@ const EmployeeList = ({ onEdit, onAdd }) => {
                 {filteredEmployees.map((employee) => (
                   <tr key={employee.id}>
                     <td>{employee.id}</td>
-                    <td>{employee.first_name} {employee.last_name}</td>
-                    <td>{employee.email}</td>
+                    <td>{employee.sso || 'N/A'}</td>
+                    <td>{employee.name}</td>
+                    <td>{employee.role || 'N/A'}</td>
+                    <td>{employee.role_type || 'N/A'}</td>
                     <td>{employee.phone || 'N/A'}</td>
-                    <td>{employee.department || 'N/A'}</td>
-                    <td>{employee.position || 'N/A'}</td>
-                    <td>{formatSalary(employee.salary)}</td>
-                    <td>{formatDate(employee.hire_date)}</td>
+                    <td>{employee.location || 'N/A'}</td>
                     <td>
-                      <span className={`status ${employee.status}`}>
+                      <span className={`badge ${getCriticalityClass(employee.criticality)}`}>
+                        {employee.criticality}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`status ${employee.status?.toLowerCase()}`}>
                         {employee.status}
+                      </span>
+                    </td>
+                    <td className="skills-cell" title={employee.skills}>
+                      {employee.skills ? (employee.skills.length > 30 ? employee.skills.substring(0, 30) + '...' : employee.skills) : 'N/A'}
+                    </td>
+                    <td>
+                      <span className={`badge ${getAttritionClass(employee.attrition)}`}>
+                        {employee.attrition}
                       </span>
                     </td>
                     <td className="actions">

@@ -4,15 +4,23 @@ import './EmployeeForm.css';
 
 const EmployeeForm = ({ employee, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
+    sso: '',
+    name: '',
+    role: '',
+    role_type: 'Full-Time',
     phone: '',
-    department: '',
-    position: '',
-    salary: '',
-    hire_date: '',
-    status: 'active'
+    location: '',
+    criticality: 'Medium',
+    status: 'Active',
+    skills: '',
+    last_working_day: '',
+    possible_candidate: '',
+    asset_id: '',
+    asset_return_id: '',
+    comments: '',
+    attrition: 'No',
+    offshore_manager_id: '',
+    onsite_manager_id: ''
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -20,15 +28,23 @@ const EmployeeForm = ({ employee, onClose, onSuccess }) => {
   useEffect(() => {
     if (employee) {
       setFormData({
-        first_name: employee.first_name || '',
-        last_name: employee.last_name || '',
-        email: employee.email || '',
+        sso: employee.sso || '',
+        name: employee.name || '',
+        role: employee.role || '',
+        role_type: employee.role_type || 'Full-Time',
         phone: employee.phone || '',
-        department: employee.department || '',
-        position: employee.position || '',
-        salary: employee.salary || '',
-        hire_date: employee.hire_date ? employee.hire_date.split('T')[0] : '',
-        status: employee.status || 'active'
+        location: employee.location || '',
+        criticality: employee.criticality || 'Medium',
+        status: employee.status || 'Active',
+        skills: employee.skills || '',
+        last_working_day: employee.last_working_day ? employee.last_working_day.split('T')[0] : '',
+        possible_candidate: employee.possible_candidate || '',
+        asset_id: employee.asset_id || '',
+        asset_return_id: employee.asset_return_id || '',
+        comments: employee.comments || '',
+        attrition: employee.attrition || 'No',
+        offshore_manager_id: employee.offshore_manager_id || '',
+        onsite_manager_id: employee.onsite_manager_id || ''
       });
     }
   }, [employee]);
@@ -51,22 +67,8 @@ const EmployeeForm = ({ employee, onClose, onSuccess }) => {
   const validate = () => {
     const newErrors = {};
 
-    if (!formData.first_name.trim()) {
-      newErrors.first_name = 'First name is required';
-    }
-
-    if (!formData.last_name.trim()) {
-      newErrors.last_name = 'Last name is required';
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
-    }
-
-    if (formData.salary && isNaN(formData.salary)) {
-      newErrors.salary = 'Salary must be a number';
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
     }
 
     return newErrors;
@@ -84,10 +86,18 @@ const EmployeeForm = ({ employee, onClose, onSuccess }) => {
     setSubmitting(true);
 
     try {
+      // Convert empty strings to null for optional fields
+      const dataToSubmit = {
+        ...formData,
+        offshore_manager_id: formData.offshore_manager_id || null,
+        onsite_manager_id: formData.onsite_manager_id || null,
+        last_working_day: formData.last_working_day || null
+      };
+
       if (employee) {
-        await updateEmployee(employee.id, formData);
+        await updateEmployee(employee.id, dataToSubmit);
       } else {
-        await createEmployee(formData);
+        await createEmployee(dataToSubmit);
       }
       onSuccess();
       onClose();
@@ -114,46 +124,59 @@ const EmployeeForm = ({ employee, onClose, onSuccess }) => {
         <form onSubmit={handleSubmit} className="employee-form">
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="first_name">First Name *</label>
+              <label htmlFor="sso">SSO</label>
               <input
                 type="text"
-                id="first_name"
-                name="first_name"
-                value={formData.first_name}
+                id="sso"
+                name="sso"
+                value={formData.sso}
                 onChange={handleChange}
-                className={errors.first_name ? 'error' : ''}
               />
-              {errors.first_name && <span className="error-message">{errors.first_name}</span>}
             </div>
 
             <div className="form-group">
-              <label htmlFor="last_name">Last Name *</label>
+              <label htmlFor="name">Name *</label>
               <input
                 type="text"
-                id="last_name"
-                name="last_name"
-                value={formData.last_name}
+                id="name"
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
-                className={errors.last_name ? 'error' : ''}
+                className={errors.name ? 'error' : ''}
               />
-              {errors.last_name && <span className="error-message">{errors.last_name}</span>}
+              {errors.name && <span className="error-message">{errors.name}</span>}
             </div>
           </div>
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="email">Email *</label>
+              <label htmlFor="role">Role</label>
               <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
+                type="text"
+                id="role"
+                name="role"
+                value={formData.role}
                 onChange={handleChange}
-                className={errors.email ? 'error' : ''}
               />
-              {errors.email && <span className="error-message">{errors.email}</span>}
             </div>
 
+            <div className="form-group">
+              <label htmlFor="role_type">Role Type</label>
+              <select
+                id="role_type"
+                name="role_type"
+                value={formData.role_type}
+                onChange={handleChange}
+              >
+                <option value="Full-Time">Full-Time</option>
+                <option value="Part-Time">Part-Time</option>
+                <option value="Contract">Contract</option>
+                <option value="Intern">Intern</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="form-row">
             <div className="form-group">
               <label htmlFor="phone">Phone</label>
               <input
@@ -164,27 +187,14 @@ const EmployeeForm = ({ employee, onClose, onSuccess }) => {
                 onChange={handleChange}
               />
             </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="department">Department</label>
-              <input
-                type="text"
-                id="department"
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-              />
-            </div>
 
             <div className="form-group">
-              <label htmlFor="position">Position</label>
+              <label htmlFor="location">Location</label>
               <input
                 type="text"
-                id="position"
-                name="position"
-                value={formData.position}
+                id="location"
+                name="location"
+                value={formData.location}
                 onChange={handleChange}
               />
             </div>
@@ -192,42 +202,145 @@ const EmployeeForm = ({ employee, onClose, onSuccess }) => {
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="salary">Salary</label>
-              <input
-                type="number"
-                id="salary"
-                name="salary"
-                value={formData.salary}
+              <label htmlFor="criticality">Criticality</label>
+              <select
+                id="criticality"
+                name="criticality"
+                value={formData.criticality}
                 onChange={handleChange}
-                step="0.01"
-                className={errors.salary ? 'error' : ''}
-              />
-              {errors.salary && <span className="error-message">{errors.salary}</span>}
+              >
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Critical">Critical</option>
+              </select>
             </div>
 
             <div className="form-group">
-              <label htmlFor="hire_date">Hire Date</label>
+              <label htmlFor="status">Status</label>
+              <select
+                id="status"
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="On Leave">On Leave</option>
+                <option value="Terminated">Terminated</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="skills">Skills</label>
+            <textarea
+              id="skills"
+              name="skills"
+              value={formData.skills}
+              onChange={handleChange}
+              rows="3"
+              placeholder="Enter skills separated by commas"
+            />
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="last_working_day">Last Working Day</label>
               <input
                 type="date"
-                id="hire_date"
-                name="hire_date"
-                value={formData.hire_date}
+                id="last_working_day"
+                name="last_working_day"
+                value={formData.last_working_day}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="possible_candidate">Possible Candidate</label>
+              <input
+                type="text"
+                id="possible_candidate"
+                name="possible_candidate"
+                value={formData.possible_candidate}
+                onChange={handleChange}
+                placeholder="Replacement candidate name"
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="asset_id">Asset ID</label>
+              <input
+                type="text"
+                id="asset_id"
+                name="asset_id"
+                value={formData.asset_id}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="asset_return_id">Asset Return ID</label>
+              <input
+                type="text"
+                id="asset_return_id"
+                name="asset_return_id"
+                value={formData.asset_return_id}
                 onChange={handleChange}
               />
             </div>
           </div>
 
           <div className="form-group">
-            <label htmlFor="status">Status</label>
-            <select
-              id="status"
-              name="status"
-              value={formData.status}
+            <label htmlFor="comments">Comments</label>
+            <textarea
+              id="comments"
+              name="comments"
+              value={formData.comments}
               onChange={handleChange}
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
+              rows="3"
+              placeholder="Additional comments or notes"
+            />
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="attrition">Attrition</label>
+              <select
+                id="attrition"
+                name="attrition"
+                value={formData.attrition}
+                onChange={handleChange}
+              >
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+                <option value="At Risk">At Risk</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="offshore_manager_id">Offshore Manager ID</label>
+              <input
+                type="number"
+                id="offshore_manager_id"
+                name="offshore_manager_id"
+                value={formData.offshore_manager_id}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="onsite_manager_id">Onsite Manager ID</label>
+            <input
+              type="number"
+              id="onsite_manager_id"
+              name="onsite_manager_id"
+              value={formData.onsite_manager_id}
+              onChange={handleChange}
+            />
           </div>
 
           <div className="form-actions">

@@ -98,7 +98,7 @@ tbody tr:hover {
   white-space: nowrap;
 }
 
-.status {
+.status, .badge {
   display: inline-block;
   padding: 0.3rem 0.8rem;
   border-radius: 12px;
@@ -112,9 +112,60 @@ tbody tr:hover {
   color: #155724;
 }
 
-.status.inactive {
+.status.inactive,
+.status.terminated {
   background-color: #f8d7da;
   color: #721c24;
+}
+
+.status.on.leave {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+/* Criticality badges */
+.criticality-low {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.criticality-medium {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.criticality-high {
+  background-color: #ffeeba;
+  color: #d39e00;
+}
+
+.criticality-critical {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* Attrition badges */
+.attrition-no {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.attrition-yes {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.attrition-risk {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.skills-cell {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: help;
 }
 
 .no-data {

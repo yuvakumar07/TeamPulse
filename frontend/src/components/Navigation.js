@@ -26,11 +26,6 @@ const Navigation = () => {
               Employees
             </Link>
           </li>
-          <li className="nav-item">
-            <Link to="/employees/add" className={`nav-link ${isActive('/employees/add')}`}>
-              Add Employee
-            </Link>
-          </li>
         </ul>
       </div>
     </nav>

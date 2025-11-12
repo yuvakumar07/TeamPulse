@@ -5,15 +5,23 @@ export const exportEmployeesToExcel = (employees, filename = 'employees') => {
   const formattedData = employees.map((emp, index) => ({
     'No.': index + 1,
     'Employee ID': emp.id,
-    'First Name': emp.first_name,
-    'Last Name': emp.last_name,
-    'Email': emp.email,
+    'SSO': emp.sso || 'N/A',
+    'Name': emp.name,
+    'Role': emp.role || 'N/A',
+    'Role Type': emp.role_type || 'N/A',
     'Phone': emp.phone || 'N/A',
-    'Department': emp.department || 'N/A',
-    'Position': emp.position || 'N/A',
-    'Salary': emp.salary ? `$${parseFloat(emp.salary).toLocaleString()}` : 'N/A',
-    'Hire Date': emp.hire_date ? new Date(emp.hire_date).toLocaleDateString() : 'N/A',
-    'Status': emp.status ? emp.status.charAt(0).toUpperCase() + emp.status.slice(1) : 'N/A',
+    'Location': emp.location || 'N/A',
+    'Criticality': emp.criticality || 'N/A',
+    'Status': emp.status || 'N/A',
+    'Skills': emp.skills || 'N/A',
+    'Last Working Day': emp.last_working_day ? new Date(emp.last_working_day).toLocaleDateString() : 'N/A',
+    'Possible Candidate': emp.possible_candidate || 'N/A',
+    'Asset ID': emp.asset_id || 'N/A',
+    'Asset Return ID': emp.asset_return_id || 'N/A',
+    'Comments': emp.comments || 'N/A',
+    'Attrition': emp.attrition || 'N/A',
+    'Offshore Manager ID': emp.offshore_manager_id || 'N/A',
+    'Onsite Manager ID': emp.onsite_manager_id || 'N/A',
     'Created At': emp.created_at ? new Date(emp.created_at).toLocaleString() : 'N/A',
     'Updated At': emp.updated_at ? new Date(emp.updated_at).toLocaleString() : 'N/A'
   }));
@@ -28,15 +36,23 @@ export const exportEmployeesToExcel = (employees, filename = 'employees') => {
   const columnWidths = [
     { wch: 5 },  // No.
     { wch: 12 }, // Employee ID
-    { wch: 15 }, // First Name
-    { wch: 15 }, // Last Name
-    { wch: 25 }, // Email
+    { wch: 12 }, // SSO
+    { wch: 20 }, // Name
+    { wch: 20 }, // Role
+    { wch: 15 }, // Role Type
     { wch: 15 }, // Phone
-    { wch: 15 }, // Department
-    { wch: 20 }, // Position
-    { wch: 15 }, // Salary
-    { wch: 12 }, // Hire Date
-    { wch: 10 }, // Status
+    { wch: 15 }, // Location
+    { wch: 12 }, // Criticality
+    { wch: 12 }, // Status
+    { wch: 40 }, // Skills
+    { wch: 18 }, // Last Working Day
+    { wch: 20 }, // Possible Candidate
+    { wch: 15 }, // Asset ID
+    { wch: 18 }, // Asset Return ID
+    { wch: 30 }, // Comments
+    { wch: 12 }, // Attrition
+    { wch: 18 }, // Offshore Manager ID
+    { wch: 18 }, // Onsite Manager ID
     { wch: 20 }, // Created At
     { wch: 20 }  // Updated At
   ];
