@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getAllEmployees, deleteEmployee } from '../services/api';
+import { exportEmployeesToExcel } from '../utils/exportToExcel';
 import './EmployeeList.css';
 
 const EmployeeList = ({ onEdit, onAdd }) => {
@@ -52,6 +53,18 @@ const EmployeeList = ({ onEdit, onAdd }) => {
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleExportToExcel = () => {
+    try {
+      const dataToExport = searchTerm ? filteredEmployees : employees;
+      const filename = searchTerm ? 'employees_filtered' : 'employees';
+      const exportedFile = exportEmployeesToExcel(dataToExport, filename);
+      alert(`Employees exported successfully to ${exportedFile}`);
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      alert('Failed to export employees to Excel');
+    }
   };
 
   const filteredEmployees = employees.filter(emp =>
@@ -158,9 +171,14 @@ const EmployeeList = ({ onEdit, onAdd }) => {
     <div className="employee-list">
       <div className="list-header">
         <h2>Employee Directory</h2>
-        <button className="btn btn-primary" onClick={onAdd}>
-          Add New Employee
-        </button>
+        <div className="header-actions">
+          <button className="btn btn-export" onClick={handleExportToExcel}>
+            Export to Excel
+          </button>
+          <button className="btn btn-primary" onClick={onAdd}>
+            Add New Employee
+          </button>
+        </div>
       </div>
 
       <div className="search-bar">
