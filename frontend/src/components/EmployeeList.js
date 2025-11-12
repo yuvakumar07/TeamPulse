@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAllEmployees, deleteEmployee } from '../services/api';
 import { exportEmployeesToExcel } from '../utils/exportToExcel';
+import ConfirmationModal from './ConfirmationModal';
 import './EmployeeList.css';
 
 const EmployeeList = ({ onEdit, onAdd }) => {
@@ -15,6 +16,8 @@ const EmployeeList = ({ onEdit, onAdd }) => {
     total: 0,
     totalPages: 0
   });
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState(null);
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -38,16 +41,28 @@ const EmployeeList = ({ onEdit, onAdd }) => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this employee?')) {
-      try {
-        await deleteEmployee(id);
-        fetchEmployees();
-      } catch (err) {
-        alert('Failed to delete employee');
-        console.error('Error deleting employee:', err);
-      }
+  const handleDeleteClick = (employee) => {
+    setEmployeeToDelete(employee);
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await deleteEmployee(employeeToDelete.id);
+      setShowConfirmation(false);
+      setEmployeeToDelete(null);
+      fetchEmployees();
+    } catch (err) {
+      alert('Failed to delete employee');
+      console.error('Error deleting employee:', err);
+      setShowConfirmation(false);
+      setEmployeeToDelete(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowConfirmation(false);
+    setEmployeeToDelete(null);
   };
 
   const handlePageChange = (newPage) => {
@@ -263,7 +278,7 @@ const EmployeeList = ({ onEdit, onAdd }) => {
                       </button>
                       <button
                         className="btn btn-delete"
-                        onClick={() => handleDelete(employee.id)}
+                        onClick={() => handleDeleteClick(employee)}
                       >
                         Delete
                       </button>
@@ -284,6 +299,15 @@ const EmployeeList = ({ onEdit, onAdd }) => {
           )}
         </>
       )}
+
+      <ConfirmationModal
+        isOpen={showConfirmation}
+        title="Delete Employee"
+        message="Are you sure you want to delete this employee?"
+        employeeName={employeeToDelete?.name}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
     </div>
   );
 };
