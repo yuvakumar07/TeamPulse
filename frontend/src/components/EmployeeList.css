@@ -103,6 +103,67 @@ tbody tr:hover {
   font-size: 1.1rem;
 }
 
+/* Pagination Styles */
+.pagination-container {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+}
+
+.pagination-info {
+  color: #666;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.pagination {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.pagination-btn,
+.pagination-number {
+  padding: 0.5rem 1rem;
+  border: 1px solid #dee2e6;
+  background-color: white;
+  color: #495057;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled),
+.pagination-number:hover {
+  background-color: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f8f9fa;
+}
+
+.pagination-number.active {
+  background-color: #667eea;
+  color: white;
+  border-color: #667eea;
+  font-weight: 600;
+}
+
+.pagination-ellipsis {
+  color: #666;
+  padding: 0 0.5rem;
+  user-select: none;
+}
+
 @media (max-width: 768px) {
   .list-header {
     flex-direction: column;
@@ -129,5 +190,20 @@ tbody tr:hover {
   .btn-delete {
     padding: 0.3rem 0.6rem;
     font-size: 0.8rem;
+  }
+
+  .pagination {
+    gap: 0.3rem;
+  }
+
+  .pagination-btn,
+  .pagination-number {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.8rem;
+  }
+
+  .pagination-btn:first-child,
+  .pagination-btn:last-child {
+    display: none;
   }
 }

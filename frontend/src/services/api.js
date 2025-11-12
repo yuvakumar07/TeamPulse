@@ -10,7 +10,7 @@ const api = axios.create({
 });
 
 // Employee API calls
-export const getAllEmployees = () => api.get('/employees');
+export const getAllEmployees = (page = 1, limit = 10) => api.get('/employees', { params: { page, limit } });
 export const getEmployeeById = (id) => api.get(`/employees/${id}`);
 export const createEmployee = (data) => api.post('/employees', data);
 export const updateEmployee = (id, data) => api.put(`/employees/${id}`, data);

@@ -3,12 +3,29 @@ const db = require('../config/database');
 // Get all employees
 const getAllEmployees = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    // Get total count for pagination
+    const [countResult] = await db.query('SELECT COUNT(*) as total FROM employees');
+    const total = countResult[0].total;
+
+    // Get paginated employees
     const [employees] = await db.query(
-      'SELECT * FROM employees ORDER BY created_at DESC'
+      'SELECT * FROM employees ORDER BY created_at DESC LIMIT ? OFFSET ?',
+      [limit, offset]
     );
+
     res.json({
       success: true,
-      data: employees
+      data: employees,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
     });
   } catch (error) {
     console.error('Error fetching employees:', error);
