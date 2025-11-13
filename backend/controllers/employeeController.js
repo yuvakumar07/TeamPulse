@@ -133,6 +133,22 @@ const createEmployee = async (req, res) => {
        attrition || 'No', offshore_manager_id, onsite_manager_id]
     );
 
+    // Log the action if admin is authenticated
+    if (req.admin) {
+      await db.query(
+        'INSERT INTO audit_logs (admin_id, action, entity_type, entity_id, description, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [
+          req.admin.id,
+          'CREATE',
+          'employees',
+          result.insertId,
+          `Created employee: ${name} (${sso || 'N/A'})`,
+          req.ip || req.connection.remoteAddress,
+          req.headers['user-agent'] || 'Unknown'
+        ]
+      );
+    }
+
     res.status(201).json({
       success: true,
       message: 'Employee created successfully',
@@ -210,6 +226,22 @@ const updateEmployee = async (req, res) => {
        attrition, offshore_manager_id, onsite_manager_id, id]
     );
 
+    // Log the action if admin is authenticated
+    if (req.admin) {
+      await db.query(
+        'INSERT INTO audit_logs (admin_id, action, entity_type, entity_id, description, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [
+          req.admin.id,
+          'UPDATE',
+          'employees',
+          id,
+          `Updated employee: ${name} (${sso || 'N/A'})`,
+          req.ip || req.connection.remoteAddress,
+          req.headers['user-agent'] || 'Unknown'
+        ]
+      );
+    }
+
     res.json({
       success: true,
       message: 'Employee updated successfully',
@@ -242,16 +274,40 @@ const deleteEmployee = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // Get employee details before deletion for audit log
+    const [employees] = await db.query(
+      'SELECT name, sso FROM employees WHERE id = ?',
+      [id]
+    );
+
+    if (employees.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Employee not found'
+      });
+    }
+
+    const employee = employees[0];
+
     const [result] = await db.query(
       'DELETE FROM employees WHERE id = ?',
       [id]
     );
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Employee not found'
-      });
+    // Log the action if admin is authenticated
+    if (req.admin) {
+      await db.query(
+        'INSERT INTO audit_logs (admin_id, action, entity_type, entity_id, description, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [
+          req.admin.id,
+          'DELETE',
+          'employees',
+          id,
+          `Deleted employee: ${employee.name} (${employee.sso || 'N/A'})`,
+          req.ip || req.connection.remoteAddress,
+          req.headers['user-agent'] || 'Unknown'
+        ]
+      );
     }
 
     res.json({

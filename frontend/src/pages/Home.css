@@ -21,8 +21,14 @@
 
 .hero p {
   font-size: 1.3rem;
-  margin-bottom: 2rem;
+  margin-bottom: 0.5rem;
   opacity: 0.95;
+}
+
+.hero-subtitle {
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
 }
 
 .hero-actions {
@@ -115,6 +121,35 @@
 .stat-label {
   color: #666;
   font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.stat-description {
+  color: #888;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.cta-section {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+}
+
+.cta-section h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.cta-section p {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  opacity: 0.95;
 }
 
 .features-grid {

@@ -4,6 +4,9 @@ const bodyParser = require('body-parser');
 require('dotenv').config();
 
 const employeeRoutes = require('./routes/employeeRoutes');
+const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const roleRoutes = require('./routes/roleRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -15,14 +18,21 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/employees', employeeRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api', roleRoutes);
 
 // Root route
 app.get('/', (req, res) => {
   res.json({
-    message: 'Employee Management API',
-    version: '1.0.0',
+    message: 'TeamPulse API',
+    version: '2.0.0',
     endpoints: {
-      employees: '/api/employees'
+      employees: '/api/employees',
+      auth: '/api/auth',
+      admin: '/api/admin',
+      roles: '/api/roles',
+      permissions: '/api/permissions'
     }
   });
 });

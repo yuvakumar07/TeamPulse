@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getAllEmployees, deleteEmployee } from '../services/api';
 import { exportEmployeesToExcel } from '../utils/exportToExcel';
 import ConfirmationModal from './ConfirmationModal';
+import PermissionGuard from './PermissionGuard';
 import './EmployeeList.css';
 
 const EmployeeList = ({ onEdit, onAdd }) => {
@@ -228,12 +229,16 @@ const EmployeeList = ({ onEdit, onAdd }) => {
       <div className="list-header">
         <h2>Employee Directory</h2>
         <div className="header-actions">
-          <button className="btn btn-export" onClick={handleExportToExcel}>
-            Export to Excel
-          </button>
-          <button className="btn btn-primary" onClick={onAdd}>
-            Add New Employee
-          </button>
+          <PermissionGuard permission="employees.view">
+            <button className="btn btn-export" onClick={handleExportToExcel}>
+              Export to Excel
+            </button>
+          </PermissionGuard>
+          <PermissionGuard permission="employees.create">
+            <button className="btn btn-primary" onClick={onAdd}>
+              Add New Employee
+            </button>
+          </PermissionGuard>
         </div>
       </div>
 
@@ -335,18 +340,22 @@ const EmployeeList = ({ onEdit, onAdd }) => {
                       </span>
                     </td>
                     <td className="actions">
-                      <button
-                        className="btn btn-edit"
-                        onClick={() => onEdit(employee)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn btn-delete"
-                        onClick={() => handleDeleteClick(employee)}
-                      >
-                        Delete
-                      </button>
+                      <PermissionGuard permission="employees.update">
+                        <button
+                          className="btn btn-edit"
+                          onClick={() => onEdit(employee)}
+                        >
+                          Edit
+                        </button>
+                      </PermissionGuard>
+                      <PermissionGuard permission="employees.delete">
+                        <button
+                          className="btn btn-delete"
+                          onClick={() => handleDeleteClick(employee)}
+                        >
+                          Delete
+                        </button>
+                      </PermissionGuard>
                     </td>
                   </tr>
                 ))}

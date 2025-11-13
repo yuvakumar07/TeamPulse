@@ -58,6 +58,36 @@
   background-color: rgba(255, 255, 255, 0.2);
 }
 
+.nav-admin-link {
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.nav-admin-link:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.nav-user-info {
+  color: white;
+  padding: 0.6rem 1.2rem;
+  display: block;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.nav-logout-btn {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.nav-logout-btn:hover {
+  background-color: rgba(255, 77, 77, 0.3);
+  border-color: rgba(255, 77, 77, 0.5);
+}
+
 @media (max-width: 768px) {
   .nav-container {
     padding: 0 1rem;
