@@ -6,16 +6,34 @@ const getAllEmployees = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
+    const roleType = req.query.role_type;
+
+    // Build query based on filters
+    let countQuery = 'SELECT COUNT(*) as total FROM employees';
+    let dataQuery = 'SELECT * FROM employees';
+    const queryParams = [];
+    const countParams = [];
+
+    // Add role_type filter if provided
+    if (roleType && roleType !== 'All') {
+      countQuery += ' WHERE role_type = ?';
+      dataQuery += ' WHERE role_type = ?';
+      queryParams.push(roleType);
+      countParams.push(roleType);
+    }
 
     // Get total count for pagination
-    const [countResult] = await db.query('SELECT COUNT(*) as total FROM employees');
+    const [countResult] = await db.query(countQuery, countParams);
     const total = countResult[0].total;
 
+    // Add ordering and pagination
+    dataQuery += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    queryParams.push(limit, offset);
+
+    console.log('dataQuery', dataQuery);
+
     // Get paginated employees
-    const [employees] = await db.query(
-      'SELECT * FROM employees ORDER BY created_at DESC LIMIT ? OFFSET ?',
-      [limit, offset]
-    );
+    const [employees] = await db.query(dataQuery, queryParams);
 
     res.json({
       success: true,

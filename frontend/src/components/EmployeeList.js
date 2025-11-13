@@ -9,6 +9,7 @@ const EmployeeList = ({ onEdit, onAdd }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [roleTypeFilter, setRoleTypeFilter] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -22,12 +23,12 @@ const EmployeeList = ({ onEdit, onAdd }) => {
 
   useEffect(() => {
     fetchEmployees();
-  }, [currentPage]);
+  }, [currentPage, roleTypeFilter]);
 
   const fetchEmployees = async () => {
     try {
       setLoading(true);
-      const response = await getAllEmployees(currentPage, itemsPerPage);
+      const response = await getAllEmployees(currentPage, itemsPerPage, roleTypeFilter);
       setEmployees(response.data.data);
       if (response.data.pagination) {
         setPagination(response.data.pagination);
@@ -68,6 +69,11 @@ const EmployeeList = ({ onEdit, onAdd }) => {
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleRoleTypeFilterChange = (e) => {
+    setRoleTypeFilter(e.target.value);
+    setCurrentPage(1); // Reset to first page when filter changes
   };
 
   const handleExportToExcel = () => {
@@ -210,13 +216,31 @@ const EmployeeList = ({ onEdit, onAdd }) => {
         </div>
       </div>
 
-      <div className="search-bar">
-        <input
-          type="text"
-          placeholder="Search employees..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      <div className="filters-container">
+        <div className="search-bar">
+          <input
+            type="text"
+            placeholder="Search employees..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        <div className="role-type-filter">
+          <label htmlFor="roleTypeFilter">Role Type:</label>
+          <select
+            id="roleTypeFilter"
+            value={roleTypeFilter}
+            onChange={handleRoleTypeFilterChange}
+            className="filter-select"
+          >
+            <option value="All">All</option>
+            <option value="DEV">DEV</option>
+            <option value="QA">QA</option>
+            <option value="Contract">Contract</option>
+            <option value="Intern">Intern</option>
+          </select>
+        </div>
       </div>
 
       {filteredEmployees.length === 0 ? (
