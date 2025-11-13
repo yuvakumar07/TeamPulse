@@ -7,6 +7,13 @@ const getAllEmployees = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
     const roleType = req.query.role_type;
+    const sortField = req.query.sortField || 'created_at';
+    const sortOrder = req.query.sortOrder || 'DESC';
+
+    // Whitelist of allowed sort fields to prevent SQL injection
+    const allowedSortFields = ['id', 'sso', 'name', 'role', 'role_type', 'phone', 'location', 'criticality', 'status', 'skills', 'attrition', 'created_at'];
+    const validSortField = allowedSortFields.includes(sortField) ? sortField : 'created_at';
+    const validSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
 
     // Build query based on filters
     let countQuery = 'SELECT COUNT(*) as total FROM employees';
@@ -27,7 +34,7 @@ const getAllEmployees = async (req, res) => {
     const total = countResult[0].total;
 
     // Add ordering and pagination
-    dataQuery += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    dataQuery += ` ORDER BY ${validSortField} ${validSortOrder} LIMIT ? OFFSET ?`;
     queryParams.push(limit, offset);
 
     console.log('dataQuery', dataQuery);

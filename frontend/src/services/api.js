@@ -10,10 +10,16 @@ const api = axios.create({
 });
 
 // Employee API calls
-export const getAllEmployees = (page = 1, limit = 10, roleType = null) => {
+export const getAllEmployees = (page = 1, limit = 10, roleType = null, sortField = 'created_at', sortOrder = 'DESC') => {
   const params = { page, limit };
   if (roleType && roleType !== 'All') {
     params.role_type = roleType;
+  }
+  if (sortField) {
+    params.sortField = sortField;
+  }
+  if (sortOrder) {
+    params.sortOrder = sortOrder;
   }
   return api.get('/employees', { params });
 };

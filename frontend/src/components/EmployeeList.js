@@ -19,16 +19,18 @@ const EmployeeList = ({ onEdit, onAdd }) => {
   });
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
+  const [sortField, setSortField] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('DESC');
   const itemsPerPage = 10;
 
   useEffect(() => {
     fetchEmployees();
-  }, [currentPage, roleTypeFilter]);
+  }, [currentPage, roleTypeFilter, sortField, sortOrder]);
 
   const fetchEmployees = async () => {
     try {
       setLoading(true);
-      const response = await getAllEmployees(currentPage, itemsPerPage, roleTypeFilter);
+      const response = await getAllEmployees(currentPage, itemsPerPage, roleTypeFilter, sortField, sortOrder);
       setEmployees(response.data.data);
       if (response.data.pagination) {
         setPagination(response.data.pagination);
@@ -74,6 +76,25 @@ const EmployeeList = ({ onEdit, onAdd }) => {
   const handleRoleTypeFilterChange = (e) => {
     setRoleTypeFilter(e.target.value);
     setCurrentPage(1); // Reset to first page when filter changes
+  };
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      // Toggle sort order if clicking the same field
+      setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC');
+    } else {
+      // Set new field and default to ASC
+      setSortField(field);
+      setSortOrder('ASC');
+    }
+    setCurrentPage(1); // Reset to first page when sorting changes
+  };
+
+  const renderSortIcon = (field) => {
+    if (sortField !== field) {
+      return <span className="sort-icon">⇅</span>;
+    }
+    return sortOrder === 'ASC' ? <span className="sort-icon active">↑</span> : <span className="sort-icon active">↓</span>;
   };
 
   const handleExportToExcel = () => {
@@ -237,8 +258,6 @@ const EmployeeList = ({ onEdit, onAdd }) => {
             <option value="All">All</option>
             <option value="DEV">DEV</option>
             <option value="QA">QA</option>
-            <option value="Contract">Contract</option>
-            <option value="Intern">Intern</option>
           </select>
         </div>
       </div>
@@ -251,17 +270,39 @@ const EmployeeList = ({ onEdit, onAdd }) => {
             <table>
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>SSO</th>
-                  <th>Name</th>
-                  <th>Role</th>
-                  <th>Role Type</th>
-                  <th>Phone</th>
-                  <th>Location</th>
-                  <th>Criticality</th>
-                  <th>Status</th>
-                  <th>Skills</th>
-                  <th>Attrition</th>
+                  <th className="sortable" onClick={() => handleSort('id')}>
+                    ID {renderSortIcon('id')}
+                  </th>
+                  <th className="sortable" onClick={() => handleSort('sso')}>
+                    SSO {renderSortIcon('sso')}
+                  </th>
+                  <th className="sortable" onClick={() => handleSort('name')}>
+                    Name {renderSortIcon('name')}
+                  </th>
+                  <th className="sortable" onClick={() => handleSort('role')}>
+                    Role {renderSortIcon('role')}
+                  </th>
+                  <th className="sortable" onClick={() => handleSort('role_type')}>
+                    Role Type {renderSortIcon('role_type')}
+                  </th>
+                  <th className="sortable" onClick={() => handleSort('phone')}>
+                    Phone {renderSortIcon('phone')}
+                  </th>
+                  <th className="sortable" onClick={() => handleSort('location')}>
+                    Location {renderSortIcon('location')}
+                  </th>
+                  <th className="sortable" onClick={() => handleSort('criticality')}>
+                    Criticality {renderSortIcon('criticality')}
+                  </th>
+                  <th className="sortable" onClick={() => handleSort('status')}>
+                    Status {renderSortIcon('status')}
+                  </th>
+                  <th className="sortable" onClick={() => handleSort('skills')}>
+                    Skills {renderSortIcon('skills')}
+                  </th>
+                  <th className="sortable" onClick={() => handleSort('attrition')}>
+                    Attrition {renderSortIcon('attrition')}
+                  </th>
                   <th>Actions</th>
                 </tr>
               </thead>
