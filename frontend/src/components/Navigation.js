@@ -63,6 +63,13 @@ const Navigation = () => {
                   </Link>
                 </li>
               </PermissionGuard>
+              <PermissionGuard permissions={['projects.view', 'projects.create', 'projects.update', 'projects.delete']} requireAll={false}>
+                <li className="nav-item">
+                  <Link to="/admin/projects" className={`nav-link ${isActive('/admin/projects')}`}>
+                    Projects
+                  </Link>
+                </li>
+              </PermissionGuard>
               <PermissionGuard permission="admin_users.view">
                 <li className="nav-item">
                   <Link to="/admin/users" className={`nav-link ${isActive('/admin/users')}`}>

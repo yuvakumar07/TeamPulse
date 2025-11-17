@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navigation from './components/Navigation';
 import Home from './pages/Home';
 import EmployeesPage from './pages/EmployeesPage';
+import ProjectsPage from './pages/ProjectsPage';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsersManagement from './pages/AdminUsersManagement';
@@ -41,6 +42,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <EmployeesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/projects"
+              element={
+                <ProtectedRoute>
+                  <ProjectsPage />
                 </ProtectedRoute>
               }
             />

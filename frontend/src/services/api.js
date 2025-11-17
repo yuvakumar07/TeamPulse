@@ -56,4 +56,23 @@ export const createEmployee = (data) => api.post('/employees', data);
 export const updateEmployee = (id, data) => api.put(`/employees/${id}`, data);
 export const deleteEmployee = (id) => api.delete(`/employees/${id}`);
 
+// Project API calls
+export const getAllProjects = (page = 1, limit = 10, status = null, sortField = 'created_at', sortOrder = 'DESC') => {
+  const params = { page, limit };
+  if (status && status !== 'All') {
+    params.status = status;
+  }
+  if (sortField) {
+    params.sortField = sortField;
+  }
+  if (sortOrder) {
+    params.sortOrder = sortOrder;
+  }
+  return api.get('/projects', { params });
+};
+export const getProjectById = (id) => api.get(`/projects/${id}`);
+export const createProject = (data) => api.post('/projects', data);
+export const updateProject = (id, data) => api.put(`/projects/${id}`, data);
+export const deleteProject = (id) => api.delete(`/projects/${id}`);
+
 export default api;
