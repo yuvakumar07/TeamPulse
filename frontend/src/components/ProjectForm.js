@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { createProject, updateProject, getProjectById, getAllEmployees } from '../services/api';
 import './ProjectForm.css';
 
@@ -49,7 +50,7 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
       setAvailableEmployees(response.data.data || []);
     } catch (err) {
       console.error('Error fetching employees:', err);
-      alert('Failed to load employees list');
+      toast.error('Failed to load employees list');
     } finally {
       setLoadingEmployees(false);
     }
@@ -80,7 +81,7 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
       }
     } catch (err) {
       console.error('Error loading project:', err);
-      alert('Failed to load project details');
+      toast.error('Failed to load project details');
     }
   };
 
@@ -103,7 +104,7 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
 
     // Check if already selected
     if (selectedEmployees.some(emp => emp.employee_id === employee.id)) {
-      alert('This employee is already assigned to the project');
+      toast.warning('This employee is already assigned to the project');
       return;
     }
 
@@ -133,7 +134,7 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
     const percentage = parseFloat(value) || 0;
 
     if (percentage < 0 || percentage > 100) {
-      alert('Allocation percentage must be between 0 and 100');
+      toast.warning('Allocation percentage must be between 0 and 100');
       return;
     }
 
@@ -188,11 +189,12 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
         await createProject(dataToSubmit);
       }
 
+      toast.success(project ? 'Project updated successfully!' : 'Project created successfully!');
       onSuccess();
       onClose();
     } catch (err) {
       console.error('Error saving project:', err);
-      alert(err.response?.data?.message || 'Failed to save project');
+      toast.error(err.response?.data?.message || 'Failed to save project');
     } finally {
       setSubmitting(false);
     }

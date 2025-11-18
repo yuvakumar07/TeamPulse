@@ -5,6 +5,19 @@
   overflow: hidden;
 }
 
+/* Login page full viewport without scroll */
+.App.login-page {
+  overflow: hidden;
+}
+
+.App.login-page .app-layout {
+  height: 100vh;
+}
+
+.App.login-page .app-main {
+  height: 100vh;
+}
+
 .app-layout {
   display: flex;
   flex: 1;
@@ -19,6 +32,14 @@
   overflow-y: auto;
   overflow-x: hidden;
   height: calc(100vh - 70px);
+}
+
+/* Login page full height without scroll */
+.app-main:has(.admin-login-container) {
+  padding: 0;
+  overflow: hidden;
+  height: 100vh;
+  background-color: transparent;
 }
 
 /* Custom scrollbar for main content */

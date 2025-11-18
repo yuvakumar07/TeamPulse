@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { getAllEmployees, deleteEmployee } from '../services/api';
 import { exportEmployeesToExcel } from '../utils/exportToExcel';
 import ConfirmationModal from './ConfirmationModal';
@@ -53,11 +54,12 @@ const EmployeeList = ({ onEdit, onAdd }) => {
   const handleConfirmDelete = async () => {
     try {
       await deleteEmployee(employeeToDelete.id);
+      toast.success('Employee deleted successfully!');
       setShowConfirmation(false);
       setEmployeeToDelete(null);
       fetchEmployees();
     } catch (err) {
-      alert('Failed to delete employee');
+      toast.error('Failed to delete employee');
       console.error('Error deleting employee:', err);
       setShowConfirmation(false);
       setEmployeeToDelete(null);
@@ -103,10 +105,10 @@ const EmployeeList = ({ onEdit, onAdd }) => {
       const dataToExport = searchTerm ? filteredEmployees : employees;
       const filename = searchTerm ? 'employees_filtered' : 'employees';
       const exportedFile = exportEmployeesToExcel(dataToExport, filename);
-      alert(`Employees exported successfully to ${exportedFile}`);
+      toast.success(`Employees exported successfully to ${exportedFile}`);
     } catch (error) {
       console.error('Error exporting to Excel:', error);
-      alert('Failed to export employees to Excel');
+      toast.error('Failed to export employees to Excel');
     }
   };
 

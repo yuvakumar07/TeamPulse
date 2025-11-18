@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import authService from '../services/authService';
 import PermissionGuard from '../components/PermissionGuard';
 import './RoleManagement.css';
@@ -93,7 +94,7 @@ const RoleManagement = () => {
         if (response.success) {
           fetchRoles();
           resetForm();
-          alert('Role updated successfully');
+          toast.success('Role updated successfully!');
         }
       } else {
         // Create new role
@@ -101,7 +102,7 @@ const RoleManagement = () => {
         if (response.success) {
           fetchRoles();
           resetForm();
-          alert('Role created successfully');
+          toast.success('Role created successfully!');
         }
       }
     } catch (err) {
@@ -139,10 +140,11 @@ const RoleManagement = () => {
         fetchRoles();
         setShowDeleteModal(false);
         setRoleToDelete(null);
-        alert('Role deleted successfully');
+        toast.success('Role deleted successfully!');
       }
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred while deleting role');
+      toast.error(err.response?.data?.message || 'Failed to delete role');
       setShowDeleteModal(false);
     }
   };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { createEmployee, updateEmployee } from '../services/api';
 import './EmployeeForm.css';
 
@@ -96,16 +97,18 @@ const EmployeeForm = ({ employee, onClose, onSuccess }) => {
 
       if (employee) {
         await updateEmployee(employee.id, dataToSubmit);
+        toast.success('Employee updated successfully!');
       } else {
         await createEmployee(dataToSubmit);
+        toast.success('Employee created successfully!');
       }
       onSuccess();
       onClose();
     } catch (err) {
       if (err.response?.data?.message) {
-        alert(err.response.data.message);
+        toast.error(err.response.data.message);
       } else {
-        alert('Failed to save employee');
+        toast.error('Failed to save employee');
       }
       console.error('Error saving employee:', err);
     } finally {

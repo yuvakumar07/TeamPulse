@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import authService from '../services/authService';
 import './AdminLogin.css';
 
@@ -36,14 +37,19 @@ const AdminLogin = () => {
       const response = await authService.login(formData.username, formData.password);
 
       if (response.success) {
-        navigate('/admin/dashboard');
+        toast.success('Login successful! Redirecting to dashboard...');
+        setTimeout(() => {
+          navigate('/admin/dashboard');
+        }, 500);
       } else {
-        setError(response.message || 'Login failed');
+        const errorMessage = response.message || 'Login failed';
+        setError(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (err) {
-      setError(
-        err.response?.data?.message || 'An error occurred during login. Please try again.'
-      );
+      const errorMessage = err.response?.data?.message || 'An error occurred during login. Please try again.';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

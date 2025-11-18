@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import authService from '../services/authService';
 import PermissionGuard from '../components/PermissionGuard';
 import './AdminUsersManagement.css';
@@ -103,7 +104,7 @@ const AdminUsersManagement = () => {
         if (response.success) {
           fetchAdmins();
           resetForm();
-          alert('Admin user updated successfully');
+          toast.success('Admin user updated successfully!');
         }
       } else {
         // Create new admin
@@ -111,7 +112,7 @@ const AdminUsersManagement = () => {
         if (response.success) {
           fetchAdmins();
           resetForm();
-          alert('Admin user created successfully');
+          toast.success('Admin user created successfully!');
         }
       }
     } catch (err) {
@@ -144,10 +145,11 @@ const AdminUsersManagement = () => {
         fetchAdmins();
         setShowDeleteModal(false);
         setAdminToDelete(null);
-        alert('Admin user deleted successfully');
+        toast.success('Admin user deleted successfully!');
       }
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred while deleting admin user');
+      toast.error(err.response?.data?.message || 'Failed to delete admin user');
       setShowDeleteModal(false);
     }
   };

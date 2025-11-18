@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { getAllProjects, deleteProject } from '../services/api';
 import ConfirmationModal from './ConfirmationModal';
 import EmployeeDetailsModal from './EmployeeDetailsModal';
@@ -55,11 +56,12 @@ const ProjectList = ({ onEdit, onAdd }) => {
   const handleConfirmDelete = async () => {
     try {
       await deleteProject(projectToDelete.id);
+      toast.success('Project deleted successfully!');
       setShowConfirmation(false);
       setProjectToDelete(null);
       fetchProjects();
     } catch (err) {
-      alert('Failed to delete project');
+      toast.error('Failed to delete project');
       console.error('Error deleting project:', err);
       setShowConfirmation(false);
       setProjectToDelete(null);
