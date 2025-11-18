@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import authService from '../services/authService';
 import PermissionGuard from '../components/auth/PermissionGuard';
+import { EditIcon, DeleteIcon } from '../components/icons/ActionIcons';
 import './RoleManagement.css';
 
 const RoleManagement = () => {
@@ -340,20 +341,20 @@ const RoleManagement = () => {
                       <PermissionGuard permission="roles.update">
                         <button
                           onClick={() => handleEdit(role)}
-                          className="btn-icon btn-edit"
-                          title="Edit"
+                          className="btn-icon btn-icon-edit"
+                          title="Edit Role"
                         >
-                          ✏️
+                          <EditIcon />
                         </button>
                       </PermissionGuard>
                       {!role.is_system_role && (
                         <PermissionGuard permission="roles.delete">
                           <button
                             onClick={() => handleDeleteClick(role)}
-                            className="btn-icon btn-delete"
-                            title="Delete"
+                            className="btn-icon btn-icon-delete"
+                            title="Delete Role"
                           >
-                            🗑️
+                            <DeleteIcon />
                           </button>
                         </PermissionGuard>
                       )}

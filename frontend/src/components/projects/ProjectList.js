@@ -4,6 +4,7 @@ import { getAllProjects, deleteProject } from '../../services/api';
 import ConfirmationModal from '../modals/ConfirmationModal';
 import EmployeeDetailsModal from '../modals/EmployeeDetailsModal';
 import PermissionGuard from '../auth/PermissionGuard';
+import { EditIcon, DeleteIcon, ViewIcon, AddIcon } from '../icons/ActionIcons';
 import './ProjectList.css';
 
 const ProjectList = ({ onEdit, onAdd }) => {
@@ -216,6 +217,7 @@ const ProjectList = ({ onEdit, onAdd }) => {
         <div className="header-actions">
           <PermissionGuard permission="projects.create">
             <button className="btn btn-primary" onClick={onAdd}>
+              <AddIcon className="btn-icon-inline" />
               Add New Project
             </button>
           </PermissionGuard>
@@ -295,27 +297,29 @@ const ProjectList = ({ onEdit, onAdd }) => {
                     <td className="actions">
                       <PermissionGuard permission="projects.view">
                         <button
-                          className="btn btn-view"
+                          className="btn-icon btn-icon-view"
                           onClick={() => handleViewEmployees(project)}
                           title="View assigned employees"
                         >
-                          View Employees
+                          <ViewIcon />
                         </button>
                       </PermissionGuard>
                       <PermissionGuard permission="projects.update">
                         <button
-                          className="btn btn-edit"
+                          className="btn-icon btn-icon-edit"
                           onClick={() => onEdit(project)}
+                          title="Edit Project"
                         >
-                          Edit
+                          <EditIcon />
                         </button>
                       </PermissionGuard>
                       <PermissionGuard permission="projects.delete">
                         <button
-                          className="btn btn-delete"
+                          className="btn-icon btn-icon-delete"
                           onClick={() => handleDeleteClick(project)}
+                          title="Delete Project"
                         >
-                          Delete
+                          <DeleteIcon />
                         </button>
                       </PermissionGuard>
                     </td>

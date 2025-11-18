@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import authService from '../services/authService';
 import PermissionGuard from '../components/auth/PermissionGuard';
+import { EditIcon, DeleteIcon } from '../components/icons/ActionIcons';
 import './AdminUsersManagement.css';
 
 const AdminUsersManagement = () => {
@@ -399,20 +400,20 @@ const AdminUsersManagement = () => {
                       <PermissionGuard permission="admin_users.update">
                         <button
                           onClick={() => handleEdit(admin)}
-                          className="btn-icon btn-edit"
-                          title="Edit"
+                          className="btn-icon btn-icon-edit"
+                          title="Edit Admin User"
                         >
-                          ✏️
+                          <EditIcon />
                         </button>
                       </PermissionGuard>
                       <PermissionGuard permission="admin_users.delete">
                         <button
                           onClick={() => handleDeleteClick(admin)}
-                          className="btn-icon btn-delete"
-                          title="Delete"
+                          className="btn-icon btn-icon-delete"
+                          title="Delete Admin User"
                           disabled={currentUser?.id === admin.id}
                         >
-                          🗑️
+                          <DeleteIcon />
                         </button>
                       </PermissionGuard>
                     </div>

@@ -4,6 +4,7 @@ import { getAllEmployees, deleteEmployee } from '../../services/api';
 import { exportEmployeesToExcel } from '../../utils/exportToExcel';
 import ConfirmationModal from '../modals/ConfirmationModal';
 import PermissionGuard from '../auth/PermissionGuard';
+import { EditIcon, DeleteIcon, AddIcon, ExportIcon } from '../icons/ActionIcons';
 import './EmployeeList.css';
 
 const EmployeeList = ({ onEdit, onAdd }) => {
@@ -233,11 +234,13 @@ const EmployeeList = ({ onEdit, onAdd }) => {
         <div className="header-actions">
           <PermissionGuard permission="employees.view">
             <button className="btn btn-export" onClick={handleExportToExcel}>
+              <ExportIcon className="btn-icon-inline" />
               Export to Excel
             </button>
           </PermissionGuard>
           <PermissionGuard permission="employees.create">
             <button className="btn btn-primary" onClick={onAdd}>
+              <AddIcon className="btn-icon-inline" />
               Add New Employee
             </button>
           </PermissionGuard>
@@ -344,18 +347,20 @@ const EmployeeList = ({ onEdit, onAdd }) => {
                     <td className="actions">
                       <PermissionGuard permission="employees.update">
                         <button
-                          className="btn btn-edit"
+                          className="btn-icon btn-icon-edit"
                           onClick={() => onEdit(employee)}
+                          title="Edit Employee"
                         >
-                          Edit
+                          <EditIcon />
                         </button>
                       </PermissionGuard>
                       <PermissionGuard permission="employees.delete">
                         <button
-                          className="btn btn-delete"
+                          className="btn-icon btn-icon-delete"
                           onClick={() => handleDeleteClick(employee)}
+                          title="Delete Employee"
                         >
-                          Delete
+                          <DeleteIcon />
                         </button>
                       </PermissionGuard>
                     </td>
