@@ -3,8 +3,8 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './toast.css';
-import Header from './components/Header';
-import Sidebar from './components/Sidebar';
+import Header from './components/layout/Header';
+import Sidebar from './components/layout/Sidebar';
 import Home from './pages/Home';
 import EmployeesPage from './pages/EmployeesPage';
 import ProjectsPage from './pages/ProjectsPage';
@@ -12,7 +12,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsersManagement from './pages/AdminUsersManagement';
 import RoleManagement from './pages/RoleManagement';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 import './App.css';
 
 function AppContent() {

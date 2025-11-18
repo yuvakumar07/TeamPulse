@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import ProjectList from '../components/ProjectList';
-import ProjectForm from '../components/ProjectForm';
+import ProjectList from '../components/projects/ProjectList';
+import ProjectForm from '../components/projects/ProjectForm';
 import './Employees.css'; // Reuse the same CSS
 
 const ProjectsPage = () => {

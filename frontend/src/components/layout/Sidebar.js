@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import authService from '../services/authService';
-import PermissionGuard from './PermissionGuard';
-import { DashboardIcon, EmployeesIcon, ProjectsIcon, AdminUsersIcon, RolesIcon } from './icons/MenuIcons';
+import authService from '../../services/authService';
+import PermissionGuard from '../auth/PermissionGuard';
+import { DashboardIcon, EmployeesIcon, ProjectsIcon, AdminUsersIcon, RolesIcon } from '../icons/MenuIcons';
 import './Sidebar.css';
 
 const Sidebar = () => {

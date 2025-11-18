@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import authService from '../services/authService';
-import PermissionGuard from '../components/PermissionGuard';
+import PermissionGuard from '../components/auth/PermissionGuard';
 import './RoleManagement.css';
 
 const RoleManagement = () => {

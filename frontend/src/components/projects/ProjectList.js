@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { getAllProjects, deleteProject } from '../services/api';
-import ConfirmationModal from './ConfirmationModal';
-import EmployeeDetailsModal from './EmployeeDetailsModal';
-import PermissionGuard from './PermissionGuard';
+import { getAllProjects, deleteProject } from '../../services/api';
+import ConfirmationModal from '../modals/ConfirmationModal';
+import EmployeeDetailsModal from '../modals/EmployeeDetailsModal';
+import PermissionGuard from '../auth/PermissionGuard';
 import './ProjectList.css';
 
 const ProjectList = ({ onEdit, onAdd }) => {

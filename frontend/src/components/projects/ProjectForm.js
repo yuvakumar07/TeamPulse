@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { createProject, updateProject, getProjectById, getAllEmployees } from '../services/api';
+import { createProject, updateProject, getProjectById, getAllEmployees } from '../../services/api';
 import './ProjectForm.css';
 
 const ProjectForm = ({ project, onClose, onSuccess }) => {

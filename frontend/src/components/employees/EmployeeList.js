@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { getAllEmployees, deleteEmployee } from '../services/api';
-import { exportEmployeesToExcel } from '../utils/exportToExcel';
-import ConfirmationModal from './ConfirmationModal';
-import PermissionGuard from './PermissionGuard';
+import { getAllEmployees, deleteEmployee } from '../../services/api';
+import { exportEmployeesToExcel } from '../../utils/exportToExcel';
+import ConfirmationModal from '../modals/ConfirmationModal';
+import PermissionGuard from '../auth/PermissionGuard';
 import './EmployeeList.css';
 
 const EmployeeList = ({ onEdit, onAdd }) => {

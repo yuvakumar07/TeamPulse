@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { createEmployee, updateEmployee } from '../services/api';
+import { createEmployee, updateEmployee } from '../../services/api';
 import './EmployeeForm.css';
 
 const EmployeeForm = ({ employee, onClose, onSuccess }) => {

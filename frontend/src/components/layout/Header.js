@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import authService from '../services/authService';
+import authService from '../../services/authService';
 import './Header.css';
 
 const Header = () => {

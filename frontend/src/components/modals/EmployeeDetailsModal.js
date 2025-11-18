@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getProjectById } from '../services/api';
+import { getProjectById } from '../../services/api';
 import './EmployeeDetailsModal.css';
 
 const EmployeeDetailsModal = ({ projectId, projectName, isOpen, onClose }) => {

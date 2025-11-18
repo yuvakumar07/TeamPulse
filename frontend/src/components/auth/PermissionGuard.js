@@ -1,5 +1,5 @@
 import React from 'react';
-import authService from '../services/authService';
+import authService from '../../services/authService';
 
 /**
  * PermissionGuard Component

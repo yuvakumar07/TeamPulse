@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import authService from '../services/authService';
+import authService from '../../services/authService';
 import PermissionGuard from './PermissionGuard';
 import './Navigation.css';
 
