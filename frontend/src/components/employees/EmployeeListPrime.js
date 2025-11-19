@@ -130,7 +130,7 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewVisaHistory }) => {
         default: return null;
       }
     };
-    return <Tag value={rowData.attrition} severity={getSeverity(attrition)} />;
+    return <Tag value={rowData.attrition} severity={getSeverity(rowData.attrition)} />;
   };
 
   const visaTypeBodyTemplate = (rowData) => {

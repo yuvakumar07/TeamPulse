@@ -293,7 +293,6 @@ const ProjectList = ({ onEdit, onAdd }) => {
                     Status {renderSortIcon('project_status')}
                   </th>
                   <th>Employees</th>
-                  <th>Total Allocation</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -310,7 +309,6 @@ const ProjectList = ({ onEdit, onAdd }) => {
                       </span>
                     </td>
                     <td>{project.employee_count || 0}</td>
-                    <td>{project.total_allocation ? `${project.total_allocation}%` : '0%'}</td>
                     <td className="actions">
                       <PermissionGuard permission="projects.view">
                         <button

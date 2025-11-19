@@ -1,0 +1,512 @@
+/* PrimeReact Custom Overrides for TeamPulse */
+
+/* Card styling for DataTables */
+.p-datatable .p-datatable-wrapper {
+  border-radius: 6px;
+}
+
+.card {
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 0;
+  margin: 0;
+}
+
+/* Remove default card padding to let DataTable use full width */
+.p-datatable .p-datatable-header {
+  background: #f8f9fa;
+  border: none;
+  padding: 1rem;
+  border-radius: 6px 6px 0 0;
+}
+
+/* Toolbar styling */
+.p-toolbar {
+  background: white;
+  border: none;
+  border-radius: 6px;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.p-toolbar h2 {
+  color: #333;
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+/* Button spacing in toolbar */
+.p-toolbar .p-button {
+  margin-left: 0.5rem;
+}
+
+.p-toolbar .p-button:first-child {
+  margin-left: 0;
+}
+
+/* DataTable styling */
+.p-datatable {
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  background-color: #f8f9fa;
+  color: #495057;
+  font-weight: 600;
+  border-bottom: 2px solid #dee2e6;
+  padding: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.p-datatable .p-datatable-tbody > tr {
+  transition: background-color 0.2s;
+}
+
+.p-datatable .p-datatable-tbody > tr:hover {
+  background-color: #f8f9fa;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #e9ecef;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+/* Pagination styling */
+.p-paginator {
+  background: white;
+  border: none;
+  border-top: 1px solid #e9ecef;
+  padding: 0.75rem 1rem;
+  border-radius: 0 0 6px 6px;
+}
+
+.p-paginator .p-paginator-pages .p-paginator-page {
+  min-width: 2rem;
+  height: 2rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
+  background-color: #667eea;
+  border-color: #667eea;
+  color: white;
+}
+
+/* Input styling */
+.p-inputtext {
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  padding: 0.6rem;
+  font-size: 0.9rem;
+  transition: border-color 0.3s;
+}
+
+.p-inputtext:enabled:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Dropdown styling */
+.p-dropdown {
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  transition: border-color 0.3s;
+}
+
+.p-dropdown:not(.p-disabled):hover {
+  border-color: #b8c2f0;
+}
+
+.p-dropdown:not(.p-disabled).p-focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Calendar styling */
+.p-calendar .p-inputtext {
+  padding-right: 2.5rem;
+}
+
+.p-calendar .p-datepicker {
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Button styling - align with existing app theme */
+.p-button {
+  background-color: #667eea;
+  border: 1px solid #667eea;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.p-button:enabled:hover {
+  background-color: #5568d3;
+  border-color: #5568d3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+.p-button:enabled:active {
+  transform: translateY(0);
+}
+
+.p-button.p-button-success {
+  background-color: #28a745;
+  border-color: #28a745;
+}
+
+.p-button.p-button-success:enabled:hover {
+  background-color: #218838;
+  border-color: #218838;
+  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+.p-button.p-button-danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+
+.p-button.p-button-danger:enabled:hover {
+  background-color: #c82333;
+  border-color: #c82333;
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+.p-button.p-button-warning {
+  background-color: #ffc107;
+  border-color: #ffc107;
+  color: #212529;
+}
+
+.p-button.p-button-warning:enabled:hover {
+  background-color: #e0a800;
+  border-color: #e0a800;
+  box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+}
+
+.p-button.p-button-info {
+  background-color: #17a2b8;
+  border-color: #17a2b8;
+}
+
+.p-button.p-button-info:enabled:hover {
+  background-color: #138496;
+  border-color: #138496;
+  box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);
+}
+
+/* Outlined button styling */
+.p-button.p-button-outlined {
+  background-color: transparent;
+  border: 2px solid;
+}
+
+.p-button.p-button-outlined.p-button-success {
+  color: #28a745;
+  border-color: #28a745;
+}
+
+.p-button.p-button-outlined.p-button-success:enabled:hover {
+  background-color: rgba(40, 167, 69, 0.1);
+}
+
+.p-button.p-button-outlined.p-button-danger {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.p-button.p-button-outlined.p-button-danger:enabled:hover {
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.p-button.p-button-outlined.p-button-info {
+  color: #17a2b8;
+  border-color: #17a2b8;
+}
+
+.p-button.p-button-outlined.p-button-info:enabled:hover {
+  background-color: rgba(23, 162, 184, 0.1);
+}
+
+.p-button.p-button-outlined.p-button-warning {
+  color: #ffc107;
+  border-color: #ffc107;
+}
+
+.p-button.p-button-outlined.p-button-warning:enabled:hover {
+  background-color: rgba(255, 193, 7, 0.1);
+}
+
+/* Rounded button styling */
+.p-button.p-button-rounded {
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+}
+
+/* Tag styling */
+.p-tag {
+  padding: 0.3rem 0.8rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.p-tag.p-tag-success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.p-tag.p-tag-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.p-tag.p-tag-warning {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.p-tag.p-tag-info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.p-tag.p-tag-secondary {
+  background-color: #e9ecef;
+  color: #495057;
+}
+
+/* Dialog styling */
+.p-dialog {
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.p-dialog .p-dialog-header {
+  background: white;
+  border-bottom: 1px solid #e9ecef;
+  padding: 1rem;
+  border-radius: 8px 8px 0 0;
+}
+
+.p-dialog .p-dialog-header .p-dialog-title {
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.p-dialog .p-dialog-content {
+  background: white;
+  padding: 1rem;
+  border-radius: 0;
+}
+
+.p-dialog .p-dialog-footer {
+  background: white;
+  border-top: 1px solid #e9ecef;
+  padding: 0.75rem 1rem;
+  border-radius: 0 0 8px 8px;
+}
+
+/* Form field styling */
+.field {
+  margin-bottom: 1rem;
+}
+
+.field label {
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  color: #495057;
+  font-size: 0.9rem;
+  display: block;
+}
+
+.field .p-error {
+  color: #dc3545;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.field .p-invalid {
+  border-color: #dc3545;
+}
+
+/* Textarea styling */
+.p-inputtextarea {
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  padding: 0.6rem;
+  font-size: 0.9rem;
+  transition: border-color 0.3s;
+  resize: vertical;
+}
+
+.p-inputtextarea:enabled:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* InputNumber styling */
+.p-inputnumber .p-inputtext {
+  width: 100%;
+}
+
+/* Checkbox styling */
+.p-checkbox {
+  width: 18px;
+  height: 18px;
+}
+
+.p-checkbox .p-checkbox-box {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #ced4da;
+  border-radius: 3px;
+  transition: all 0.2s;
+}
+
+.p-checkbox .p-checkbox-box.p-highlight {
+  border-color: #667eea;
+  background-color: #667eea;
+}
+
+/* Confirm Dialog styling */
+.p-confirm-dialog {
+  border-radius: 8px;
+}
+
+.p-confirm-dialog .p-confirm-dialog-icon {
+  color: #ffc107;
+  font-size: 2rem;
+}
+
+/* Divider styling */
+.p-divider {
+  margin: 1.5rem 0;
+}
+
+.p-divider.p-divider-horizontal:before {
+  border-top: 1px solid #e9ecef;
+}
+
+.p-divider .p-divider-content {
+  background-color: white;
+  color: #2196F3;
+  font-weight: 600;
+  padding: 0 1rem;
+}
+
+/* Adjust spacing for grid layout */
+.formgrid.grid {
+  margin-left: -0.5rem;
+  margin-right: -0.5rem;
+}
+
+.formgrid.grid .field {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .p-toolbar {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .p-toolbar .flex {
+    width: 100%;
+  }
+
+  .p-datatable .p-datatable-thead > tr > th,
+  .p-datatable .p-datatable-tbody > tr > td {
+    padding: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .p-button.p-button-rounded {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .p-dialog {
+    width: 95vw !important;
+  }
+}
+
+/* Action button container */
+.flex.gap-2 {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Ensure proper alignment in DataTable */
+.p-datatable .p-datatable-tbody > tr > td .flex {
+  justify-content: flex-start;
+  align-items: center;
+}
+
+/* Fix for icon alignment in buttons */
+.p-button .p-button-icon {
+  font-size: 1rem;
+}
+
+/* Tooltip styling */
+.p-tooltip .p-tooltip-text {
+  background-color: #333;
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.p-tooltip.p-tooltip-top .p-tooltip-arrow {
+  border-top-color: #333;
+}
+
+.p-tooltip.p-tooltip-bottom .p-tooltip-arrow {
+  border-bottom-color: #333;
+}
+
+.p-tooltip.p-tooltip-left .p-tooltip-arrow {
+  border-left-color: #333;
+}
+
+.p-tooltip.p-tooltip-right .p-tooltip-arrow {
+  border-right-color: #333;
+}
+
+/* Card component for forms */
+.p-card {
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: none;
+  border: 1px solid #e0e0e0;
+}
+
+.p-card .p-card-title {
+  color: #333;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.p-card .p-card-content {
+  padding: 1.5rem;
+}
