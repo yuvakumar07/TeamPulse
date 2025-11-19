@@ -2,33 +2,34 @@
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
+  padding: 1rem;
 }
 
 .list-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .list-header h2 {
   color: #333;
-  font-size: 1.8rem;
+  font-size: 1.4rem;
+  margin: 0;
 }
 
 .header-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 
 .filters-container {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
   align-items: flex-end;
   flex-wrap: wrap;
 }
@@ -40,23 +41,23 @@
 
 .search-bar input {
   width: 100%;
-  padding: 0.6rem;
+  padding: 0.5rem;
   border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 .status-filter {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .filter-select {
-  padding: 0.6rem;
+  padding: 0.5rem;
   border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   min-width: 150px;
 }
 
@@ -68,7 +69,7 @@
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 thead {
@@ -78,12 +79,13 @@ thead {
 }
 
 th {
-  padding: 1rem 0.75rem;
+  padding: 0.75rem 0.6rem;
   text-align: left;
   font-weight: 600;
   color: #495057;
   border-bottom: 2px solid #dee2e6;
   white-space: nowrap;
+  font-size: 0.9rem;
 }
 
 th.sortable {
@@ -99,7 +101,7 @@ th.sortable:hover {
 .sort-icon {
   margin-left: 0.25rem;
   color: #6c757d;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .sort-icon.active {
@@ -108,8 +110,9 @@ th.sortable:hover {
 }
 
 td {
-  padding: 1rem 0.75rem;
+  padding: 0.75rem 0.6rem;
   border-bottom: 1px solid #dee2e6;
+  font-size: 0.9rem;
 }
 
 tbody tr:hover {
@@ -117,9 +120,9 @@ tbody tr:hover {
 }
 
 .badge {
-  padding: 0.35rem 0.75rem;
+  padding: 0.3rem 0.6rem;
   border-radius: 12px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 500;
   display: inline-block;
   white-space: nowrap;
@@ -152,16 +155,16 @@ tbody tr:hover {
 
 .actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   flex-wrap: wrap;
 }
 
 .btn {
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.8rem;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   transition: all 0.3s;
   font-weight: 500;
 }
@@ -207,21 +210,21 @@ tbody tr:hover {
 }
 
 .pagination-container {
-  margin-top: 1.5rem;
+  margin-top: 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .pagination-info {
   color: #6c757d;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .pagination {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   align-items: center;
   flex-wrap: wrap;
   justify-content: center;
@@ -229,13 +232,13 @@ tbody tr:hover {
 
 .pagination-btn,
 .pagination-number {
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.8rem;
   border: 1px solid #dee2e6;
   background-color: white;
   color: #007bff;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   transition: all 0.2s;
 }
 
@@ -266,8 +269,8 @@ tbody tr:hover {
 .error,
 .no-data {
   text-align: center;
-  padding: 3rem 1rem;
-  font-size: 1.1rem;
+  padding: 2rem 1rem;
+  font-size: 0.95rem;
   color: #6c757d;
 }
 
@@ -281,6 +284,10 @@ tbody tr:hover {
     align-items: flex-start;
   }
 
+  .list-header h2 {
+    font-size: 1.2rem;
+  }
+
   .filters-container {
     flex-direction: column;
     align-items: stretch;
@@ -291,12 +298,12 @@ tbody tr:hover {
   }
 
   table {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
   }
 
   th,
   td {
-    padding: 0.75rem 0.5rem;
+    padding: 0.6rem 0.4rem;
   }
 }
 
@@ -342,6 +349,15 @@ tbody tr:hover {
 
 .btn-icon-view:hover {
   background-color: rgba(102, 126, 234, 0.1);
+  transform: scale(1.1);
+}
+
+.btn-icon-assign {
+  color: #17a2b8;
+}
+
+.btn-icon-assign:hover {
+  background-color: rgba(23, 162, 184, 0.1);
   transform: scale(1.1);
 }
 

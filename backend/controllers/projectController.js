@@ -87,10 +87,13 @@ const getProjectById = async (req, res) => {
       });
     }
 
-    // Get assigned employees with their details
+    // Get assigned employees with their details and total allocation
     const [employees] = await db.query(
       `SELECT pe.id as assignment_id, pe.allocation_percentage,
-              e.id, e.sso, e.name, e.role, e.role_type, e.location
+              e.id, e.sso, e.name, e.role, e.role_type, e.location,
+              (SELECT COALESCE(SUM(pe2.allocation_percentage), 0)
+               FROM project_employees pe2
+               WHERE pe2.employee_id = e.id) as total_allocation
        FROM project_employees pe
        JOIN employees e ON pe.employee_id = e.id
        WHERE pe.project_id = ?
@@ -315,6 +318,104 @@ const updateProject = async (req, res) => {
   }
 };
 
+// Assign employees to project
+const assignEmployeesToProject = async (req, res) => {
+  const connection = await db.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const { id } = req.params;
+    const { employees } = req.body;
+
+    // Check if project exists
+    const [existing] = await connection.query(
+      'SELECT project_team_name FROM projects WHERE id = ?',
+      [id]
+    );
+
+    if (existing.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({
+        success: false,
+        message: 'Project not found'
+      });
+    }
+
+    const projectName = existing[0].project_team_name;
+
+    // Validate employees array
+    if (!employees || !Array.isArray(employees)) {
+      await connection.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Employees array is required'
+      });
+    }
+
+    // Delete existing assignments
+    await connection.query('DELETE FROM project_employees WHERE project_id = ?', [id]);
+
+    // Insert new assignments
+    for (const emp of employees) {
+      if (emp.employee_id && emp.allocation_percentage !== undefined) {
+        // Validate allocation percentage
+        if (emp.allocation_percentage < 0 || emp.allocation_percentage > 100) {
+          await connection.rollback();
+          return res.status(400).json({
+            success: false,
+            message: 'Allocation percentage must be between 0 and 100'
+          });
+        }
+
+        await connection.query(
+          `INSERT INTO project_employees (project_id, employee_id, allocation_percentage)
+           VALUES (?, ?, ?)`,
+          [id, emp.employee_id, emp.allocation_percentage]
+        );
+      }
+    }
+
+    // Log the action if admin is authenticated
+    if (req.admin) {
+      await connection.query(
+        'INSERT INTO audit_logs (admin_id, action, entity_type, entity_id, description, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [
+          req.admin.id,
+          'UPDATE',
+          'projects',
+          id,
+          `Updated employee assignments for project: ${projectName}`,
+          req.ip || req.connection.remoteAddress,
+          req.headers['user-agent'] || 'Unknown'
+        ]
+      );
+    }
+
+    await connection.commit();
+
+    res.json({
+      success: true,
+      message: 'Employee assignments updated successfully',
+      data: {
+        id,
+        project_team_name: projectName
+      }
+    });
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error assigning employees to project:', error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Error assigning employees to project',
+      error: error.message
+    });
+  } finally {
+    connection.release();
+  }
+};
+
 // Delete project
 const deleteProject = async (req, res) => {
   try {
@@ -373,5 +474,6 @@ module.exports = {
   getProjectById,
   createProject,
   updateProject,
+  assignEmployeesToProject,
   deleteProject
 };

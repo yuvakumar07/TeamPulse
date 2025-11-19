@@ -17,24 +17,32 @@ const getAllEmployees = async (req, res) => {
 
     // Build query based on filters
     let countQuery = 'SELECT COUNT(*) as total FROM employees';
-    let dataQuery = 'SELECT * FROM employees';
+    let dataQuery = `
+      SELECT e.*,
+             COALESCE(SUM(pe.allocation_percentage), 0) as total_allocation
+      FROM employees e
+      LEFT JOIN project_employees pe ON e.id = pe.employee_id
+    `;
     const queryParams = [];
     const countParams = [];
 
     // Add role_type filter if provided
     if (roleType && roleType !== 'All') {
       countQuery += ' WHERE role_type = ?';
-      dataQuery += ' WHERE role_type = ?';
+      dataQuery += ' WHERE e.role_type = ?';
       queryParams.push(roleType);
       countParams.push(roleType);
     }
+
+    // Group by employee for aggregation
+    dataQuery += ' GROUP BY e.id';
 
     // Get total count for pagination
     const [countResult] = await db.query(countQuery, countParams);
     const total = countResult[0].total;
 
     // Add ordering and pagination
-    dataQuery += ` ORDER BY ${validSortField} ${validSortOrder} LIMIT ? OFFSET ?`;
+    dataQuery += ` ORDER BY e.${validSortField} ${validSortOrder} LIMIT ? OFFSET ?`;
     queryParams.push(limit, offset);
 
     console.log('dataQuery', dataQuery);

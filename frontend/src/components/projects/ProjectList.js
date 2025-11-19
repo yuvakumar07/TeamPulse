@@ -3,8 +3,9 @@ import { toast } from 'react-toastify';
 import { getAllProjects, deleteProject } from '../../services/api';
 import ConfirmationModal from '../modals/ConfirmationModal';
 import EmployeeDetailsModal from '../modals/EmployeeDetailsModal';
+import EmployeeAssignment from './EmployeeAssignment';
 import PermissionGuard from '../auth/PermissionGuard';
-import { EditIcon, DeleteIcon, ViewIcon, AddIcon } from '../icons/ActionIcons';
+import { EditIcon, DeleteIcon, ViewIcon, AddIcon, AssignIcon } from '../icons/ActionIcons';
 import './ProjectList.css';
 
 const ProjectList = ({ onEdit, onAdd }) => {
@@ -24,6 +25,8 @@ const ProjectList = ({ onEdit, onAdd }) => {
   const [projectToDelete, setProjectToDelete] = useState(null);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [selectedProjectForEmployees, setSelectedProjectForEmployees] = useState(null);
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
+  const [selectedProjectForAssignment, setSelectedProjectForAssignment] = useState(null);
   const [sortField, setSortField] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('DESC');
   const itemsPerPage = 10;
@@ -82,6 +85,20 @@ const ProjectList = ({ onEdit, onAdd }) => {
   const handleCloseEmployeeModal = () => {
     setShowEmployeeModal(false);
     setSelectedProjectForEmployees(null);
+  };
+
+  const handleAssignEmployees = (project) => {
+    setSelectedProjectForAssignment(project);
+    setShowAssignmentModal(true);
+  };
+
+  const handleCloseAssignmentModal = () => {
+    setShowAssignmentModal(false);
+    setSelectedProjectForAssignment(null);
+  };
+
+  const handleAssignmentSuccess = () => {
+    fetchProjects();
   };
 
   const handlePageChange = (newPage) => {
@@ -306,6 +323,15 @@ const ProjectList = ({ onEdit, onAdd }) => {
                       </PermissionGuard>
                       <PermissionGuard permission="projects.update">
                         <button
+                          className="btn-icon btn-icon-assign"
+                          onClick={() => handleAssignEmployees(project)}
+                          title="Assign Employees"
+                        >
+                          <AssignIcon />
+                        </button>
+                      </PermissionGuard>
+                      <PermissionGuard permission="projects.update">
+                        <button
                           className="btn-icon btn-icon-edit"
                           onClick={() => onEdit(project)}
                           title="Edit Project"
@@ -355,6 +381,14 @@ const ProjectList = ({ onEdit, onAdd }) => {
         projectName={selectedProjectForEmployees?.project_team_name}
         onClose={handleCloseEmployeeModal}
       />
+
+      {showAssignmentModal && selectedProjectForAssignment && (
+        <EmployeeAssignment
+          project={selectedProjectForAssignment}
+          onClose={handleCloseAssignmentModal}
+          onSuccess={handleAssignmentSuccess}
+        />
+      )}
     </div>
   );
 };

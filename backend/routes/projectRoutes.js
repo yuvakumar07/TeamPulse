@@ -5,6 +5,7 @@ const {
   getProjectById,
   createProject,
   updateProject,
+  assignEmployeesToProject,
   deleteProject
 } = require('../controllers/projectController');
 const { verifyToken, checkAdminStatus } = require('../middleware/authMiddleware');
@@ -20,6 +21,7 @@ router.get('/', requirePermission('projects.view'), getAllProjects);
 router.get('/:id', requirePermission('projects.view'), getProjectById);
 router.post('/', requirePermission('projects.create'), createProject);
 router.put('/:id', requirePermission('projects.update'), updateProject);
+router.put('/:id/employees', requirePermission('projects.update'), assignEmployeesToProject);
 router.delete('/:id', requirePermission('projects.delete'), deleteProject);
 
 module.exports = router;
