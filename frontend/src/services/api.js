@@ -76,4 +76,12 @@ export const updateProject = (id, data) => api.put(`/projects/${id}`, data);
 export const deleteProject = (id) => api.delete(`/projects/${id}`);
 export const assignEmployeesToProject = (projectId, data) => api.put(`/projects/${projectId}/employees`, data);
 
+// Visa History API calls
+export const getVisaHistory = (employeeId) => api.get(`/visa/employee/${employeeId}`);
+export const getVisaHistoryById = (id) => api.get(`/visa/${id}`);
+export const createVisaHistory = (data) => api.post('/visa', data);
+export const updateVisaHistory = (id, data) => api.put(`/visa/${id}`, data);
+export const deleteVisaHistory = (id) => api.delete(`/visa/${id}`);
+export const getUpcomingVisaExpirations = (days = 90) => api.get('/visa/expirations', { params: { days } });
+
 export default api;

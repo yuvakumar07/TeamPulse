@@ -4,10 +4,10 @@ import { getAllEmployees, deleteEmployee } from '../../services/api';
 import { exportEmployeesToExcel } from '../../utils/exportToExcel';
 import ConfirmationModal from '../modals/ConfirmationModal';
 import PermissionGuard from '../auth/PermissionGuard';
-import { EditIcon, DeleteIcon, AddIcon, ExportIcon } from '../icons/ActionIcons';
+import { EditIcon, DeleteIcon, AddIcon, ExportIcon, DocumentIcon } from '../icons/ActionIcons';
 import './EmployeeList.css';
 
-const EmployeeList = ({ onEdit, onAdd }) => {
+const EmployeeList = ({ onEdit, onAdd, onViewVisaHistory }) => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -313,6 +313,12 @@ const EmployeeList = ({ onEdit, onAdd }) => {
                   <th className="sortable" onClick={() => handleSort('attrition')}>
                     Attrition {renderSortIcon('attrition')}
                   </th>
+                  <th className="sortable" onClick={() => handleSort('visa_type')}>
+                    Visa Type {renderSortIcon('visa_type')}
+                  </th>
+                  <th className="sortable" onClick={() => handleSort('visa_status')}>
+                    Visa Status {renderSortIcon('visa_status')}
+                  </th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -344,7 +350,26 @@ const EmployeeList = ({ onEdit, onAdd }) => {
                         {employee.attrition}
                       </span>
                     </td>
+                    <td>
+                      <span className={`visa-type ${employee.visa_type !== 'None' ? 'visa-active' : ''}`}>
+                        {employee.visa_type || 'None'}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`visa-status ${employee.visa_status === 'Active' ? 'visa-status-active' : employee.visa_status === 'Expired' ? 'visa-status-expired' : ''}`}>
+                        {employee.visa_status || 'N/A'}
+                      </span>
+                    </td>
                     <td className="actions">
+                      <PermissionGuard permission="employees.view">
+                        <button
+                          className="btn-icon btn-icon-view"
+                          onClick={() => onViewVisaHistory(employee)}
+                          title="View Visa History"
+                        >
+                          <DocumentIcon />
+                        </button>
+                      </PermissionGuard>
                       <PermissionGuard permission="employees.update">
                         <button
                           className="btn-icon btn-icon-edit"

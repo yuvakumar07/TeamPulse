@@ -8,6 +8,7 @@ const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const roleRoutes = require('./routes/roleRoutes');
 const projectRoutes = require('./routes/projectRoutes');
+const visaRoutes = require('./routes/visaRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -23,6 +24,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', roleRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/visa', visaRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -35,7 +37,8 @@ app.get('/', (req, res) => {
       admin: '/api/admin',
       roles: '/api/roles',
       permissions: '/api/permissions',
-      projects: '/api/projects'
+      projects: '/api/projects',
+      visa: '/api/visa'
     }
   });
 });

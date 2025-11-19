@@ -1,5 +1,39 @@
 const db = require('../config/database');
 
+// Helper function to calculate visa status based on dates
+const calculateVisaStatus = (visaType, startDate, endDate) => {
+  if (!visaType || visaType === 'None' || visaType === 'US Citizen' || visaType === 'Green Card') {
+    return 'Not Applicable';
+  }
+
+  if (!startDate && !endDate) {
+    return 'In Process';
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (startDate) {
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+
+    if (start > today) {
+      return 'In Process';
+    }
+  }
+
+  if (endDate) {
+    const end = new Date(endDate);
+    end.setHours(0, 0, 0, 0);
+
+    if (end < today) {
+      return 'Expired';
+    }
+  }
+
+  return 'Active';
+};
+
 // Get all employees
 const getAllEmployees = async (req, res) => {
   try {
@@ -50,9 +84,15 @@ const getAllEmployees = async (req, res) => {
     // Get paginated employees
     const [employees] = await db.query(dataQuery, queryParams);
 
+    // Calculate visa_status for each employee
+    const employeesWithStatus = employees.map(employee => ({
+      ...employee,
+      visa_status: calculateVisaStatus(employee.visa_type, employee.current_visa_start_date, employee.current_visa_end_date)
+    }));
+
     res.json({
       success: true,
-      data: employees,
+      data: employeesWithStatus,
       pagination: {
         page,
         limit,
@@ -86,9 +126,12 @@ const getEmployeeById = async (req, res) => {
       });
     }
 
+    const employee = employees[0];
+    employee.visa_status = calculateVisaStatus(employee.visa_type, employee.current_visa_start_date, employee.current_visa_end_date);
+
     res.json({
       success: true,
-      data: employees[0]
+      data: employee
     });
   } catch (error) {
     console.error('Error fetching employee:', error);
@@ -120,7 +163,15 @@ const createEmployee = async (req, res) => {
       comments,
       attrition,
       offshore_manager_id,
-      onsite_manager_id
+      onsite_manager_id,
+      visa_type,
+      current_visa_start_date,
+      current_visa_end_date,
+      i94_expiry_date,
+      passport_number,
+      passport_expiry_date,
+      sponsor_company,
+      visa_notes
     } = req.body;
 
     // Validation
@@ -131,14 +182,21 @@ const createEmployee = async (req, res) => {
       });
     }
 
+    // Calculate visa status based on dates
+    const computedVisaStatus = calculateVisaStatus(visa_type || 'None', current_visa_start_date, current_visa_end_date);
+
     const [result] = await db.query(
       `INSERT INTO employees
       (sso, name, role, role_type, phone, location, criticality, status, skills, last_working_day,
-       possible_candidate, asset_id, asset_return_id, comments, attrition, offshore_manager_id, onsite_manager_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       possible_candidate, asset_id, asset_return_id, comments, attrition, offshore_manager_id, onsite_manager_id,
+       visa_type, visa_status, current_visa_start_date, current_visa_end_date, i94_expiry_date,
+       passport_number, passport_expiry_date, sponsor_company, visa_notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [sso, name, role, role_type, phone, location, criticality || 'Medium', status || 'Active',
        skills, last_working_day, possible_candidate, asset_id, asset_return_id, comments,
-       attrition || 'No', offshore_manager_id, onsite_manager_id]
+       attrition || 'No', offshore_manager_id, onsite_manager_id,
+       visa_type || 'None', computedVisaStatus, current_visa_start_date, current_visa_end_date,
+       i94_expiry_date, passport_number, passport_expiry_date, sponsor_company, visa_notes]
     );
 
     // Log the action if admin is authenticated
@@ -206,7 +264,15 @@ const updateEmployee = async (req, res) => {
       comments,
       attrition,
       offshore_manager_id,
-      onsite_manager_id
+      onsite_manager_id,
+      visa_type,
+      current_visa_start_date,
+      current_visa_end_date,
+      i94_expiry_date,
+      passport_number,
+      passport_expiry_date,
+      sponsor_company,
+      visa_notes
     } = req.body;
 
     // Check if employee exists
@@ -222,16 +288,23 @@ const updateEmployee = async (req, res) => {
       });
     }
 
+    // Calculate visa status based on dates
+    const computedVisaStatus = calculateVisaStatus(visa_type, current_visa_start_date, current_visa_end_date);
+
     const [result] = await db.query(
       `UPDATE employees
       SET sso = ?, name = ?, role = ?, role_type = ?, phone = ?, location = ?,
           criticality = ?, status = ?, skills = ?, last_working_day = ?,
           possible_candidate = ?, asset_id = ?, asset_return_id = ?, comments = ?,
-          attrition = ?, offshore_manager_id = ?, onsite_manager_id = ?
+          attrition = ?, offshore_manager_id = ?, onsite_manager_id = ?,
+          visa_type = ?, visa_status = ?, current_visa_start_date = ?, current_visa_end_date = ?,
+          i94_expiry_date = ?, passport_number = ?, passport_expiry_date = ?, sponsor_company = ?, visa_notes = ?
       WHERE id = ?`,
       [sso, name, role, role_type, phone, location, criticality, status, skills,
        last_working_day, possible_candidate, asset_id, asset_return_id, comments,
-       attrition, offshore_manager_id, onsite_manager_id, id]
+       attrition, offshore_manager_id, onsite_manager_id,
+       visa_type, computedVisaStatus, current_visa_start_date, current_visa_end_date,
+       i94_expiry_date, passport_number, passport_expiry_date, sponsor_company, visa_notes, id]
     );
 
     // Log the action if admin is authenticated
