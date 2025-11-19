@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import EmployeeList from '../components/employees/EmployeeList';
-import EmployeeForm from '../components/employees/EmployeeForm';
-import VisaHistory from '../components/employees/VisaHistory';
+import EmployeeListPrime from '../components/employees/EmployeeListPrime';
+import EmployeeFormPrime from '../components/employees/EmployeeFormPrime';
+import VisaHistoryPrime from '../components/employees/VisaHistoryPrime';
 import './Employees.css';
 
 const EmployeesPage = () => {
@@ -43,28 +43,26 @@ const EmployeesPage = () => {
 
   return (
     <div className="employees-page">
-      <EmployeeList
+      <EmployeeListPrime
         key={refreshTrigger}
         onEdit={handleEdit}
         onAdd={handleAdd}
         onViewVisaHistory={handleViewVisaHistory}
       />
 
-      {showForm && (
-        <EmployeeForm
-          employee={selectedEmployee}
-          onClose={handleCloseForm}
-          onSuccess={handleFormSuccess}
-        />
-      )}
+      <EmployeeFormPrime
+        employee={selectedEmployee}
+        visible={showForm}
+        onHide={handleCloseForm}
+        onSuccess={handleFormSuccess}
+      />
 
-      {showVisaHistory && visaEmployee && (
-        <VisaHistory
-          employeeId={visaEmployee.id}
-          employeeName={visaEmployee.name}
-          onClose={handleCloseVisaHistory}
-        />
-      )}
+      <VisaHistoryPrime
+        employeeId={visaEmployee?.id}
+        employeeName={visaEmployee?.name}
+        visible={showVisaHistory}
+        onHide={handleCloseVisaHistory}
+      />
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import ProjectList from '../components/projects/ProjectList';
+import ProjectListPrime from '../components/projects/ProjectListPrime';
 import ProjectForm from '../components/projects/ProjectForm';
 import './Employees.css'; // Reuse the same CSS
 
@@ -29,7 +29,7 @@ const ProjectsPage = () => {
 
   return (
     <div className="employees-page">
-      <ProjectList
+      <ProjectListPrime
         key={refreshTrigger}
         onEdit={handleEdit}
         onAdd={handleAdd}
