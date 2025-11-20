@@ -11,11 +11,11 @@ const Header = () => {
 
   const handleLogout = async () => {
     await authService.logout();
-    navigate('/admin/login');
+    navigate('/');
   };
 
   // Don't show header on admin login page
-  if (location.pathname === '/admin/login') {
+  if (location.pathname === '/') {
     return null;
   }
 

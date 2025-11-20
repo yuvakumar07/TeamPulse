@@ -25,7 +25,7 @@ import './App.css';
 
 function AppContent() {
   const location = useLocation();
-  const isLoginPage = location.pathname === '/admin/login';
+  const isLoginPage = location.pathname === '/';
 
   return (
     <div className={`App ${isLoginPage ? 'login-page' : ''}`}>
@@ -36,8 +36,7 @@ function AppContent() {
 
         <main className="app-main">
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/" element={<AdminLogin />} />
             <Route
               path="/admin/dashboard"
               element={

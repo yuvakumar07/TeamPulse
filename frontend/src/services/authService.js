@@ -32,7 +32,7 @@ authApi.interceptors.response.use(
       // Token expired or invalid
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminUser');
-      window.location.href = '/admin/login';
+      window.location.href = '/';
     }
     return Promise.reject(error);
   }

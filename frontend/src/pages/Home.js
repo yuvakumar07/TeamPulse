@@ -10,7 +10,7 @@ const Home = () => {
         <p>Your comprehensive employee management solution</p>
         <p className="hero-subtitle">Secure, efficient, and powerful workforce management</p>
         <div className="hero-actions">
-          <Link to="/admin/login" className="btn btn-primary-large">
+          <Link to="/" className="btn btn-primary-large">
             Admin Login
           </Link>
         </div>
@@ -75,7 +75,7 @@ const Home = () => {
       <section className="cta-section">
         <h2>Ready to Get Started?</h2>
         <p>Access the admin panel to manage your workforce efficiently</p>
-        <Link to="/admin/login" className="btn btn-primary-large">
+        <Link to="/" className="btn btn-primary-large">
           Go to Admin Panel
         </Link>
       </section>

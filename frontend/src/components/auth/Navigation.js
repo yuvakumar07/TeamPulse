@@ -20,11 +20,11 @@ const Navigation = () => {
 
   const handleLogout = async () => {
     await authService.logout();
-    navigate('/admin/login');
+    navigate('/');
   };
 
   // Don't show navigation on admin login page
-  if (location.pathname === '/admin/login') {
+  if (location.pathname === '/') {
     return null;
   }
 
@@ -43,7 +43,7 @@ const Navigation = () => {
                 </Link>
               </li>
               <li className="nav-item">
-                <Link to="/admin/login" className="nav-link nav-admin-link">
+                <Link to="/" className="nav-link nav-admin-link">
                   Admin Login
                 </Link>
               </li>

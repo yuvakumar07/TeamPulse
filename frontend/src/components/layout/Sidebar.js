@@ -24,7 +24,7 @@ const Sidebar = () => {
   };
 
   // Don't show sidebar on admin login page or non-admin routes
-  if (location.pathname === '/admin/login' || !isAdminRoute() || !isAuthenticated) {
+  if (location.pathname === '/' || !isAdminRoute() || !isAuthenticated) {
     return null;
   }
 

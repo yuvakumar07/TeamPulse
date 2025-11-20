@@ -34,7 +34,7 @@ const AdminDashboard = () => {
 
   const handleLogout = async () => {
     await authService.logout();
-    navigate('/admin/login');
+    navigate('/');
   };
 
   const formatDate = (dateString) => {
