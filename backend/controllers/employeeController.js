@@ -54,9 +54,15 @@ const getAllEmployees = async (req, res) => {
     let countQuery = 'SELECT COUNT(*) as total FROM employees e';
     let dataQuery = `
       SELECT e.*,
-             COALESCE(SUM(pe.allocation_percentage), 0) as total_allocation
+             COALESCE(SUM(pe.allocation_percentage), 0) as total_allocation,
+             GROUP_CONCAT(
+               DISTINCT CONCAT(p.project_team_name, ':', pe.allocation_percentage)
+               ORDER BY p.project_team_name
+               SEPARATOR '||'
+             ) as allocated_projects
       FROM employees e
       LEFT JOIN project_employees pe ON e.id = pe.employee_id
+      LEFT JOIN projects p ON pe.project_id = p.id
     `;
     const queryParams = [];
     const countParams = [];

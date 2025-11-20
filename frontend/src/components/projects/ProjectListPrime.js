@@ -241,7 +241,7 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
         value={projects}
         lazy
         dataKey="id"
-        paginator
+        paginator={totalRecords > 10}
         first={lazyState.first}
         rows={lazyState.rows}
         totalRecords={totalRecords}
@@ -254,7 +254,7 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
         header={header}
         emptyMessage="No projects found"
         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} projects"
+        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} Projects"
         rowsPerPageOptions={[5, 10, 25, 50]}
         responsiveLayout="scroll"
         stripedRows
@@ -271,7 +271,9 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
 
       {showEmployeeModal && selectedProjectForEmployees && (
         <EmployeeDetailsModal
-          project={selectedProjectForEmployees}
+          projectId={selectedProjectForEmployees.id}
+          projectName={selectedProjectForEmployees.project_team_name}
+          isOpen={showEmployeeModal}
           onClose={() => {
             setShowEmployeeModal(false);
             setSelectedProjectForEmployees(null);

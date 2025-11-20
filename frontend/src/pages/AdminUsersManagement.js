@@ -1,22 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import { Button } from 'primereact/button';
+import { Dialog } from 'primereact/dialog';
+import { InputText } from 'primereact/inputtext';
+import { Dropdown } from 'primereact/dropdown';
+import { Tag } from 'primereact/tag';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
+import { Toolbar } from 'primereact/toolbar';
+import { Card } from 'primereact/card';
+import { Timeline } from 'primereact/timeline';
+import { classNames } from 'primereact/utils';
 import authService from '../services/authService';
 import PermissionGuard from '../components/auth/PermissionGuard';
-import { EditIcon, DeleteIcon } from '../components/icons/ActionIcons';
-import './AdminUsersManagement.css';
 
 const AdminUsersManagement = () => {
   const [admins, setAdmins] = useState([]);
   const [roles, setRoles] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [showAuditLogs, setShowAuditLogs] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [adminToDelete, setAdminToDelete] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
   const [auditPagination, setAuditPagination] = useState({ page: 1, limit: 20, total: 0 });
@@ -28,6 +35,9 @@ const AdminUsersManagement = () => {
     status: 'Active',
     role_id: ''
   });
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const dt = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -56,10 +66,10 @@ const AdminUsersManagement = () => {
         setAdmins(response.data);
         setPagination(prev => ({ ...prev, total: response.pagination.total }));
       } else {
-        setError(response.message || 'Failed to load admin users');
+        toast.error(response.message || 'Failed to load admin users');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred while fetching admin users');
+      toast.error(err.response?.data?.message || 'An error occurred while fetching admin users');
     } finally {
       setLoading(false);
     }
@@ -83,23 +93,39 @@ const AdminUsersManagement = () => {
     }
   }, [showAuditLogs, auditPagination.page]);
 
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const handleInputChange = (name, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.username.trim()) newErrors.username = 'Username is required';
+    if (!formData.email.trim()) newErrors.email = 'Email is required';
+    if (!formData.full_name.trim()) newErrors.full_name = 'Full name is required';
+    if (!selectedAdmin && !formData.password) newErrors.password = 'Password is required';
+    if (formData.password && formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+    return newErrors;
+  };
 
+  const handleSubmit = async () => {
+    const newErrors = validate();
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setSubmitting(true);
     try {
       if (selectedAdmin) {
-        // Update existing admin
         const updateData = { ...formData };
         if (!updateData.password) {
-          delete updateData.password; // Don't send password if not changing
+          delete updateData.password;
         }
         const response = await authService.updateAdmin(selectedAdmin.id, updateData);
         if (response.success) {
@@ -108,7 +134,6 @@ const AdminUsersManagement = () => {
           toast.success('Admin user updated successfully!');
         }
       } else {
-        // Create new admin
         const response = await authService.createAdmin(formData);
         if (response.success) {
           fetchAdmins();
@@ -117,7 +142,9 @@ const AdminUsersManagement = () => {
         }
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred while saving admin user');
+      toast.error(err.response?.data?.message || 'An error occurred while saving admin user');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -134,25 +161,23 @@ const AdminUsersManagement = () => {
     setShowForm(true);
   };
 
-  const handleDeleteClick = (admin) => {
-    setAdminToDelete(admin);
-    setShowDeleteModal(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    try {
-      const response = await authService.deleteAdmin(adminToDelete.id);
-      if (response.success) {
-        fetchAdmins();
-        setShowDeleteModal(false);
-        setAdminToDelete(null);
-        toast.success('Admin user deleted successfully!');
+  const handleDelete = (admin) => {
+    confirmDialog({
+      message: `Are you sure you want to delete admin user ${admin.username}?`,
+      header: 'Delete Confirmation',
+      icon: 'pi pi-exclamation-triangle',
+      accept: async () => {
+        try {
+          const response = await authService.deleteAdmin(admin.id);
+          if (response.success) {
+            fetchAdmins();
+            toast.success('Admin user deleted successfully!');
+          }
+        } catch (err) {
+          toast.error(err.response?.data?.message || 'An error occurred while deleting admin user');
+        }
       }
-    } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred while deleting admin user');
-      toast.error(err.response?.data?.message || 'Failed to delete admin user');
-      setShowDeleteModal(false);
-    }
+    });
   };
 
   const resetForm = () => {
@@ -166,285 +191,286 @@ const AdminUsersManagement = () => {
     });
     setSelectedAdmin(null);
     setShowForm(false);
+    setErrors({});
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Never';
-    const date = new Date(dateString);
-    return date.toLocaleString();
+    return new Date(dateString).toLocaleString();
   };
 
-  if (loading && admins.length === 0) {
+  // Column templates
+  const statusBodyTemplate = (rowData) => {
+    const getSeverity = (status) => {
+      switch (status) {
+        case 'Active': return 'success';
+        case 'Inactive': return 'warning';
+        case 'Suspended': return 'danger';
+        default: return null;
+      }
+    };
+    return <Tag value={rowData.status} severity={getSeverity(rowData.status)} />;
+  };
+
+  const lastLoginBodyTemplate = (rowData) => {
+    return formatDate(rowData.last_login);
+  };
+
+  const actionBodyTemplate = (rowData) => {
+    const isCurrentUser = currentUser?.id === rowData.id;
     return (
-      <div className="admin-users-management">
-        <div className="loading-container">
-          <div className="spinner"></div>
-          <p>Loading admin users...</p>
-        </div>
+      <div className="flex gap-2">
+        <PermissionGuard permission="admin_users.update">
+          <Button
+            icon="pi pi-pencil"
+            rounded
+            outlined
+            className="p-button-success"
+            onClick={() => handleEdit(rowData)}
+            tooltip="Edit"
+            tooltipOptions={{ position: 'top' }}
+          />
+        </PermissionGuard>
+        <PermissionGuard permission="admin_users.delete">
+          <Button
+            icon="pi pi-trash"
+            rounded
+            outlined
+            severity="danger"
+            onClick={() => handleDelete(rowData)}
+            disabled={isCurrentUser}
+            tooltip={isCurrentUser ? "Cannot delete yourself" : "Delete"}
+            tooltipOptions={{ position: 'top' }}
+          />
+        </PermissionGuard>
       </div>
     );
-  }
+  };
+
+  const roleBodyTemplate = (rowData) => {
+    const role = roles.find(r => r.id === rowData.role_id);
+    return role ? <Tag value={role.display_name} severity="info" /> : <span className="text-500">No Role</span>;
+  };
+
+  // Toolbar templates
+  const leftToolbarTemplate = () => {
+    return (
+      <div className="flex flex-wrap gap-2">
+        <h2 className="m-0">Admin Users Management</h2>
+      </div>
+    );
+  };
+
+  const rightToolbarTemplate = () => {
+    return (
+      <div className="flex gap-2">
+        <PermissionGuard permission="audit.view">
+          <Button
+            label={showAuditLogs ? 'Hide Audit Logs' : 'View Audit Logs'}
+            icon="pi pi-history"
+            onClick={() => setShowAuditLogs(!showAuditLogs)}
+            className="p-button-help"
+          />
+        </PermissionGuard>
+        <PermissionGuard permission="admin_users.create">
+          <Button
+            label="Add New Admin"
+            icon="pi pi-plus"
+            onClick={() => setShowForm(true)}
+            className="p-button-success"
+          />
+        </PermissionGuard>
+        <Button
+          label="Back to Dashboard"
+          icon="pi pi-arrow-left"
+          onClick={() => navigate('/admin/dashboard')}
+          className="p-button-secondary"
+        />
+      </div>
+    );
+  };
+
+  // Dialog footer
+  const dialogFooter = (
+    <div>
+      <Button label="Cancel" icon="pi pi-times" onClick={resetForm} className="p-button-text" />
+      <Button label="Save" icon="pi pi-check" onClick={handleSubmit} loading={submitting} />
+    </div>
+  );
+
+  const statusOptions = [
+    { label: 'Active', value: 'Active' },
+    { label: 'Inactive', value: 'Inactive' },
+    { label: 'Suspended', value: 'Suspended' }
+  ];
+
+  const roleOptions = [
+    { label: 'No Role Assigned', value: '' },
+    ...roles.map(role => ({
+      label: `${role.display_name} (${role.permission_count} permissions)`,
+      value: role.id
+    }))
+  ];
+
+  // Audit log customization
+  const auditLogMarker = (item) => {
+    const iconMap = {
+      'LOGIN': 'pi-sign-in',
+      'LOGOUT': 'pi-sign-out',
+      'CREATE': 'pi-plus',
+      'UPDATE': 'pi-pencil',
+      'DELETE': 'pi-trash'
+    };
+    const colorMap = {
+      'LOGIN': 'success',
+      'LOGOUT': 'info',
+      'CREATE': 'success',
+      'UPDATE': 'warning',
+      'DELETE': 'danger'
+    };
+    return (
+      <span className={`flex w-2rem h-2rem align-items-center justify-content-center text-white border-circle z-1 shadow-1`}
+        style={{ backgroundColor: `var(--${colorMap[item.action]}-color)` }}>
+        <i className={`pi ${iconMap[item.action]}`}></i>
+      </span>
+    );
+  };
+
+  const auditLogContent = (item) => {
+    return (
+      <Card title={`${item.full_name || item.username} - ${item.action}`} subTitle={formatDate(item.created_at)}>
+        <p>{item.description}</p>
+        <small className="text-500">IP: {item.ip_address}</small>
+      </Card>
+    );
+  };
 
   return (
-    <div className="admin-users-management">
-      <div className="page-header">
-        <div>
-          <h1>Admin Users Management</h1>
-          <p>Manage administrator accounts and view audit logs</p>
-        </div>
-        <div className="header-actions">
-          <PermissionGuard permission="audit.view">
-            <button
-              onClick={() => setShowAuditLogs(!showAuditLogs)}
-              className="btn btn-secondary"
-            >
-              {showAuditLogs ? 'Hide' : 'View'} Audit Logs
-            </button>
-          </PermissionGuard>
-          <button onClick={() => navigate('/admin/dashboard')} className="btn btn-outline">
-            Back to Dashboard
-          </button>
-        </div>
-      </div>
-
-      {error && (
-        <div className="alert alert-danger">
-          {error}
-          <button onClick={() => setError('')} className="alert-close">&times;</button>
-        </div>
-      )}
+    <div className="card">
+      <ConfirmDialog />
+      <Toolbar className="mb-4" left={leftToolbarTemplate} right={rightToolbarTemplate} />
 
       {/* Audit Logs Section */}
       {showAuditLogs && (
-        <div className="audit-logs-section">
-          <h2>Audit Logs</h2>
+        <Card title="Audit Logs" className="mb-4">
           {auditLogs.length > 0 ? (
-            <div className="audit-logs-list">
-              {auditLogs.map((log) => (
-                <div key={log.id} className="audit-log-item">
-                  <div className="audit-log-icon">
-                    {log.action === 'LOGIN' && '🔐'}
-                    {log.action === 'LOGOUT' && '🚪'}
-                    {log.action === 'CREATE' && '➕'}
-                    {log.action === 'UPDATE' && '✏️'}
-                    {log.action === 'DELETE' && '🗑️'}
-                  </div>
-                  <div className="audit-log-content">
-                    <div className="audit-log-header">
-                      <strong>{log.full_name || log.username}</strong>
-                      <span className={`audit-action action-${log.action.toLowerCase()}`}>
-                        {log.action}
-                      </span>
-                    </div>
-                    <div className="audit-log-description">{log.description}</div>
-                    <div className="audit-log-meta">
-                      <span>{formatDate(log.created_at)}</span>
-                      <span>IP: {log.ip_address}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <Timeline value={auditLogs} align="alternate" content={auditLogContent} marker={auditLogMarker} />
           ) : (
-            <p className="empty-state">No audit logs found</p>
+            <p className="text-center text-500">No audit logs found</p>
           )}
-        </div>
+        </Card>
       )}
 
-      {/* Admin Users List */}
-      <div className="admin-users-section">
-        <div className="section-header">
-          <h2>Admin Users</h2>
-          <PermissionGuard permission="admin_users.create">
-            <button onClick={() => setShowForm(!showForm)} className="btn btn-primary">
-              {showForm ? 'Cancel' : '+ Add New Admin'}
-            </button>
-          </PermissionGuard>
-        </div>
+      {/* Admin Users DataTable */}
+      <DataTable
+        ref={dt}
+        value={admins}
+        loading={loading}
+        paginator={pagination.total > 10}
+        rows={pagination.limit}
+        totalRecords={pagination.total}
+        onPage={(e) => setPagination(prev => ({ ...prev, page: e.page + 1 }))}
+        emptyMessage="No admin users found"
+        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport"
+        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} Admins"
+        responsiveLayout="scroll"
+        stripedRows
+        showGridlines
+      >
+        <Column field="id" header="ID" sortable style={{ minWidth: '80px' }} />
+        <Column field="username" header="Username" sortable style={{ minWidth: '120px' }} />
+        <Column field="full_name" header="Full Name" sortable style={{ minWidth: '150px' }} />
+        <Column field="email" header="Email" sortable style={{ minWidth: '200px' }} />
+        <Column field="role_id" header="Role" body={roleBodyTemplate} style={{ minWidth: '150px' }} />
+        <Column field="status" header="Status" body={statusBodyTemplate} sortable style={{ minWidth: '110px' }} />
+        <Column field="last_login" header="Last Login" body={lastLoginBodyTemplate} sortable style={{ minWidth: '180px' }} />
+        <Column header="Actions" body={actionBodyTemplate} exportable={false} style={{ minWidth: '150px' }} />
+      </DataTable>
 
-        {/* Add/Edit Form */}
-        {showForm && (
-          <div className="admin-form-container">
-            <h3>{selectedAdmin ? 'Edit Admin User' : 'Add New Admin User'}</h3>
-            <form onSubmit={handleSubmit} className="admin-form">
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="username">Username *</label>
-                  <input
-                    type="text"
-                    id="username"
-                    name="username"
-                    value={formData.username}
-                    onChange={handleInputChange}
-                    required
-                    disabled={!!selectedAdmin}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="email">Email *</label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="full_name">Full Name *</label>
-                  <input
-                    type="text"
-                    id="full_name"
-                    name="full_name"
-                    value={formData.full_name}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="status">Status *</label>
-                  <select
-                    id="status"
-                    name="status"
-                    value={formData.status}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                    <option value="Suspended">Suspended</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="role_id">Role</label>
-                  <select
-                    id="role_id"
-                    name="role_id"
-                    value={formData.role_id}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">No Role Assigned</option>
-                    {roles.map(role => (
-                      <option key={role.id} value={role.id}>
-                        {role.display_name} ({role.permission_count} permissions)
-                      </option>
-                    ))}
-                  </select>
-                  <small style={{color: '#666', marginTop: '5px', display: 'block'}}>
-                    Assign a role to grant permissions to this admin user
-                  </small>
-                </div>
-                <div className="form-group">
-                  <label htmlFor="password">
-                    Password {!selectedAdmin && '*'}
-                    {selectedAdmin && ' (leave blank to keep current)'}
-                  </label>
-                  <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    required={!selectedAdmin}
-                    minLength="6"
-                  />
-                </div>
-              </div>
-
-              <div className="form-actions">
-                <button type="submit" className="btn btn-primary">
-                  {selectedAdmin ? 'Update Admin' : 'Create Admin'}
-                </button>
-                <button type="button" onClick={resetForm} className="btn btn-outline">
-                  Cancel
-                </button>
-              </div>
-            </form>
+      {/* Add/Edit Dialog */}
+      <Dialog
+        visible={showForm}
+        style={{ width: '50vw' }}
+        breakpoints={{ '960px': '75vw', '641px': '95vw' }}
+        header={selectedAdmin ? 'Edit Admin User' : 'Add New Admin User'}
+        modal
+        className="p-fluid"
+        footer={dialogFooter}
+        onHide={resetForm}
+      >
+        <div className="formgrid grid">
+          <div className="field col-12 md:col-6">
+            <label htmlFor="username">Username *</label>
+            <InputText
+              id="username"
+              value={formData.username}
+              onChange={(e) => handleInputChange('username', e.target.value)}
+              disabled={!!selectedAdmin}
+              className={classNames({ 'p-invalid': errors.username })}
+            />
+            {errors.username && <small className="p-error">{errors.username}</small>}
           </div>
-        )}
 
-        {/* Admin Users Table */}
-        <div className="admin-users-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Username</th>
-                <th>Full Name</th>
-                <th>Email</th>
-                <th>Status</th>
-                <th>Last Login</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {admins.map((admin) => (
-                <tr key={admin.id}>
-                  <td>{admin.username}</td>
-                  <td>{admin.full_name}</td>
-                  <td>{admin.email}</td>
-                  <td>
-                    <span className={`status-badge status-${admin.status.toLowerCase()}`}>
-                      {admin.status}
-                    </span>
-                  </td>
-                  <td>{formatDate(admin.last_login)}</td>
-                  <td>
-                    <div className="action-buttons">
-                      <PermissionGuard permission="admin_users.update">
-                        <button
-                          onClick={() => handleEdit(admin)}
-                          className="btn-icon btn-icon-edit"
-                          title="Edit Admin User"
-                        >
-                          <EditIcon />
-                        </button>
-                      </PermissionGuard>
-                      <PermissionGuard permission="admin_users.delete">
-                        <button
-                          onClick={() => handleDeleteClick(admin)}
-                          className="btn-icon btn-icon-delete"
-                          title="Delete Admin User"
-                          disabled={currentUser?.id === admin.id}
-                        >
-                          <DeleteIcon />
-                        </button>
-                      </PermissionGuard>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+          <div className="field col-12 md:col-6">
+            <label htmlFor="email">Email *</label>
+            <InputText
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              className={classNames({ 'p-invalid': errors.email })}
+            />
+            {errors.email && <small className="p-error">{errors.email}</small>}
+          </div>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>Confirm Delete</h3>
-            <p>
-              Are you sure you want to delete admin user <strong>{adminToDelete?.username}</strong>?
-            </p>
-            <p className="warning-text">This action cannot be undone.</p>
-            <div className="modal-actions">
-              <button onClick={handleDeleteConfirm} className="btn btn-danger">
-                Delete
-              </button>
-              <button onClick={() => setShowDeleteModal(false)} className="btn btn-outline">
-                Cancel
-              </button>
-            </div>
+          <div className="field col-12 md:col-6">
+            <label htmlFor="full_name">Full Name *</label>
+            <InputText
+              id="full_name"
+              value={formData.full_name}
+              onChange={(e) => handleInputChange('full_name', e.target.value)}
+              className={classNames({ 'p-invalid': errors.full_name })}
+            />
+            {errors.full_name && <small className="p-error">{errors.full_name}</small>}
+          </div>
+
+          <div className="field col-12 md:col-6">
+            <label htmlFor="status">Status *</label>
+            <Dropdown
+              id="status"
+              value={formData.status}
+              options={statusOptions}
+              onChange={(e) => handleInputChange('status', e.value)}
+            />
+          </div>
+
+          <div className="field col-12 md:col-6">
+            <label htmlFor="role_id">Role</label>
+            <Dropdown
+              id="role_id"
+              value={formData.role_id}
+              options={roleOptions}
+              onChange={(e) => handleInputChange('role_id', e.value)}
+            />
+            <small className="block mt-1">Assign a role to grant permissions to this admin user</small>
+          </div>
+
+          <div className="field col-12 md:col-6">
+            <label htmlFor="password">
+              Password {!selectedAdmin && '*'}
+              {selectedAdmin && ' (leave blank to keep current)'}
+            </label>
+            <InputText
+              id="password"
+              type="password"
+              value={formData.password}
+              onChange={(e) => handleInputChange('password', e.target.value)}
+              className={classNames({ 'p-invalid': errors.password })}
+            />
+            {errors.password && <small className="p-error">{errors.password}</small>}
           </div>
         </div>
-      )}
+      </Dialog>
     </div>
   );
 };

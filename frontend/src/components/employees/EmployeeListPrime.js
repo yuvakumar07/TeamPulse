@@ -161,6 +161,31 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewVisaHistory }) => {
     return <span>{skills}</span>;
   };
 
+  const allocatedProjectsBodyTemplate = (rowData) => {
+    if (!rowData.allocated_projects) {
+      return <span className="text-500">No projects</span>;
+    }
+
+    // Parse the allocated_projects string: "Project1:50||Project2:30"
+    const projects = rowData.allocated_projects.split('||').map(item => {
+      const [name, allocation] = item.split(':');
+      return { name, allocation };
+    });
+
+    return (
+      <div className="flex flex-wrap gap-1">
+        {projects.map((project, index) => (
+          <Tag
+            key={index}
+            value={`${project.name} (${project.allocation}%)`}
+            severity="info"
+            style={{ fontSize: '0.75rem' }}
+          />
+        ))}
+      </div>
+    );
+  };
+
   const actionBodyTemplate = (rowData) => {
     return (
       <div className="flex gap-2">
@@ -287,7 +312,7 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewVisaHistory }) => {
         header={header}
         emptyMessage="No employees found"
         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} employees"
+        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} Employees"
         rowsPerPageOptions={[5, 10, 25, 50]}
         responsiveLayout="scroll"
         stripedRows
@@ -341,6 +366,12 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewVisaHistory }) => {
           body={visaStatusBodyTemplate}
           sortable
           style={{ minWidth: '130px' }}
+        />
+        <Column
+          field="allocated_projects"
+          header="Allocated Projects"
+          body={allocatedProjectsBodyTemplate}
+          style={{ minWidth: '250px' }}
         />
         <Column
           header="Actions"
