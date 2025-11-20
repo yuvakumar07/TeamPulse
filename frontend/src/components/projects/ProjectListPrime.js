@@ -74,7 +74,7 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
 
   const handleDelete = (project) => {
     confirmDialog({
-      message: `Are you sure you want to delete ${project.name}?`,
+      message: `Are you sure you want to delete ${project.project_team_name}?`,
       header: 'Delete Confirmation',
       icon: 'pi pi-exclamation-triangle',
       accept: async () => {
@@ -112,7 +112,7 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
         default: return null;
       }
     };
-    return <Tag value={rowData.status} severity={getSeverity(rowData.status)} />;
+    return <Tag value={rowData.project_status} severity={getSeverity(rowData.project_status)} />;
   };
 
   const budgetBodyTemplate = (rowData) => {
@@ -258,13 +258,11 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
         showGridlines
       >
         <Column field="id" header="ID" sortable style={{ minWidth: '80px' }} />
-        <Column field="name" header="Name" sortable style={{ minWidth: '200px' }} />
-        <Column field="description" header="Description" sortable style={{ minWidth: '250px' }} />
-        <Column field="status" header="Status" body={statusBodyTemplate} sortable style={{ minWidth: '120px' }} />
-        <Column field="start_date" header="Start Date" body={(rowData) => dateBodyTemplate(rowData.start_date)} sortable style={{ minWidth: '130px' }} />
-        <Column field="end_date" header="End Date" body={(rowData) => dateBodyTemplate(rowData.end_date)} sortable style={{ minWidth: '130px' }} />
-        <Column field="budget" header="Budget" body={budgetBodyTemplate} sortable style={{ minWidth: '130px' }} />
-        <Column field="client_name" header="Client" sortable style={{ minWidth: '150px' }} />
+        <Column field="project_team_name" header="Project Team Name" sortable style={{ minWidth: '200px' }} />
+        <Column field="agile_board_name" header="Agile Board" sortable style={{ minWidth: '200px' }} />
+        <Column field="agile_team_jira_key" header="JIRA Key" sortable style={{ minWidth: '150px' }} />
+        <Column field="project_status" header="Status" body={statusBodyTemplate} sortable style={{ minWidth: '120px' }} />
+        <Column field="employee_count" header="Employees" style={{ minWidth: '100px' }} />
         <Column header="Actions" body={actionBodyTemplate} exportable={false} style={{ minWidth: '200px' }} />
       </DataTable>
 
