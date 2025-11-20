@@ -41,6 +41,7 @@ const getAllEmployees = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
     const roleType = req.query.role_type;
+    const search = req.query.search;
     const sortField = req.query.sortField || 'created_at';
     const sortOrder = req.query.sortOrder || 'DESC';
 
@@ -50,7 +51,7 @@ const getAllEmployees = async (req, res) => {
     const validSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
 
     // Build query based on filters
-    let countQuery = 'SELECT COUNT(*) as total FROM employees';
+    let countQuery = 'SELECT COUNT(*) as total FROM employees e';
     let dataQuery = `
       SELECT e.*,
              COALESCE(SUM(pe.allocation_percentage), 0) as total_allocation
@@ -59,13 +60,28 @@ const getAllEmployees = async (req, res) => {
     `;
     const queryParams = [];
     const countParams = [];
+    const conditions = [];
 
     // Add role_type filter if provided
     if (roleType && roleType !== 'All') {
-      countQuery += ' WHERE role_type = ?';
-      dataQuery += ' WHERE e.role_type = ?';
+      conditions.push('e.role_type = ?');
       queryParams.push(roleType);
       countParams.push(roleType);
+    }
+
+    // Add search filter if provided
+    if (search && search.trim() !== '') {
+      const searchPattern = `%${search.trim()}%`;
+      conditions.push('(e.sso LIKE ? OR e.name LIKE ? OR e.role LIKE ? OR e.phone LIKE ? OR e.location LIKE ? OR e.skills LIKE ?)');
+      queryParams.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+      countParams.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+    }
+
+    // Apply WHERE conditions
+    if (conditions.length > 0) {
+      const whereClause = ' WHERE ' + conditions.join(' AND ');
+      countQuery += whereClause;
+      dataQuery += whereClause;
     }
 
     // Group by employee for aggregation

@@ -200,7 +200,7 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
   };
 
   const header = (
-    <div className="flex flex-wrap gap-2 align-items-center justify-content-between">
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
       <span className="p-input-icon-left" style={{ width: '300px' }}>
         <i className="pi pi-search" />
         <InputText
@@ -211,7 +211,7 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
           style={{ width: '100%' }}
         />
       </span>
-      <div className="flex gap-2 align-items-center">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <label htmlFor="statusFilter">Status:</label>
         <Dropdown
           id="statusFilter"

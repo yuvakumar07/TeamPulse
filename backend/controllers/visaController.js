@@ -39,6 +39,21 @@ const getVisaHistory = async (req, res) => {
   try {
     const { employeeId } = req.params;
 
+    console.log('Fetching visa history for employee ID:', employeeId);
+
+    // First check if employee exists
+    const [employee] = await db.query('SELECT id, name FROM employees WHERE id = ?', [employeeId]);
+
+    if (employee.length === 0) {
+      console.error('Employee not found:', employeeId);
+      return res.status(404).json({
+        success: false,
+        message: 'Employee not found'
+      });
+    }
+
+    console.log('Employee found:', employee[0].name);
+
     const [history] = await db.query(
       `SELECT vh.*, a.username as created_by_name
        FROM visa_history vh
@@ -47,6 +62,8 @@ const getVisaHistory = async (req, res) => {
        ORDER BY vh.start_date DESC`,
       [employeeId]
     );
+
+    console.log(`Found ${history.length} visa history records for employee ${employeeId}`);
 
     // Calculate visa_status for each record
     const historyWithStatus = history.map(record => ({
@@ -60,6 +77,7 @@ const getVisaHistory = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching visa history:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
       message: 'Error fetching visa history',

@@ -44,19 +44,31 @@ const VisaHistoryPrime = ({ employeeId, employeeName, visible, onHide }) => {
   });
 
   useEffect(() => {
-    if (visible) {
+    if (visible && employeeId) {
+      console.log('Fetching visa history for employee:', employeeId);
+      setShowForm(false); // Always show list view when dialog opens
+      setEditingRecord(null); // Clear any editing record
       fetchHistory();
     }
   }, [visible, employeeId]);
 
   const fetchHistory = async () => {
+    if (!employeeId) {
+      console.error('No employee ID provided');
+      toast.error('No employee selected');
+      return;
+    }
+
     try {
       setLoading(true);
+      console.log('Calling getVisaHistory API for employee:', employeeId);
       const response = await getVisaHistory(employeeId);
+      console.log('Visa history response:', response.data);
       setHistory(response.data.data);
     } catch (err) {
       toast.error('Failed to fetch visa history');
       console.error('Error fetching visa history:', err);
+      console.error('Error details:', err.response?.data);
     } finally {
       setLoading(false);
     }

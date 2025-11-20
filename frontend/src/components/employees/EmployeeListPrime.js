@@ -21,8 +21,8 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewVisaHistory }) => {
     first: 0,
     rows: 10,
     page: 0,
-    sortField: 'created_at',
-    sortOrder: -1
+    sortField: 'id',
+    sortOrder: 1
   });
   const [totalRecords, setTotalRecords] = useState(0);
   const dt = useRef(null);
@@ -35,17 +35,17 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewVisaHistory }) => {
 
   useEffect(() => {
     loadEmployees();
-  }, [lazyState, roleTypeFilter]);
+  }, [lazyState, roleTypeFilter, globalFilter]);
 
   const loadEmployees = async () => {
     try {
       setLoading(true);
       const page = lazyState.page + 1;
       const limit = lazyState.rows;
-      const sortField = lazyState.sortField || 'created_at';
+      const sortField = lazyState.sortField || 'id';
       const sortOrder = lazyState.sortOrder === 1 ? 'ASC' : 'DESC';
 
-      const response = await getAllEmployees(page, limit, roleTypeFilter, sortField, sortOrder);
+      const response = await getAllEmployees(page, limit, roleTypeFilter, sortField, sortOrder, globalFilter);
       setEmployees(response.data.data);
       setTotalRecords(response.data.pagination.total);
     } catch (err) {
@@ -233,18 +233,21 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewVisaHistory }) => {
   };
 
   const header = (
-    <div className="flex flex-wrap gap-2 align-items-center justify-content-between">
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
       <span className="p-input-icon-left" style={{ width: '300px' }}>
         <i className="pi pi-search" />
         <InputText
           type="search"
           value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
+          onChange={(e) => {
+            setGlobalFilter(e.target.value);
+            setlazyState({ ...lazyState, first: 0, page: 0 });
+          }}
           placeholder="Search employees..."
           style={{ width: '100%' }}
         />
       </span>
-      <div className="flex gap-2 align-items-center">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <label htmlFor="roleTypeFilter">Role Type:</label>
         <Dropdown
           id="roleTypeFilter"

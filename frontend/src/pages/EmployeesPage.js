@@ -31,6 +31,7 @@ const EmployeesPage = () => {
   };
 
   const handleViewVisaHistory = (employee) => {
+    console.log('handleViewVisaHistory called with employee:', employee);
     setVisaEmployee(employee);
     setShowVisaHistory(true);
   };
