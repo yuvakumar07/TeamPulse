@@ -7,6 +7,7 @@ import { Calendar } from 'primereact/calendar';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { InputNumber } from 'primereact/inputnumber';
 import { Button } from 'primereact/button';
+import { Divider } from 'primereact/divider';
 import { classNames } from 'primereact/utils';
 import { createEmployee, updateEmployee } from '../../services/api';
 
@@ -28,7 +29,15 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
     comments: '',
     attrition: 'No',
     offshore_manager_id: null,
-    onsite_manager_id: null
+    onsite_manager_id: null,
+    visa_type: 'None',
+    current_visa_start_date: null,
+    current_visa_end_date: null,
+    i94_expiry_date: null,
+    passport_number: '',
+    passport_expiry_date: null,
+    sponsor_company: '',
+    visa_notes: ''
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -52,7 +61,15 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
         comments: employee.comments || '',
         attrition: employee.attrition || 'No',
         offshore_manager_id: employee.offshore_manager_id || null,
-        onsite_manager_id: employee.onsite_manager_id || null
+        onsite_manager_id: employee.onsite_manager_id || null,
+        visa_type: employee.visa_type || 'None',
+        current_visa_start_date: employee.current_visa_start_date ? new Date(employee.current_visa_start_date) : null,
+        current_visa_end_date: employee.current_visa_end_date ? new Date(employee.current_visa_end_date) : null,
+        i94_expiry_date: employee.i94_expiry_date ? new Date(employee.i94_expiry_date) : null,
+        passport_number: employee.passport_number || '',
+        passport_expiry_date: employee.passport_expiry_date ? new Date(employee.passport_expiry_date) : null,
+        sponsor_company: employee.sponsor_company || '',
+        visa_notes: employee.visa_notes || ''
       });
     } else {
       resetForm();
@@ -77,7 +94,15 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
       comments: '',
       attrition: 'No',
       offshore_manager_id: null,
-      onsite_manager_id: null
+      onsite_manager_id: null,
+      visa_type: 'None',
+      current_visa_start_date: null,
+      current_visa_end_date: null,
+      i94_expiry_date: null,
+      passport_number: '',
+      passport_expiry_date: null,
+      sponsor_company: '',
+      visa_notes: ''
     });
     setErrors({});
   };
@@ -115,7 +140,11 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
     try {
       const dataToSubmit = {
         ...formData,
-        last_working_day: formData.last_working_day ? formData.last_working_day.toISOString().split('T')[0] : null
+        last_working_day: formData.last_working_day ? formData.last_working_day.toISOString().split('T')[0] : null,
+        current_visa_start_date: formData.current_visa_start_date ? formData.current_visa_start_date.toISOString().split('T')[0] : null,
+        current_visa_end_date: formData.current_visa_end_date ? formData.current_visa_end_date.toISOString().split('T')[0] : null,
+        i94_expiry_date: formData.i94_expiry_date ? formData.i94_expiry_date.toISOString().split('T')[0] : null,
+        passport_expiry_date: formData.passport_expiry_date ? formData.passport_expiry_date.toISOString().split('T')[0] : null
       };
 
       if (employee) {
@@ -164,6 +193,16 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
     { label: 'No', value: 'No' },
     { label: 'Yes', value: 'Yes' },
     { label: 'At Risk', value: 'At Risk' }
+  ];
+
+  const visaTypeOptions = [
+    { label: 'None', value: 'None' },
+    { label: 'H1B', value: 'H1B' },
+    { label: 'L1', value: 'L1' },
+    { label: 'L2', value: 'L2' },
+    { label: 'Green Card', value: 'Green Card' },
+    { label: 'US Citizen', value: 'US Citizen' },
+    { label: 'Other', value: 'Other' }
   ];
 
   const dialogFooter = (
@@ -351,6 +390,99 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
             value={formData.onsite_manager_id}
             onValueChange={(e) => handleChange('onsite_manager_id', e.value)}
             useGrouping={false}
+          />
+        </div>
+
+        {/* Visa Section */}
+        <div className="col-12">
+          <Divider align="left">
+            <div className="inline-flex align-items-center">
+              <i className="pi pi-id-card mr-2"></i>
+              <b>Visa & Immigration Details</b>
+            </div>
+          </Divider>
+        </div>
+
+        <div className="field col-12 md:col-6">
+          <label htmlFor="visa_type">Visa Type</label>
+          <Dropdown
+            id="visa_type"
+            value={formData.visa_type}
+            options={visaTypeOptions}
+            onChange={(e) => handleChange('visa_type', e.value)}
+          />
+        </div>
+
+        <div className="field col-12 md:col-6">
+          <label htmlFor="sponsor_company">Sponsor Company</label>
+          <InputText
+            id="sponsor_company"
+            value={formData.sponsor_company}
+            onChange={(e) => handleChange('sponsor_company', e.target.value)}
+          />
+        </div>
+
+        <div className="field col-12 md:col-6">
+          <label htmlFor="current_visa_start_date">Visa Start Date</label>
+          <Calendar
+            id="current_visa_start_date"
+            value={formData.current_visa_start_date}
+            onChange={(e) => handleChange('current_visa_start_date', e.value)}
+            dateFormat="yy-mm-dd"
+            showIcon
+          />
+        </div>
+
+        <div className="field col-12 md:col-6">
+          <label htmlFor="current_visa_end_date">Visa End Date</label>
+          <Calendar
+            id="current_visa_end_date"
+            value={formData.current_visa_end_date}
+            onChange={(e) => handleChange('current_visa_end_date', e.value)}
+            dateFormat="yy-mm-dd"
+            showIcon
+          />
+        </div>
+
+        <div className="field col-12 md:col-6">
+          <label htmlFor="i94_expiry_date">I-94 Expiry Date</label>
+          <Calendar
+            id="i94_expiry_date"
+            value={formData.i94_expiry_date}
+            onChange={(e) => handleChange('i94_expiry_date', e.value)}
+            dateFormat="yy-mm-dd"
+            showIcon
+          />
+        </div>
+
+        <div className="field col-12 md:col-6">
+          <label htmlFor="passport_number">Passport Number</label>
+          <InputText
+            id="passport_number"
+            value={formData.passport_number}
+            onChange={(e) => handleChange('passport_number', e.target.value)}
+          />
+        </div>
+
+        <div className="field col-12 md:col-6">
+          <label htmlFor="passport_expiry_date">Passport Expiry Date</label>
+          <Calendar
+            id="passport_expiry_date"
+            value={formData.passport_expiry_date}
+            onChange={(e) => handleChange('passport_expiry_date', e.value)}
+            dateFormat="yy-mm-dd"
+            showIcon
+          />
+        </div>
+
+        <div className="field col-12">
+          <label htmlFor="visa_notes">Visa Notes</label>
+          <InputTextarea
+            id="visa_notes"
+            value={formData.visa_notes}
+            onChange={(e) => handleChange('visa_notes', e.target.value)}
+            rows={3}
+            placeholder="Additional visa-related notes"
           />
         </div>
       </div>

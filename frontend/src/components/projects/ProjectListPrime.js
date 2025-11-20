@@ -43,7 +43,7 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
 
   useEffect(() => {
     loadProjects();
-  }, [lazyState, statusFilter]);
+  }, [lazyState, statusFilter, globalFilter]);
 
   const loadProjects = async () => {
     try {
@@ -53,7 +53,7 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
       const sortField = lazyState.sortField || 'created_at';
       const sortOrder = lazyState.sortOrder === 1 ? 'ASC' : 'DESC';
 
-      const response = await getAllProjects(page, limit, statusFilter, sortField, sortOrder);
+      const response = await getAllProjects(page, limit, statusFilter, sortField, sortOrder, globalFilter);
       setProjects(response.data.data);
       setTotalRecords(response.data.pagination.total);
     } catch (err) {
@@ -206,7 +206,10 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
         <InputText
           type="search"
           value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
+          onChange={(e) => {
+            setGlobalFilter(e.target.value);
+            setlazyState({ ...lazyState, first: 0, page: 0 });
+          }}
           placeholder="Search projects..."
           style={{ width: '100%' }}
         />

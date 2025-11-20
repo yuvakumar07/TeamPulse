@@ -7,6 +7,7 @@ const getAllProjects = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
     const status = req.query.status;
+    const search = req.query.search;
     const sortField = req.query.sortField || 'created_at';
     const sortOrder = req.query.sortOrder || 'DESC';
 
@@ -16,7 +17,7 @@ const getAllProjects = async (req, res) => {
     const validSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
 
     // Build query based on filters
-    let countQuery = 'SELECT COUNT(*) as total FROM projects';
+    let countQuery = 'SELECT COUNT(*) as total FROM projects p';
     let dataQuery = `
       SELECT p.*,
              COUNT(DISTINCT pe.employee_id) as employee_count,
@@ -26,13 +27,28 @@ const getAllProjects = async (req, res) => {
     `;
     const queryParams = [];
     const countParams = [];
+    const conditions = [];
 
     // Add status filter if provided
     if (status && status !== 'All') {
-      countQuery += ' WHERE project_status = ?';
-      dataQuery += ' WHERE p.project_status = ?';
+      conditions.push('p.project_status = ?');
       queryParams.push(status);
       countParams.push(status);
+    }
+
+    // Add search filter if provided
+    if (search && search.trim() !== '') {
+      const searchPattern = `%${search.trim()}%`;
+      conditions.push('(p.project_team_name LIKE ? OR p.agile_board_name LIKE ? OR p.agile_team_jira_key LIKE ?)');
+      queryParams.push(searchPattern, searchPattern, searchPattern);
+      countParams.push(searchPattern, searchPattern, searchPattern);
+    }
+
+    // Apply WHERE conditions
+    if (conditions.length > 0) {
+      const whereClause = ' WHERE ' + conditions.join(' AND ');
+      countQuery += whereClause;
+      dataQuery += whereClause;
     }
 
     // Group by project for aggregation

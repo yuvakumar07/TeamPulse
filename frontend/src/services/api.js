@@ -60,7 +60,7 @@ export const updateEmployee = (id, data) => api.put(`/employees/${id}`, data);
 export const deleteEmployee = (id) => api.delete(`/employees/${id}`);
 
 // Project API calls
-export const getAllProjects = (page = 1, limit = 10, status = null, sortField = 'created_at', sortOrder = 'DESC') => {
+export const getAllProjects = (page = 1, limit = 10, status = null, sortField = 'created_at', sortOrder = 'DESC', search = null) => {
   const params = { page, limit };
   if (status && status !== 'All') {
     params.status = status;
@@ -70,6 +70,9 @@ export const getAllProjects = (page = 1, limit = 10, status = null, sortField = 
   }
   if (sortOrder) {
     params.sortOrder = sortOrder;
+  }
+  if (search && search.trim() !== '') {
+    params.search = search.trim();
   }
   return api.get('/projects', { params });
 };
