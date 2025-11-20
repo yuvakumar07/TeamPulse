@@ -1,26 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import { Button } from 'primereact/button';
+import { Dialog } from 'primereact/dialog';
+import { InputText } from 'primereact/inputtext';
+import { InputTextarea } from 'primereact/inputtextarea';
+import { Checkbox } from 'primereact/checkbox';
+import { Tag } from 'primereact/tag';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
+import { Toolbar } from 'primereact/toolbar';
+import { Panel } from 'primereact/panel';
+import { Message } from 'primereact/message';
+import { classNames } from 'primereact/utils';
 import authService from '../services/authService';
 import PermissionGuard from '../components/auth/PermissionGuard';
-import { EditIcon, DeleteIcon } from '../components/icons/ActionIcons';
-import './RoleManagement.css';
 
 const RoleManagement = () => {
   const [roles, setRoles] = useState([]);
   const [permissions, setPermissions] = useState({ all: [], grouped: {} });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [roleToDelete, setRoleToDelete] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     display_name: '',
     description: '',
     permission_ids: []
   });
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const dt = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,10 +46,10 @@ const RoleManagement = () => {
       if (response.success) {
         setRoles(response.data);
       } else {
-        setError(response.message || 'Failed to load roles');
+        toast.error(response.message || 'Failed to load roles');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred while fetching roles');
+      toast.error(err.response?.data?.message || 'An error occurred while fetching roles');
     } finally {
       setLoading(false);
     }
@@ -55,11 +66,14 @@ const RoleManagement = () => {
     }
   };
 
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const handleInputChange = (name, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handlePermissionToggle = (permissionId) => {
@@ -84,13 +98,24 @@ const RoleManagement = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.name.trim()) newErrors.name = 'Role name is required';
+    if (!formData.display_name.trim()) newErrors.display_name = 'Display name is required';
+    if (formData.permission_ids.length === 0) newErrors.permissions = 'At least one permission is required';
+    return newErrors;
+  };
 
+  const handleSubmit = async () => {
+    const newErrors = validate();
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setSubmitting(true);
     try {
       if (selectedRole) {
-        // Update existing role
         const response = await authService.updateRole(selectedRole.id, formData);
         if (response.success) {
           fetchRoles();
@@ -98,7 +123,6 @@ const RoleManagement = () => {
           toast.success('Role updated successfully!');
         }
       } else {
-        // Create new role
         const response = await authService.createRole(formData);
         if (response.success) {
           fetchRoles();
@@ -107,7 +131,9 @@ const RoleManagement = () => {
         }
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred while saving role');
+      toast.error(err.response?.data?.message || 'An error occurred while saving role');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -125,29 +151,27 @@ const RoleManagement = () => {
         setShowForm(true);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load role details');
+      toast.error(err.response?.data?.message || 'Failed to load role details');
     }
   };
 
-  const handleDeleteClick = (role) => {
-    setRoleToDelete(role);
-    setShowDeleteModal(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    try {
-      const response = await authService.deleteRole(roleToDelete.id);
-      if (response.success) {
-        fetchRoles();
-        setShowDeleteModal(false);
-        setRoleToDelete(null);
-        toast.success('Role deleted successfully!');
+  const handleDelete = (role) => {
+    confirmDialog({
+      message: `Are you sure you want to delete the role "${role.display_name}"?`,
+      header: 'Delete Confirmation',
+      icon: 'pi pi-exclamation-triangle',
+      accept: async () => {
+        try {
+          const response = await authService.deleteRole(role.id);
+          if (response.success) {
+            fetchRoles();
+            toast.success('Role deleted successfully!');
+          }
+        } catch (err) {
+          toast.error(err.response?.data?.message || 'An error occurred while deleting role');
+        }
       }
-    } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred while deleting role');
-      toast.error(err.response?.data?.message || 'Failed to delete role');
-      setShowDeleteModal(false);
-    }
+    });
   };
 
   const resetForm = () => {
@@ -159,6 +183,7 @@ const RoleManagement = () => {
     });
     setSelectedRole(null);
     setShowForm(false);
+    setErrors({});
   };
 
   const isModuleFullySelected = (module) => {
@@ -167,226 +192,215 @@ const RoleManagement = () => {
            modulePermissions.every(p => formData.permission_ids.includes(p.id));
   };
 
-  if (loading && roles.length === 0) {
+  // Column templates
+  const nameBodyTemplate = (rowData) => {
+    return <code style={{ fontSize: '0.9rem', padding: '0.25rem 0.5rem', backgroundColor: '#f4f4f4', borderRadius: '4px' }}>{rowData.name}</code>;
+  };
+
+  const typeBodyTemplate = (rowData) => {
+    return rowData.is_system_role ?
+      <Tag value="System" severity="warning" /> :
+      <Tag value="Custom" severity="info" />;
+  };
+
+  const permissionCountBodyTemplate = (rowData) => {
+    return <Tag value={`${rowData.permission_count} permissions`} severity="success" />;
+  };
+
+  const actionBodyTemplate = (rowData) => {
     return (
-      <div className="role-management">
-        <div className="loading-container">
-          <div className="spinner"></div>
-          <p>Loading roles...</p>
-        </div>
+      <div className="flex gap-2">
+        <PermissionGuard permission="roles.update">
+          <Button
+            icon="pi pi-pencil"
+            rounded
+            outlined
+            className="p-button-success"
+            onClick={() => handleEdit(rowData)}
+            tooltip="Edit"
+            tooltipOptions={{ position: 'top' }}
+          />
+        </PermissionGuard>
+        {!rowData.is_system_role && (
+          <PermissionGuard permission="roles.delete">
+            <Button
+              icon="pi pi-trash"
+              rounded
+              outlined
+              severity="danger"
+              onClick={() => handleDelete(rowData)}
+              tooltip="Delete"
+              tooltipOptions={{ position: 'top' }}
+            />
+          </PermissionGuard>
+        )}
       </div>
     );
-  }
+  };
+
+  // Toolbar templates
+  const leftToolbarTemplate = () => {
+    return (
+      <div className="flex flex-wrap gap-2">
+        <h2 className="m-0">Role Management</h2>
+      </div>
+    );
+  };
+
+  const rightToolbarTemplate = () => {
+    return (
+      <div className="flex gap-2">
+        <PermissionGuard permission="roles.create">
+          <Button
+            label="Create Custom Role"
+            icon="pi pi-plus"
+            onClick={() => setShowForm(true)}
+            className="p-button-success"
+          />
+        </PermissionGuard>
+        <Button
+          label="Back to Dashboard"
+          icon="pi pi-arrow-left"
+          onClick={() => navigate('/admin/dashboard')}
+          className="p-button-secondary"
+        />
+      </div>
+    );
+  };
+
+  // Dialog footer
+  const dialogFooter = (
+    <div>
+      <Button label="Cancel" icon="pi pi-times" onClick={resetForm} className="p-button-text" />
+      <Button label="Save" icon="pi pi-check" onClick={handleSubmit} loading={submitting} />
+    </div>
+  );
 
   return (
-    <div className="role-management">
-      <div className="page-header">
-        <div>
-          <h1>Role Management</h1>
-          <p>Manage system roles and permissions</p>
-        </div>
-        <div className="header-actions">
-          <button onClick={() => navigate('/admin/dashboard')} className="btn btn-outline">
-            Back to Dashboard
-          </button>
-        </div>
-      </div>
+    <div className="card">
+      <ConfirmDialog />
+      <Toolbar className="mb-4" left={leftToolbarTemplate} right={rightToolbarTemplate} />
 
-      {error && (
-        <div className="alert alert-danger">
-          {error}
-          <button onClick={() => setError('')} className="alert-close">&times;</button>
-        </div>
-      )}
+      {/* Roles DataTable */}
+      <DataTable
+        ref={dt}
+        value={roles}
+        loading={loading}
+        emptyMessage="No roles found"
+        responsiveLayout="scroll"
+        stripedRows
+        showGridlines
+      >
+        <Column field="id" header="ID" sortable style={{ minWidth: '80px' }} />
+        <Column field="name" header="Role Name" body={nameBodyTemplate} sortable style={{ minWidth: '150px' }} />
+        <Column field="display_name" header="Display Name" sortable style={{ minWidth: '150px' }} />
+        <Column field="description" header="Description" sortable style={{ minWidth: '200px' }} />
+        <Column field="permission_count" header="Permissions" body={permissionCountBodyTemplate} style={{ minWidth: '150px' }} />
+        <Column field="is_system_role" header="Type" body={typeBodyTemplate} sortable style={{ minWidth: '110px' }} />
+        <Column header="Actions" body={actionBodyTemplate} exportable={false} style={{ minWidth: '150px' }} />
+      </DataTable>
 
-      {/* Roles List */}
-      <div className="roles-section">
-        <div className="section-header">
-          <h2>Roles</h2>
-          <PermissionGuard permission="roles.create">
-            <button onClick={() => setShowForm(!showForm)} className="btn btn-primary">
-              {showForm ? 'Cancel' : '+ Create Custom Role'}
-            </button>
-          </PermissionGuard>
-        </div>
-
-        {/* Create/Edit Form */}
-        {showForm && (
-          <div className="role-form-container">
-            <h3>{selectedRole ? 'Edit Role' : 'Create New Role'}</h3>
-            {selectedRole?.is_system_role && (
-              <div className="alert alert-warning">
-                This is a system role. You can only modify permissions, not the name or description.
-              </div>
-            )}
-            <form onSubmit={handleSubmit} className="role-form">
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="name">Role Name (Identifier) *</label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    required
-                    disabled={!!selectedRole}
-                    placeholder="e.g., hr_manager"
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="display_name">Display Name *</label>
-                  <input
-                    type="text"
-                    id="display_name"
-                    name="display_name"
-                    value={formData.display_name}
-                    onChange={handleInputChange}
-                    required
-                    disabled={selectedRole?.is_system_role}
-                    placeholder="e.g., HR Manager"
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="description">Description</label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  rows="3"
-                  disabled={selectedRole?.is_system_role}
-                  placeholder="Describe the role's purpose and responsibilities"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Permissions *</label>
-                <div className="permissions-container">
-                  {Object.keys(permissions.grouped).map(module => (
-                    <div key={module} className="permission-module">
-                      <div className="module-header">
-                        <label>
-                          <input
-                            type="checkbox"
-                            checked={isModuleFullySelected(module)}
-                            onChange={() => handleModuleToggle(module)}
-                          />
-                          <strong>{module.replace('_', ' ').toUpperCase()}</strong>
-                        </label>
-                      </div>
-                      <div className="module-permissions">
-                        {permissions.grouped[module].map(permission => (
-                          <label key={permission.id} className="permission-item">
-                            <input
-                              type="checkbox"
-                              checked={formData.permission_ids.includes(permission.id)}
-                              onChange={() => handlePermissionToggle(permission.id)}
-                            />
-                            <span className="permission-name">{permission.action}</span>
-                            <span className="permission-desc">{permission.description}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="form-actions">
-                <button type="submit" className="btn btn-primary">
-                  {selectedRole ? 'Update Role' : 'Create Role'}
-                </button>
-                <button type="button" onClick={resetForm} className="btn btn-outline">
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
+      {/* Add/Edit Dialog */}
+      <Dialog
+        visible={showForm}
+        style={{ width: '60vw' }}
+        breakpoints={{ '960px': '80vw', '641px': '95vw' }}
+        header={selectedRole ? 'Edit Role' : 'Create New Role'}
+        modal
+        className="p-fluid"
+        footer={dialogFooter}
+        onHide={resetForm}
+      >
+        {selectedRole?.is_system_role && (
+          <Message severity="warn" text="This is a system role. You can only modify permissions, not the name or description." className="mb-3" />
         )}
 
-        {/* Roles Table */}
-        <div className="roles-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Role Name</th>
-                <th>Display Name</th>
-                <th>Description</th>
-                <th>Permissions</th>
-                <th>Type</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {roles.map((role) => (
-                <tr key={role.id}>
-                  <td><code>{role.name}</code></td>
-                  <td>{role.display_name}</td>
-                  <td className="role-description">{role.description}</td>
-                  <td>
-                    <span className="permission-count">{role.permission_count} permissions</span>
-                  </td>
-                  <td>
-                    {role.is_system_role ? (
-                      <span className="badge badge-system">System</span>
-                    ) : (
-                      <span className="badge badge-custom">Custom</span>
-                    )}
-                  </td>
-                  <td>
-                    <div className="action-buttons">
-                      <PermissionGuard permission="roles.update">
-                        <button
-                          onClick={() => handleEdit(role)}
-                          className="btn-icon btn-icon-edit"
-                          title="Edit Role"
-                        >
-                          <EditIcon />
-                        </button>
-                      </PermissionGuard>
-                      {!role.is_system_role && (
-                        <PermissionGuard permission="roles.delete">
-                          <button
-                            onClick={() => handleDeleteClick(role)}
-                            className="btn-icon btn-icon-delete"
-                            title="Delete Role"
-                          >
-                            <DeleteIcon />
-                          </button>
-                        </PermissionGuard>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>Confirm Delete</h3>
-            <p>
-              Are you sure you want to delete the role <strong>{roleToDelete?.display_name}</strong>?
-            </p>
-            <p className="warning-text">This action cannot be undone.</p>
-            <div className="modal-actions">
-              <button onClick={handleDeleteConfirm} className="btn btn-danger">
-                Delete
-              </button>
-              <button onClick={() => setShowDeleteModal(false)} className="btn btn-outline">
-                Cancel
-              </button>
+        <div className="grid">
+          <div className="col-12 md:col-6">
+            <div className="field">
+              <label htmlFor="name">Role Name (Identifier) *</label>
+              <InputText
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                disabled={!!selectedRole}
+                placeholder="e.g., hr_manager"
+                className={classNames({ 'p-invalid': errors.name })}
+              />
+              {errors.name && <small className="p-error">{errors.name}</small>}
+              <small className="block mt-1">Unique identifier for the role (cannot be changed after creation)</small>
             </div>
           </div>
+
+          <div className="col-12 md:col-6">
+            <div className="field">
+              <label htmlFor="display_name">Display Name *</label>
+              <InputText
+                id="display_name"
+                value={formData.display_name}
+                onChange={(e) => handleInputChange('display_name', e.target.value)}
+                disabled={selectedRole?.is_system_role}
+                placeholder="e.g., HR Manager"
+                className={classNames({ 'p-invalid': errors.display_name })}
+              />
+              {errors.display_name && <small className="p-error">{errors.display_name}</small>}
+            </div>
+          </div>
+
+          <div className="col-12">
+            <div className="field">
+              <label htmlFor="description">Description</label>
+              <InputTextarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                disabled={selectedRole?.is_system_role}
+                rows={3}
+                placeholder="Describe the role's purpose and responsibilities"
+              />
+            </div>
+          </div>
+
+          <div className="col-12">
+            <div className="field">
+              <label>Permissions *</label>
+              {errors.permissions && <small className="p-error block mb-2">{errors.permissions}</small>}
+            </div>
+          </div>
+
+          {Object.keys(permissions.grouped).map(module => (
+            <div key={module} className="col-12 md:col-6">
+              <Panel header={module.replace('_', ' ').toUpperCase()} toggleable collapsed={false} className="mb-3">
+                <div className="field-checkbox mb-3">
+                  <Checkbox
+                    inputId={`module-${module}`}
+                    checked={isModuleFullySelected(module)}
+                    onChange={() => handleModuleToggle(module)}
+                  />
+                  <label htmlFor={`module-${module}`} className="ml-2">
+                    <strong>Select All</strong>
+                  </label>
+                </div>
+                {permissions.grouped[module].map(permission => (
+                  <div key={permission.id} className="field-checkbox mb-2">
+                    <Checkbox
+                      inputId={`permission-${permission.id}`}
+                      checked={formData.permission_ids.includes(permission.id)}
+                      onChange={() => handlePermissionToggle(permission.id)}
+                    />
+                    <label htmlFor={`permission-${permission.id}`} className="ml-2">
+                      <div>
+                        <div className="font-semibold">{permission.action}</div>
+                        <div className="text-sm text-500">{permission.description}</div>
+                      </div>
+                    </label>
+                  </div>
+                ))}
+              </Panel>
+            </div>
+          ))}
         </div>
-      )}
+      </Dialog>
     </div>
   );
 };
