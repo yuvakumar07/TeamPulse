@@ -1,7 +1,7 @@
 .employees-page {
-  max-width: 1400px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0;
 }
 
 .employee-list {
@@ -129,7 +129,7 @@ tbody tr:hover {
 
 @media (max-width: 768px) {
   .employees-page {
-    padding: 1rem;
+    padding: 0;
   }
 
   .list-header {

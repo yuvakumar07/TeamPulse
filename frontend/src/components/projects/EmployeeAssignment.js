@@ -107,9 +107,21 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
   };
 
   const handleAllocationChange = (employeeId, value) => {
-    const percentage = parseFloat(value) || 0;
+    // Allow empty string to clear the field
+    if (value === '') {
+      setSelectedEmployees(prev =>
+        prev.map(emp =>
+          emp.employee_id === employeeId
+            ? { ...emp, allocation_percentage: '' }
+            : emp
+        )
+      );
+      return;
+    }
 
-    if (percentage < 0 || percentage > 100) {
+    const percentage = parseFloat(value);
+
+    if (isNaN(percentage) || percentage < 0 || percentage > 100) {
       toast.warning('Allocation percentage must be between 0 and 100');
       return;
     }
@@ -137,7 +149,7 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
       const dataToSubmit = {
         employees: selectedEmployees.map(emp => ({
           employee_id: emp.employee_id,
-          allocation_percentage: emp.allocation_percentage
+          allocation_percentage: emp.allocation_percentage === '' ? 0 : emp.allocation_percentage
         }))
       };
 
@@ -269,9 +281,10 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
                               min="0"
                               max="100"
                               step="0.1"
-                              value={emp.allocation_percentage}
+                              value={emp.allocation_percentage === 0 ? '' : emp.allocation_percentage}
                               onChange={(e) => handleAllocationChange(emp.employee_id, e.target.value)}
                               className="allocation-input"
+                              placeholder="0"
                             />
                           </td>
                           <td>

@@ -207,7 +207,7 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
 
   const dialogFooter = (
     <div>
-      <Button label="Cancel" icon="pi pi-times" onClick={onHide} className="p-button-text" />
+      <Button label="Cancel" icon="pi pi-times" onClick={onHide} className="p-button-text" aria-label="Cancel" />
       <Button label="Save" icon="pi pi-check" onClick={handleSubmit} loading={submitting} />
     </div>
   );

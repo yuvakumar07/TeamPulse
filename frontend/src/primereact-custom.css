@@ -114,29 +114,75 @@
 
 /* Dropdown styling */
 .p-dropdown {
-  border: 1px solid #ced4da;
+  border: 1px solid #ced4da !important;
   border-radius: 4px;
   transition: border-color 0.3s;
 }
 
+.p-dropdown .p-dropdown-trigger,
+.p-dropdown .p-dropdown-label {
+  border: none !important;
+}
+
 .p-dropdown:not(.p-disabled):hover {
-  border-color: #b8c2f0;
+  border-color: #b8c2f0 !important;
 }
 
 .p-dropdown:not(.p-disabled).p-focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #667eea !important;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+/* Dropdown panel and items */
+.p-dropdown-panel .p-dropdown-items {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item {
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  margin: 2px 0;
+}
+
 /* Calendar styling */
+.p-calendar {
+  width: 100%;
+}
+
 .p-calendar .p-inputtext {
-  padding-right: 2.5rem;
+  padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+  font-size: 0.875rem;
 }
 
 .p-calendar .p-datepicker {
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 0.875rem;
+  padding: 0.5rem;
+}
+
+.p-calendar .p-datepicker table {
+  font-size: 0.875rem;
+}
+
+.p-calendar .p-datepicker table td {
+  padding: 0.25rem;
+}
+
+.p-calendar .p-datepicker table td > span {
+  width: 2rem;
+  height: 2rem;
+  font-size: 0.875rem;
+}
+
+.p-calendar .p-datepicker .p-datepicker-header {
+  padding: 0.5rem;
+}
+
+.p-calendar .p-datepicker .p-monthpicker-month,
+.p-calendar .p-datepicker .p-yearpicker-year {
+  padding: 0.5rem;
+  font-size: 0.875rem;
 }
 
 /* Button styling - align with existing app theme */
@@ -148,6 +194,20 @@
   font-size: 0.875rem;
   font-weight: 500;
   transition: all 0.3s ease;
+}
+
+/* Cancel button with black background */
+.p-button[aria-label="Cancel"],
+button[aria-label="Cancel"] {
+  background-color: #000 !important;
+  color: white !important;
+  border: 1px solid #000 !important;
+}
+
+.p-button[aria-label="Cancel"]:hover,
+button[aria-label="Cancel"]:hover {
+  background-color: #333 !important;
+  border-color: #333 !important;
 }
 
 .p-button:enabled:hover {
@@ -290,36 +350,49 @@
   color: #495057;
 }
 
-/* Dialog styling */
+/* Dialog styling - Unified modal style */
 .p-dialog {
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
 .p-dialog .p-dialog-header {
-  background: white;
-  border-bottom: 1px solid #e9ecef;
-  padding: 1rem;
-  border-radius: 8px 8px 0 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-bottom: none;
+  padding: 20px;
+  border-radius: 12px 12px 0 0;
 }
 
 .p-dialog .p-dialog-header .p-dialog-title {
-  color: #333;
-  font-size: 1.2rem;
+  color: white;
+  font-size: 1.25rem;
   font-weight: 600;
+}
+
+.p-dialog .p-dialog-header .p-dialog-header-icon {
+  color: white;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: all 0.3s;
+}
+
+.p-dialog .p-dialog-header .p-dialog-header-icon:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .p-dialog .p-dialog-content {
   background: white;
-  padding: 1rem;
+  padding: 20px;
   border-radius: 0;
 }
 
 .p-dialog .p-dialog-footer {
-  background: white;
+  background: #f8f9fa;
   border-top: 1px solid #e9ecef;
-  padding: 0.75rem 1rem;
-  border-radius: 0 0 8px 8px;
+  padding: 16px 20px;
+  border-radius: 0 0 12px 12px;
 }
 
 /* Form field styling */

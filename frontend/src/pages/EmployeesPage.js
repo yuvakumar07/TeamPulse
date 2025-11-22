@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import EmployeeListPrime from '../components/employees/EmployeeListPrime';
 import EmployeeFormPrime from '../components/employees/EmployeeFormPrime';
-import VisaHistoryPrime from '../components/employees/VisaHistoryPrime';
+import AssetsByEmployeeModal from '../components/modals/AssetsByEmployeeModal';
 import './Employees.css';
 
 const EmployeesPage = () => {
   const [showForm, setShowForm] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [showVisaHistory, setShowVisaHistory] = useState(false);
-  const [visaEmployee, setVisaEmployee] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [showAssetsModal, setShowAssetsModal] = useState(false);
+  const [selectedEmployeeForAssets, setSelectedEmployeeForAssets] = useState(null);
 
   const handleAdd = () => {
     setSelectedEmployee(null);
@@ -30,16 +30,14 @@ const EmployeesPage = () => {
     setRefreshTrigger(prev => prev + 1);
   };
 
-  const handleViewVisaHistory = (employee) => {
-    console.log('handleViewVisaHistory called with employee:', employee);
-    setVisaEmployee(employee);
-    setShowVisaHistory(true);
+  const handleViewAssets = (employee) => {
+    setSelectedEmployeeForAssets(employee);
+    setShowAssetsModal(true);
   };
 
-  const handleCloseVisaHistory = () => {
-    setShowVisaHistory(false);
-    setVisaEmployee(null);
-    setRefreshTrigger(prev => prev + 1);
+  const handleCloseAssetsModal = () => {
+    setShowAssetsModal(false);
+    setSelectedEmployeeForAssets(null);
   };
 
   return (
@@ -48,7 +46,7 @@ const EmployeesPage = () => {
         key={refreshTrigger}
         onEdit={handleEdit}
         onAdd={handleAdd}
-        onViewVisaHistory={handleViewVisaHistory}
+        onViewAssets={handleViewAssets}
       />
 
       <EmployeeFormPrime
@@ -58,12 +56,14 @@ const EmployeesPage = () => {
         onSuccess={handleFormSuccess}
       />
 
-      <VisaHistoryPrime
-        employeeId={visaEmployee?.id}
-        employeeName={visaEmployee?.name}
-        visible={showVisaHistory}
-        onHide={handleCloseVisaHistory}
-      />
+      {showAssetsModal && selectedEmployeeForAssets && (
+        <AssetsByEmployeeModal
+          employeeId={selectedEmployeeForAssets.id}
+          employeeName={selectedEmployeeForAssets.name}
+          isOpen={showAssetsModal}
+          onClose={handleCloseAssetsModal}
+        />
+      )}
     </div>
   );
 };

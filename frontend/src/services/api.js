@@ -90,4 +90,32 @@ export const updateVisaHistory = (id, data) => api.put(`/visa/${id}`, data);
 export const deleteVisaHistory = (id) => api.delete(`/visa/${id}`);
 export const getUpcomingVisaExpirations = (days = 90) => api.get('/visa/expirations', { params: { days } });
 
+// Asset Management API calls
+export const getAllAssets = (page = 1, limit = 10, status = null, assetType = null, sortField = 'created_at', sortOrder = 'DESC', search = null) => {
+  const params = { page, limit };
+  if (status && status !== 'All') {
+    params.status = status;
+  }
+  if (assetType && assetType !== 'All') {
+    params.asset_type = assetType;
+  }
+  if (sortField) {
+    params.sortField = sortField;
+  }
+  if (sortOrder) {
+    params.sortOrder = sortOrder;
+  }
+  if (search && search.trim() !== '') {
+    params.search = search.trim();
+  }
+  return api.get('/assets', { params });
+};
+export const getAssetById = (id) => api.get(`/assets/${id}`);
+export const createAsset = (data) => api.post('/assets', data);
+export const updateAsset = (id, data) => api.put(`/assets/${id}`, data);
+export const deleteAsset = (id) => api.delete(`/assets/${id}`);
+export const assignAsset = (id, data) => api.put(`/assets/${id}/assign`, data);
+export const unassignAsset = (id) => api.put(`/assets/${id}/unassign`);
+export const getAssetsByEmployee = (employeeId) => api.get(`/assets/employee/${employeeId}`);
+
 export default api;

@@ -12,7 +12,7 @@ import { getAllEmployees, deleteEmployee } from '../../services/api';
 import { exportEmployeesToExcel } from '../../utils/exportToExcel';
 import PermissionGuard from '../auth/PermissionGuard';
 
-const EmployeeListPrime = ({ onEdit, onAdd, onViewVisaHistory }) => {
+const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -189,14 +189,14 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewVisaHistory }) => {
   const actionBodyTemplate = (rowData) => {
     return (
       <div className="flex gap-2">
-        <PermissionGuard permission="employees.view">
+        <PermissionGuard permission="assets.view">
           <Button
-            icon="pi pi-file"
+            icon="pi pi-box"
             rounded
             outlined
             className="p-button-info"
-            onClick={() => onViewVisaHistory(rowData)}
-            tooltip="View Visa History"
+            onClick={() => onViewAssets(rowData)}
+            tooltip="View Assets"
             tooltipOptions={{ position: 'top' }}
           />
         </PermissionGuard>

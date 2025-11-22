@@ -5,38 +5,39 @@
   position: sticky;
   top: 60px;
   left: 0;
-  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   z-index: 100;
-  transition: width 0.3s ease;
+  transition: all 0.3s ease;
   overflow: hidden;
   flex-shrink: 0;
+  border-radius: 0;
 }
 
 .sidebar.collapsed {
-  width: 65px;
+  width: 60px;
 }
 
 .sidebar-toggle {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
   color: white;
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   z-index: 10;
 }
 
 .sidebar-toggle:hover {
-  background: rgba(255, 255, 255, 0.25);
-  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
 }
 
 .toggle-icon {
@@ -45,24 +46,24 @@
 }
 
 .sidebar-nav {
-  padding: 2.5rem 0 0.75rem 0;
+  padding: 2.5rem 0.5rem 0.75rem 0.5rem;
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
-/* Custom scrollbar for sidebar */
+/* Custom scrollbar for sidebar - PrimeReact style */
 .sidebar-nav::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 .sidebar-nav::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+  background: transparent;
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.3);
-  border-radius: 3px;
+  border-radius: 2px;
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb:hover {
@@ -83,28 +84,44 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: white;
+  color: rgba(255, 255, 255, 0.95);
   text-decoration: none;
-  padding: 0.75rem 1rem;
-  transition: all 0.3s ease;
-  border-left: 3px solid transparent;
+  padding: 0.65rem 0.75rem;
+  margin: 2px 0;
+  transition: all 0.2s ease;
+  border-radius: 6px;
   white-space: nowrap;
+  position: relative;
 }
 
 .sidebar-link:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-left-color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+  transform: translateX(2px);
 }
 
 .sidebar-link:hover .sidebar-icon {
-  transform: scale(1.1);
+  transform: scale(1.08);
   transition: transform 0.2s ease;
 }
 
 .sidebar-link.active {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-left-color: white;
+  background-color: rgba(255, 255, 255, 0.25);
+  color: white;
   font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-link.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 70%;
+  background: white;
+  border-radius: 0 2px 2px 0;
 }
 
 .sidebar-link.active .sidebar-icon {
@@ -112,22 +129,24 @@
 }
 
 .sidebar-icon {
-  width: 22px;
-  height: 22px;
-  min-width: 22px;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: white;
-  stroke: white;
+  color: currentColor;
+  stroke: currentColor;
+  transition: transform 0.2s ease;
 }
 
 .sidebar-text {
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 500;
   opacity: 1;
-  transition: opacity 0.3s ease;
+  transition: all 0.3s ease;
+  letter-spacing: 0.01em;
 }
 
 /* Collapsed state */
@@ -139,7 +158,17 @@
 
 .sidebar.collapsed .sidebar-link {
   justify-content: center;
-  padding: 0.75rem 0.4rem;
+  padding: 0.65rem 0.5rem;
+}
+
+.sidebar.collapsed .sidebar-link:hover {
+  transform: translateX(0);
+}
+
+.sidebar.collapsed .sidebar-link.active::before {
+  left: 0;
+  width: 2px;
+  height: 60%;
 }
 
 .sidebar.collapsed .sidebar-toggle {
@@ -148,7 +177,7 @@
 }
 
 .sidebar.collapsed .sidebar-toggle:hover {
-  transform: translateX(50%) scale(1.1);
+  transform: translateX(50%) scale(1.05);
 }
 
 /* Responsive Design */

@@ -35,20 +35,6 @@ const Navigation = () => {
           TeamPulse
         </Link>
         <ul className="nav-menu">
-          {!isAdminRoute() && (
-            <>
-              <li className="nav-item">
-                <Link to="/" className={`nav-link ${isActive('/')}`}>
-                  Home
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/" className="nav-link nav-admin-link">
-                  Admin Login
-                </Link>
-              </li>
-            </>
-          )}
           {isAdminRoute() && isAuthenticated && (
             <>
               <li className="nav-item">

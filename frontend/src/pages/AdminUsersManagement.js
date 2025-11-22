@@ -293,7 +293,7 @@ const AdminUsersManagement = () => {
   // Dialog footer
   const dialogFooter = (
     <div>
-      <Button label="Cancel" icon="pi pi-times" onClick={resetForm} className="p-button-text" />
+      <Button label="Cancel" icon="pi pi-times" onClick={resetForm} className="p-button-text" aria-label="Cancel" />
       <Button label="Save" icon="pi pi-check" onClick={handleSubmit} loading={submitting} />
     </div>
   );

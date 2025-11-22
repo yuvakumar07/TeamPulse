@@ -45,7 +45,7 @@
 .confirmation-header {
   background: linear-gradient(135deg, #f44336 0%, #e53935 100%);
   color: white;
-  padding: 20px 24px;
+  padding: 20px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
@@ -56,7 +56,7 @@
 }
 
 .confirmation-body {
-  padding: 30px 24px;
+  padding: 20px;
   text-align: center;
 }
 
@@ -109,8 +109,8 @@
 .confirmation-actions {
   display: flex;
   gap: 12px;
-  padding: 20px 24px;
-  background: #f9f9f9;
+  padding: 16px 20px;
+  background: #f8f9fa;
   border-top: 1px solid #e0e0e0;
 }
 

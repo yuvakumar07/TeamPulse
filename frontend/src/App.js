@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import './toast.css';
 
 // PrimeReact imports
+import { PrimeReactProvider } from 'primereact/api';
 import 'primereact/resources/themes/lara-light-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
@@ -13,9 +14,9 @@ import './primereact-custom.css';
 
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
-import Home from './pages/Home';
 import EmployeesPage from './pages/EmployeesPage';
 import ProjectsPage from './pages/ProjectsPage';
+import AssetsPage from './pages/AssetsPage';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsersManagement from './pages/AdminUsersManagement';
@@ -70,6 +71,14 @@ function AppContent() {
               }
             />
             <Route
+              path="/admin/assets"
+              element={
+                <ProtectedRoute>
+                  <AssetsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/admin/roles"
               element={
                 <ProtectedRoute>
@@ -105,9 +114,11 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <PrimeReactProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </PrimeReactProvider>
   );
 }
 

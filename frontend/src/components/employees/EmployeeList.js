@@ -7,7 +7,7 @@ import PermissionGuard from '../auth/PermissionGuard';
 import { EditIcon, DeleteIcon, AddIcon, ExportIcon, DocumentIcon } from '../icons/ActionIcons';
 import './EmployeeList.css';
 
-const EmployeeList = ({ onEdit, onAdd, onViewVisaHistory }) => {
+const EmployeeList = ({ onEdit, onAdd }) => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -361,15 +361,6 @@ const EmployeeList = ({ onEdit, onAdd, onViewVisaHistory }) => {
                       </span>
                     </td>
                     <td className="actions">
-                      <PermissionGuard permission="employees.view">
-                        <button
-                          className="btn-icon btn-icon-view"
-                          onClick={() => onViewVisaHistory(employee)}
-                          title="View Visa History"
-                        >
-                          <DocumentIcon />
-                        </button>
-                      </PermissionGuard>
                       <PermissionGuard permission="employees.update">
                         <button
                           className="btn-icon btn-icon-edit"

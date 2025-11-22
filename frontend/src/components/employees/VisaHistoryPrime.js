@@ -12,7 +12,6 @@ import { InputNumber } from 'primereact/inputnumber';
 import { Checkbox } from 'primereact/checkbox';
 import { Tag } from 'primereact/tag';
 import { Card } from 'primereact/card';
-import { Divider } from 'primereact/divider';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { getVisaHistory, createVisaHistory, updateVisaHistory, deleteVisaHistory } from '../../services/api';
 import PermissionGuard from '../auth/PermissionGuard';
@@ -236,13 +235,6 @@ const VisaHistoryPrime = ({ employeeId, employeeName, visible, onHide }) => {
     { label: 'Other', value: 'Other' }
   ];
 
-  const formFooter = (
-    <div>
-      <Button label="Cancel" icon="pi pi-times" onClick={resetForm} className="p-button-text" />
-      <Button label="Save" icon="pi pi-check" onClick={handleSubmit} />
-    </div>
-  );
-
   const mainDialogFooter = (
     <div>
       <Button label="Close" icon="pi pi-times" onClick={onHide} className="p-button-text" />
@@ -454,7 +446,7 @@ const VisaHistoryPrime = ({ employeeId, employeeName, visible, onHide }) => {
 
               <div className="col-12">
                 <div className="flex justify-content-end gap-2">
-                  <Button label="Cancel" icon="pi pi-times" onClick={resetForm} className="p-button-text" />
+                  <Button label="Cancel" icon="pi pi-times" onClick={resetForm} className="p-button-text" aria-label="Cancel" />
                   <Button label="Save" icon="pi pi-check" onClick={handleSubmit} />
                 </div>
               </div>

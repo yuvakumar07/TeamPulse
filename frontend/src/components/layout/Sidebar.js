@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import authService from '../../services/authService';
 import PermissionGuard from '../auth/PermissionGuard';
-import { DashboardIcon, EmployeesIcon, ProjectsIcon, AdminUsersIcon, RolesIcon } from '../icons/MenuIcons';
+import { DashboardIcon, EmployeesIcon, ProjectsIcon, AssetsIcon, AdminUsersIcon, RolesIcon } from '../icons/MenuIcons';
 import './Sidebar.css';
 
 const Sidebar = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const isAuthenticated = authService.isAuthenticated();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -57,6 +56,15 @@ const Sidebar = () => {
               <Link to="/admin/projects" className={`sidebar-link ${isActive('/admin/projects')}`} title="Projects">
                 <ProjectsIcon className="sidebar-icon" />
                 <span className="sidebar-text">Projects</span>
+              </Link>
+            </li>
+          </PermissionGuard>
+
+          <PermissionGuard permissions={['assets.view', 'assets.create', 'assets.update', 'assets.delete']} requireAll={false}>
+            <li className="sidebar-item">
+              <Link to="/admin/assets" className={`sidebar-link ${isActive('/admin/assets')}`} title="Assets">
+                <AssetsIcon className="sidebar-icon" />
+                <span className="sidebar-text">Assets</span>
               </Link>
             </li>
           </PermissionGuard>

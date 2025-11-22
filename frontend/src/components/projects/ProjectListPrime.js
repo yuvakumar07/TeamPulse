@@ -115,16 +115,6 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
     return <Tag value={rowData.project_status} severity={getSeverity(rowData.project_status)} />;
   };
 
-  const budgetBodyTemplate = (rowData) => {
-    if (!rowData.budget) return 'N/A';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(rowData.budget);
-  };
-
-  const dateBodyTemplate = (value) => {
-    if (!value) return 'N/A';
-    return new Date(value).toLocaleDateString();
-  };
-
   const actionBodyTemplate = (rowData) => {
     return (
       <div className="flex gap-2">
@@ -201,7 +191,7 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
 
   const header = (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-      <span className="p-input-icon-left" style={{ width: '300px' }}>
+      <span className="p-input-icon-right" style={{ width: '300px' }}>
         <i className="pi pi-search" />
         <InputText
           type="search"
