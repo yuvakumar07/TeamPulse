@@ -125,6 +125,15 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
     }
+    if (!formData.visa_type || formData.visa_type === 'None') {
+      newErrors.visa_type = 'Visa Type is required';
+    }
+    if (!formData.current_visa_start_date) {
+      newErrors.current_visa_start_date = 'Visa Start Date is required';
+    }
+    if (!formData.current_visa_end_date) {
+      newErrors.current_visa_end_date = 'Visa End Date is required';
+    }
     return newErrors;
   };
 
@@ -404,13 +413,15 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
         </div>
 
         <div className="field col-12 md:col-6">
-          <label htmlFor="visa_type">Visa Type</label>
+          <label htmlFor="visa_type">Visa Type *</label>
           <Dropdown
             id="visa_type"
             value={formData.visa_type}
             options={visaTypeOptions}
             onChange={(e) => handleChange('visa_type', e.value)}
+            className={classNames({ 'p-invalid': errors.visa_type })}
           />
+          {errors.visa_type && <small className="p-error">{errors.visa_type}</small>}
         </div>
 
         <div className="field col-12 md:col-6">
@@ -423,25 +434,29 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
         </div>
 
         <div className="field col-12 md:col-6">
-          <label htmlFor="current_visa_start_date">Visa Start Date</label>
+          <label htmlFor="current_visa_start_date">Visa Start Date *</label>
           <Calendar
             id="current_visa_start_date"
             value={formData.current_visa_start_date}
             onChange={(e) => handleChange('current_visa_start_date', e.value)}
             dateFormat="yy-mm-dd"
             showIcon
+            className={classNames({ 'p-invalid': errors.current_visa_start_date })}
           />
+          {errors.current_visa_start_date && <small className="p-error">{errors.current_visa_start_date}</small>}
         </div>
 
         <div className="field col-12 md:col-6">
-          <label htmlFor="current_visa_end_date">Visa End Date</label>
+          <label htmlFor="current_visa_end_date">Visa End Date *</label>
           <Calendar
             id="current_visa_end_date"
             value={formData.current_visa_end_date}
             onChange={(e) => handleChange('current_visa_end_date', e.value)}
             dateFormat="yy-mm-dd"
             showIcon
+            className={classNames({ 'p-invalid': errors.current_visa_end_date })}
           />
+          {errors.current_visa_end_date && <small className="p-error">{errors.current_visa_end_date}</small>}
         </div>
 
         <div className="field col-12 md:col-6">
