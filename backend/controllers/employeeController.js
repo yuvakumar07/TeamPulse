@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const xlsx = require('xlsx');
 
 // Helper function to calculate visa status based on dates
 const calculateVisaStatus = (visaType, startDate, endDate) => {
@@ -427,10 +428,193 @@ const deleteEmployee = async (req, res) => {
   }
 };
 
+// Import employees from Excel/CSV
+const importEmployees = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
+      });
+    }
+
+    // Read the uploaded file
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json(worksheet);
+
+    if (data.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'File is empty or has no valid data'
+      });
+    }
+
+    const results = {
+      success: 0,
+      failed: 0,
+      errors: []
+    };
+
+    // Process each row
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      const rowNumber = i + 2; // Excel rows start at 1, and row 1 is header
+
+      try {
+        // Map Excel columns to database fields (case-insensitive)
+        const employeeData = {
+          sso: row.SSO || row.sso || null,
+          name: row.Name || row.name || null,
+          role: row.Role || row.role || null,
+          role_type: row['Role Type'] || row['role type'] || row.role_type || row['ROLE TYPE'] || null,
+          phone: row.Phone || row.phone || null,
+          location: row.Location || row.location || null,
+          criticality: row.Criticality || row.criticality || 'Medium',
+          status: row.Status || row.status || 'Active',
+          skills: row.Skills || row.skills || null,
+          last_working_day: row['Last Working Day'] || row['last working day'] || row.last_working_day || row['LAST WORKING DAY'] || null,
+          possible_candidate: row['Possible Candidate'] || row['possible candidate'] || row.possible_candidate || row['POSSIBLE CANDIDATE'] || null,
+          asset_id: row['Asset ID'] || row['asset id'] || row.asset_id || row['ASSET ID'] || null,
+          asset_return_id: row['Asset Return ID'] || row['asset return id'] || row.asset_return_id || row['ASSET RETURN ID'] || null,
+          comments: row.Comments || row.comments || null,
+          attrition: row.Attrition || row.attrition || 'No',
+          visa_type: row['Visa Type'] || row['visa type'] || row.visa_type || row['VISA TYPE'] || 'None',
+          current_visa_start_date: row['Current Visa Start Date'] || row['current visa start date'] || row.current_visa_start_date || row['CURRENT VISA START DATE'] || null,
+          current_visa_end_date: row['Current Visa End Date'] || row['current visa end date'] || row.current_visa_end_date || row['CURRENT VISA END DATE'] || null,
+          i94_expiry_date: row['I94 Expiry Date'] || row['i94 expiry date'] || row.i94_expiry_date || row['I94 EXPIRY DATE'] || null,
+          passport_number: row['Passport Number'] || row['passport number'] || row.passport_number || row['PASSPORT NUMBER'] || null,
+          passport_expiry_date: row['Passport Expiry Date'] || row['passport expiry date'] || row.passport_expiry_date || row['PASSPORT EXPIRY DATE'] || null,
+          sponsor_company: row['Sponsor Company'] || row['sponsor company'] || row.sponsor_company || row['SPONSOR COMPANY'] || null,
+          visa_notes: row['Visa Notes'] || row['visa notes'] || row.visa_notes || row['VISA NOTES'] || null
+        };
+
+        // Validate required fields
+        if (!employeeData.name) {
+          results.failed++;
+          results.errors.push({
+            row: rowNumber,
+            error: 'Name is required'
+          });
+          continue;
+        }
+
+        // Convert date strings to proper format if needed
+        const dateFields = ['last_working_day', 'current_visa_start_date', 'current_visa_end_date', 'i94_expiry_date', 'passport_expiry_date'];
+        dateFields.forEach(field => {
+          if (employeeData[field]) {
+            // Handle Excel date serial numbers
+            if (typeof employeeData[field] === 'number') {
+              const date = xlsx.SSF.parse_date_code(employeeData[field]);
+              employeeData[field] = `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
+            } else if (typeof employeeData[field] === 'string') {
+              // Try to parse common date formats
+              const parsedDate = new Date(employeeData[field]);
+              if (!isNaN(parsedDate.getTime())) {
+                employeeData[field] = parsedDate.toISOString().split('T')[0];
+              }
+            }
+          }
+        });
+
+        // Calculate visa status
+        const computedVisaStatus = calculateVisaStatus(
+          employeeData.visa_type,
+          employeeData.current_visa_start_date,
+          employeeData.current_visa_end_date
+        );
+
+        // Insert employee
+        await db.query(
+          `INSERT INTO employees
+          (sso, name, role, role_type, phone, location, criticality, status, skills, last_working_day,
+           possible_candidate, asset_id, asset_return_id, comments, attrition, visa_type, visa_status,
+           current_visa_start_date, current_visa_end_date, i94_expiry_date, passport_number,
+           passport_expiry_date, sponsor_company, visa_notes)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            employeeData.sso,
+            employeeData.name,
+            employeeData.role,
+            employeeData.role_type,
+            employeeData.phone,
+            employeeData.location,
+            employeeData.criticality,
+            employeeData.status,
+            employeeData.skills,
+            employeeData.last_working_day,
+            employeeData.possible_candidate,
+            employeeData.asset_id,
+            employeeData.asset_return_id,
+            employeeData.comments,
+            employeeData.attrition,
+            employeeData.visa_type,
+            computedVisaStatus,
+            employeeData.current_visa_start_date,
+            employeeData.current_visa_end_date,
+            employeeData.i94_expiry_date,
+            employeeData.passport_number,
+            employeeData.passport_expiry_date,
+            employeeData.sponsor_company,
+            employeeData.visa_notes
+          ]
+        );
+
+        results.success++;
+      } catch (error) {
+        results.failed++;
+        let errorMessage = error.message;
+
+        // Handle duplicate SSO error
+        if (error.code === 'ER_DUP_ENTRY') {
+          errorMessage = 'SSO already exists';
+        }
+
+        results.errors.push({
+          row: rowNumber,
+          name: row.Name || row.name || 'Unknown',
+          error: errorMessage
+        });
+      }
+    }
+
+    // Log the action if admin is authenticated
+    if (req.admin) {
+      await db.query(
+        'INSERT INTO audit_logs (admin_id, action, entity_type, entity_id, description, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [
+          req.admin.id,
+          'IMPORT',
+          'employees',
+          null,
+          `Imported employees: ${results.success} succeeded, ${results.failed} failed`,
+          req.ip || req.connection.remoteAddress,
+          req.headers['user-agent'] || 'Unknown'
+        ]
+      );
+    }
+
+    res.json({
+      success: true,
+      message: `Import completed: ${results.success} succeeded, ${results.failed} failed`,
+      data: results
+    });
+  } catch (error) {
+    console.error('Error importing employees:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error importing employees',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getAllEmployees,
   getEmployeeById,
   createEmployee,
   updateEmployee,
-  deleteEmployee
+  deleteEmployee,
+  importEmployees
 };

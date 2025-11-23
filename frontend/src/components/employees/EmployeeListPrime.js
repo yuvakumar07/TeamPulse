@@ -11,12 +11,14 @@ import { Toolbar } from 'primereact/toolbar';
 import { getAllEmployees, deleteEmployee } from '../../services/api';
 import { exportEmployeesToExcel } from '../../utils/exportToExcel';
 import PermissionGuard from '../auth/PermissionGuard';
+import ImportEmployeesDialog from './ImportEmployeesDialog';
 
 const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [globalFilter, setGlobalFilter] = useState('');
   const [roleTypeFilter, setRoleTypeFilter] = useState('All');
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [lazyState, setlazyState] = useState({
     first: 0,
     rows: 10,
@@ -108,6 +110,11 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
       console.error('Error exporting to Excel:', error);
       toast.error('Failed to export employees to Excel');
     }
+  };
+
+  const handleImportSuccess = () => {
+    loadEmployees();
+    setShowImportDialog(false);
   };
 
   // Column templates
@@ -264,6 +271,14 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
         </PermissionGuard>
         <PermissionGuard permission="employees.create">
           <Button
+            label="Import"
+            icon="pi pi-download"
+            className="p-button-help"
+            onClick={() => setShowImportDialog(true)}
+          />
+        </PermissionGuard>
+        <PermissionGuard permission="employees.create">
+          <Button
             label="Add Employee"
             icon="pi pi-plus"
             onClick={onAdd}
@@ -309,6 +324,12 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
     <div className="card">
       <ConfirmDialog />
       <Toolbar className="mb-4" left={leftToolbarTemplate} right={rightToolbarTemplate} />
+
+      <ImportEmployeesDialog
+        visible={showImportDialog}
+        onHide={() => setShowImportDialog(false)}
+        onSuccess={handleImportSuccess}
+      />
 
       <DataTable
         ref={dt}
