@@ -88,8 +88,8 @@
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #FFC500;
+  box-shadow: 0 0 0 3px rgba(255, 197, 0, 0.15);
 }
 
 .form-group input.error {

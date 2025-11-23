@@ -1,5 +1,5 @@
 .app-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #323232 0%, #4a4a4a 100%);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
@@ -17,17 +17,47 @@
 }
 
 .header-brand {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: white;
-  text-decoration: none;
+  display: flex;
+  align-items: center;
   transition: opacity 0.3s;
+}
+
+.header-brand:hover {
+  opacity: 0.9;
 }
 
 .header-user-section {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+.header-user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFC500 0%, #e6b000 100%);
+  color: #323232;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.5px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.header-user-avatar:hover {
+  transform: scale(1.05);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .header-user-name {
@@ -59,16 +89,28 @@
     padding: 0 0.75rem;
   }
 
-  .header-brand {
-    font-size: 1.3rem;
+  .header-brand svg {
+    width: 140px;
+    height: 32px;
   }
 
   .header-user-section {
     gap: 0.75rem;
   }
 
+  .header-user-info {
+    gap: 0.5rem;
+  }
+
+  .header-user-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.75rem;
+  }
+
   .header-user-name {
     font-size: 0.8rem;
+    display: none;
   }
 
   .header-logout-btn {

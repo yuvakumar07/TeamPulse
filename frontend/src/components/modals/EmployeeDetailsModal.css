@@ -41,7 +41,7 @@
   align-items: center;
   padding: 20px;
   border-bottom: none;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #323232 0%, #4a4a4a 100%);
   color: white;
   border-radius: 12px 12px 0 0;
 }
@@ -82,7 +82,7 @@
 
 .allocation-summary-box {
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  border-left: 4px solid #667eea;
+  border-left: 4px solid #FFC500;
   padding: 1rem 1.5rem;
   margin-bottom: 1.5rem;
   border-radius: 8px;
@@ -118,7 +118,7 @@
 }
 
 .employee-details-table thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #323232 0%, #4a4a4a 100%);
   color: white;
 }
 
@@ -167,8 +167,8 @@
 .allocation-badge {
   display: inline-block;
   padding: 0.35rem 0.75rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(90deg, #FFC500 0%, #e6b000 100%);
+  color: #323232;
   border-radius: 12px;
   font-size: 0.9rem;
   font-weight: 600;

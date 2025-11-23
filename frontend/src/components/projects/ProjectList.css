@@ -344,11 +344,11 @@ tbody tr:hover {
 }
 
 .btn-icon-view {
-  color: #667eea;
+  color: #FFC500;
 }
 
 .btn-icon-view:hover {
-  background-color: rgba(102, 126, 234, 0.1);
+  background-color: rgba(255, 197, 0, 0.1);
   transform: scale(1.1);
 }
 

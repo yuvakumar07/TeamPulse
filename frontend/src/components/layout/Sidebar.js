@@ -30,7 +30,7 @@ const Sidebar = () => {
   return (
     <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <button className="sidebar-toggle" onClick={toggleSidebar} title={isCollapsed ? 'Expand Menu' : 'Collapse Menu'}>
-        <span className="toggle-icon">{isCollapsed ? '►' : '◄'}</span>
+        <i className={`pi ${isCollapsed ? 'pi-angle-right' : 'pi-angle-left'}`}></i>
       </button>
 
       <nav className="sidebar-nav">

@@ -110,14 +110,15 @@
 }
 
 .btn-primary {
-  background-color: #667eea;
-  color: white;
+  background-color: #FFC500;
+  color: #323232;
+  font-weight: 600;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #5568d3;
+  background-color: #e6b000;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 8px rgba(255, 197, 0, 0.3);
 }
 
 .btn-secondary {

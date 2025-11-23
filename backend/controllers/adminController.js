@@ -449,6 +449,21 @@ const getDashboardStats = async (req, res) => {
       FROM admin_users
     `);
 
+    // Get project statistics with employee counts
+    const [projectStats] = await db.query(`
+      SELECT
+        p.id,
+        p.project_team_name as project_name,
+        p.project_status as status,
+        COUNT(DISTINCT pe.employee_id) as employee_count,
+        SUM(pe.allocation_percentage) as total_allocation
+      FROM projects p
+      LEFT JOIN project_employees pe ON p.id = pe.project_id
+      GROUP BY p.id, p.project_team_name, p.project_status
+      ORDER BY employee_count DESC, p.project_team_name ASC
+      LIMIT 10
+    `);
+
     // Get recent activities (last 10)
     const [recentActivities] = await db.query(`
       SELECT
@@ -474,6 +489,7 @@ const getDashboardStats = async (req, res) => {
         employeeStats: employeeStats[0],
         roleDistribution,
         adminStats: adminStats[0],
+        projectStats,
         recentActivities
       }
     });

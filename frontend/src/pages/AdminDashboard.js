@@ -161,6 +161,29 @@ const AdminDashboard = () => {
             </div>
           </section>
 
+          {/* Project Statistics */}
+          <section className="dashboard-section">
+            <h2>Projects Overview</h2>
+            <div className="stats-grid">
+              {stats.projectStats && stats.projectStats.length > 0 ? (
+                stats.projectStats.map((project) => (
+                  <div key={project.id} className="stat-card stat-primary">
+                    <div className="stat-icon">📁</div>
+                    <div className="stat-content">
+                      <h3>{project.employee_count || 0}</h3>
+                      <p>{project.project_name}</p>
+                      <span className={`project-status status-${project.status.toLowerCase().replace(' ', '-')}`}>
+                        {project.status}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="empty-state">No projects available</p>
+              )}
+            </div>
+          </section>
+
           {/* Role Distribution */}
           <section className="dashboard-section">
             <h2>Role Distribution</h2>

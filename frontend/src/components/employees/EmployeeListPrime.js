@@ -25,6 +25,7 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
     sortOrder: 1
   });
   const [totalRecords, setTotalRecords] = useState(0);
+  const [tableHeight, setTableHeight] = useState('calc(100vh - 350px)');
   const dt = useRef(null);
 
   const roleTypeOptions = [
@@ -32,6 +33,21 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
     { label: 'DEV', value: 'DEV' },
     { label: 'QA', value: 'QA' }
   ];
+
+  // Calculate table height based on window height
+  useEffect(() => {
+    const calculateTableHeight = () => {
+      // Header: 60px, Toolbar: 70px, DataTable header/filters: 120px, Pagination: 60px, Padding: 40px
+      const fixedHeight = 350;
+      const availableHeight = window.innerHeight - fixedHeight;
+      setTableHeight(`${Math.max(400, availableHeight)}px`);
+    };
+
+    calculateTableHeight();
+    window.addEventListener('resize', calculateTableHeight);
+
+    return () => window.removeEventListener('resize', calculateTableHeight);
+  }, []);
 
   useEffect(() => {
     loadEmployees();
@@ -317,6 +333,8 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
         responsiveLayout="scroll"
         stripedRows
         showGridlines
+        scrollable
+        scrollHeight={tableHeight}
       >
         <Column field="id" header="ID" sortable style={{ minWidth: '80px' }} />
         <Column field="sso" header="SSO" sortable style={{ minWidth: '120px' }} />

@@ -109,7 +109,7 @@
 
 .search-bar input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #FFC500;
 }
 
 .role-type-filter {
@@ -137,7 +137,7 @@
 
 .filter-select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #FFC500;
 }
 
 .filter-select:hover {
@@ -185,7 +185,7 @@ th.sortable:hover {
 }
 
 .sort-icon.active {
-  color: #667eea;
+  color: #FFC500;
   font-weight: bold;
 }
 
@@ -367,9 +367,9 @@ tbody tr:hover {
 
 .pagination-btn:hover:not(:disabled),
 .pagination-number:hover {
-  background-color: #667eea;
+  background-color: #FFC500;
   color: white;
-  border-color: #667eea;
+  border-color: #FFC500;
 }
 
 .pagination-btn:disabled {
@@ -379,9 +379,9 @@ tbody tr:hover {
 }
 
 .pagination-number.active {
-  background-color: #667eea;
+  background-color: #FFC500;
   color: white;
-  border-color: #667eea;
+  border-color: #FFC500;
   font-weight: 600;
 }
 

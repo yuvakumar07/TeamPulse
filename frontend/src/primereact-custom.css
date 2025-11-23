@@ -92,9 +92,10 @@
 }
 
 .p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
-  background-color: #667eea;
-  border-color: #667eea;
-  color: white;
+  background-color: #FFC500;
+  border-color: #FFC500;
+  color: #323232;
+  font-weight: 600;
 }
 
 /* Input styling */
@@ -108,8 +109,8 @@
 
 .p-inputtext:enabled:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #FFC500;
+  box-shadow: 0 0 0 3px rgba(255, 197, 0, 0.15);
 }
 
 /* Dropdown styling */
@@ -130,8 +131,8 @@
 
 .p-dropdown:not(.p-disabled).p-focus {
   outline: none;
-  border-color: #667eea !important;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #FFC500 !important;
+  box-shadow: 0 0 0 3px rgba(255, 197, 0, 0.15);
 }
 
 /* Dropdown panel and items */
@@ -187,34 +188,36 @@
 
 /* Button styling - align with existing app theme */
 .p-button {
-  background-color: #667eea;
-  border: 1px solid #667eea;
+  background-color: #FFC500;
+  border: 1px solid #FFC500;
+  color: #323232;
   border-radius: 4px;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   transition: all 0.3s ease;
 }
 
 /* Cancel button with black background */
 .p-button[aria-label="Cancel"],
 button[aria-label="Cancel"] {
-  background-color: #000 !important;
+  background-color: #323232 !important;
   color: white !important;
-  border: 1px solid #000 !important;
+  border: 1px solid #323232 !important;
 }
 
 .p-button[aria-label="Cancel"]:hover,
 button[aria-label="Cancel"]:hover {
-  background-color: #333 !important;
-  border-color: #333 !important;
+  background-color: #4a4a4a !important;
+  border-color: #4a4a4a !important;
 }
 
 .p-button:enabled:hover {
-  background-color: #5568d3;
-  border-color: #5568d3;
+  background-color: #e6b000;
+  border-color: #e6b000;
+  color: #323232;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 8px rgba(255, 197, 0, 0.3);
 }
 
 .p-button:enabled:active {
@@ -222,14 +225,16 @@ button[aria-label="Cancel"]:hover {
 }
 
 .p-button.p-button-success {
-  background-color: #28a745;
-  border-color: #28a745;
+  background-color: #4a4a4a;
+  border-color: #4a4a4a;
+  color: #FFFFFF;
 }
 
 .p-button.p-button-success:enabled:hover {
-  background-color: #218838;
-  border-color: #218838;
-  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+  background-color: #323232;
+  border-color: #323232;
+  color: #FFFFFF;
+  box-shadow: 0 4px 8px rgba(74, 74, 74, 0.3);
 }
 
 .p-button.p-button-danger {
@@ -273,12 +278,13 @@ button[aria-label="Cancel"]:hover {
 }
 
 .p-button.p-button-outlined.p-button-success {
-  color: #28a745;
-  border-color: #28a745;
+  color: #4a4a4a;
+  border-color: #4a4a4a;
 }
 
 .p-button.p-button-outlined.p-button-success:enabled:hover {
-  background-color: rgba(40, 167, 69, 0.1);
+  background-color: rgba(74, 74, 74, 0.1);
+  color: #323232;
 }
 
 .p-button.p-button-outlined.p-button-danger {
@@ -357,8 +363,8 @@ button[aria-label="Cancel"]:hover {
 }
 
 .p-dialog .p-dialog-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-bottom: none;
+  background: linear-gradient(135deg, #323232 0%, #4a4a4a 100%);
+  border-bottom: 3px solid #FFC500;
   padding: 20px;
   border-radius: 12px 12px 0 0;
 }
@@ -431,8 +437,8 @@ button[aria-label="Cancel"]:hover {
 
 .p-inputtextarea:enabled:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #FFC500;
+  box-shadow: 0 0 0 3px rgba(255, 197, 0, 0.15);
 }
 
 /* InputNumber styling */
@@ -455,8 +461,8 @@ button[aria-label="Cancel"]:hover {
 }
 
 .p-checkbox .p-checkbox-box.p-highlight {
-  border-color: #667eea;
-  background-color: #667eea;
+  border-color: #FFC500;
+  background-color: #FFC500;
 }
 
 /* Confirm Dialog styling */
@@ -480,7 +486,7 @@ button[aria-label="Cancel"]:hover {
 
 .p-divider .p-divider-content {
   background-color: white;
-  color: #2196F3;
+  color: #FFC500;
   font-weight: 600;
   padding: 0 1rem;
 }

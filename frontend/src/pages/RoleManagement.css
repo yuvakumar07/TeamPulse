@@ -46,25 +46,26 @@
 }
 
 .btn-primary {
-  background-color: #667eea;
-  color: white;
+  background-color: #FFC500;
+  color: #323232;
+  font-weight: 600;
 }
 
 .btn-primary:hover {
-  background-color: #5568d3;
+  background-color: #e6b000;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 197, 0, 0.3);
 }
 
 .btn-outline {
   background-color: white;
-  color: #667eea;
-  border: 2px solid #667eea;
+  color: #FFC500;
+  border: 2px solid #FFC500;
 }
 
 .btn-outline:hover {
-  background-color: #667eea;
-  color: white;
+  background-color: #FFC500;
+  color: #323232;
 }
 
 .btn-danger {
@@ -181,8 +182,8 @@
 .form-group textarea:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #FFC500;
+  box-shadow: 0 0 0 3px rgba(255, 197, 0, 0.15);
 }
 
 .form-group input:disabled,
@@ -310,7 +311,7 @@
   border-radius: 3px;
   font-family: 'Courier New', monospace;
   font-size: 0.8rem;
-  color: #667eea;
+  color: #FFC500;
 }
 
 .roles-table tr:hover {
@@ -327,7 +328,7 @@
 .permission-count {
   padding: 3px 10px;
   background-color: #e0e7ff;
-  color: #667eea;
+  color: #FFC500;
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 600;
@@ -462,7 +463,7 @@
   width: 40px;
   height: 40px;
   border: 3px solid #f3f3f3;
-  border-top: 3px solid #667eea;
+  border-top: 3px solid #FFC500;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 15px;
