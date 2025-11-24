@@ -21,6 +21,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsersManagement from './pages/AdminUsersManagement';
 import RoleManagement from './pages/RoleManagement';
+import SettingsPage from './pages/SettingsPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import './App.css';
 
@@ -83,6 +84,14 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <RoleManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/settings"
+              element={
+                <ProtectedRoute>
+                  <SettingsPage />
                 </ProtectedRoute>
               }
             />
