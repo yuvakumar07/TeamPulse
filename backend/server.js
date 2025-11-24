@@ -10,6 +10,7 @@ const roleRoutes = require('./routes/roleRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const visaRoutes = require('./routes/visaRoutes');
 const assetRoutes = require('./routes/assetRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -27,6 +28,7 @@ app.use('/api', roleRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/visa', visaRoutes);
 app.use('/api/assets', assetRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -41,7 +43,8 @@ app.get('/', (req, res) => {
       permissions: '/api/permissions',
       projects: '/api/projects',
       visa: '/api/visa',
-      assets: '/api/assets'
+      assets: '/api/assets',
+      settings: '/api/settings'
     }
   });
 });
