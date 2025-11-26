@@ -8,8 +8,9 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import { InputNumber } from 'primereact/inputnumber';
 import { Button } from 'primereact/button';
 import { Divider } from 'primereact/divider';
+import { MultiSelect } from 'primereact/multiselect';
 import { classNames } from 'primereact/utils';
-import { createEmployee, updateEmployee } from '../../services/api';
+import { createEmployee, updateEmployee, getAllProjects } from '../../services/api';
 
 const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -22,6 +23,7 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
     criticality: 'Medium',
     status: 'Active',
     skills: '',
+    joining_date: null,
     last_working_day: null,
     possible_candidate: '',
     asset_id: '',
@@ -41,6 +43,25 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [projects, setProjects] = useState([]);
+  const [selectedProjects, setSelectedProjects] = useState([]);
+  const [projectAllocations, setProjectAllocations] = useState({});
+
+  // Fetch all projects on component mount
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await getAllProjects(1, 1000, null, 'project_team_name', 'ASC');
+        if (response.data.success) {
+          setProjects(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+        toast.error('Failed to load projects');
+      }
+    };
+    fetchProjects();
+  }, []);
 
   useEffect(() => {
     if (employee) {
@@ -54,6 +75,7 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
         criticality: employee.criticality || 'Medium',
         status: employee.status || 'Active',
         skills: employee.skills || '',
+        joining_date: employee.joining_date ? new Date(employee.joining_date) : null,
         last_working_day: employee.last_working_day ? new Date(employee.last_working_day) : null,
         possible_candidate: employee.possible_candidate || '',
         asset_id: employee.asset_id || '',
@@ -71,10 +93,34 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
         sponsor_company: employee.sponsor_company || '',
         visa_notes: employee.visa_notes || ''
       });
+
+      // Parse employee's current project assignments
+      if (employee.allocated_projects) {
+        const projectAssignments = employee.allocated_projects.split('||');
+        const allocations = {};
+        const projectIds = [];
+
+        projectAssignments.forEach(assignment => {
+          const [projectName, allocationPercentage] = assignment.split(':');
+          // Find project ID by name (once projects are loaded)
+          setTimeout(() => {
+            const project = projects.find(p => p.project_team_name === projectName);
+            if (project) {
+              projectIds.push(project.id);
+              allocations[project.id] = parseFloat(allocationPercentage) || 0;
+            }
+          }, 100);
+        });
+
+        setTimeout(() => {
+          setSelectedProjects(projectIds);
+          setProjectAllocations(allocations);
+        }, 150);
+      }
     } else {
       resetForm();
     }
-  }, [employee]);
+  }, [employee, projects]);
 
   const resetForm = () => {
     setFormData({
@@ -105,6 +151,8 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
       visa_notes: ''
     });
     setErrors({});
+    setSelectedProjects([]);
+    setProjectAllocations({});
   };
 
   const handleChange = (name, value) => {
@@ -118,6 +166,31 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
         [name]: ''
       }));
     }
+  };
+
+  const handleProjectSelection = (projectIds) => {
+    setSelectedProjects(projectIds);
+    // Initialize allocations for newly selected projects
+    const newAllocations = { ...projectAllocations };
+    projectIds.forEach(id => {
+      if (!(id in newAllocations)) {
+        newAllocations[id] = 0;
+      }
+    });
+    // Remove allocations for deselected projects
+    Object.keys(newAllocations).forEach(id => {
+      if (!projectIds.includes(parseInt(id))) {
+        delete newAllocations[id];
+      }
+    });
+    setProjectAllocations(newAllocations);
+  };
+
+  const handleAllocationChange = (projectId, value) => {
+    setProjectAllocations(prev => ({
+      ...prev,
+      [projectId]: value || 0
+    }));
   };
 
   const validate = () => {
@@ -149,11 +222,17 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
     try {
       const dataToSubmit = {
         ...formData,
+        joining_date: formData.joining_date ? formData.joining_date.toISOString().split('T')[0] : null,
         last_working_day: formData.last_working_day ? formData.last_working_day.toISOString().split('T')[0] : null,
         current_visa_start_date: formData.current_visa_start_date ? formData.current_visa_start_date.toISOString().split('T')[0] : null,
         current_visa_end_date: formData.current_visa_end_date ? formData.current_visa_end_date.toISOString().split('T')[0] : null,
         i94_expiry_date: formData.i94_expiry_date ? formData.i94_expiry_date.toISOString().split('T')[0] : null,
-        passport_expiry_date: formData.passport_expiry_date ? formData.passport_expiry_date.toISOString().split('T')[0] : null
+        passport_expiry_date: formData.passport_expiry_date ? formData.passport_expiry_date.toISOString().split('T')[0] : null,
+        // Add project assignments
+        projects: selectedProjects.map(projectId => ({
+          project_id: projectId,
+          allocation_percentage: projectAllocations[projectId] || 0
+        }))
       };
 
       if (employee) {
@@ -323,6 +402,18 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
         </div>
 
         <div className="field col-12 md:col-6">
+          <label htmlFor="joining_date">Joining Date</label>
+          <Calendar
+            id="joining_date"
+            value={formData.joining_date}
+            onChange={(e) => handleChange('joining_date', e.value)}
+            dateFormat="yy-mm-dd"
+            showIcon
+            placeholder="Select joining date"
+          />
+        </div>
+
+        <div className="field col-12 md:col-6">
           <label htmlFor="last_working_day">Last Working Day</label>
           <Calendar
             id="last_working_day"
@@ -401,6 +492,67 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
             useGrouping={false}
           />
         </div>
+
+        {/* Project Assignment Section */}
+        <div className="col-12">
+          <Divider align="left">
+            <div className="inline-flex align-items-center">
+              <i className="pi pi-briefcase mr-2"></i>
+              <b>Project Assignments</b>
+            </div>
+          </Divider>
+        </div>
+
+        <div className="field col-12">
+          <label htmlFor="projects">Assign Projects</label>
+          <MultiSelect
+            id="projects"
+            value={selectedProjects}
+            options={projects.map(p => ({ label: p.project_team_name, value: p.id }))}
+            onChange={(e) => handleProjectSelection(e.value)}
+            placeholder="Select projects to assign"
+            display="chip"
+            filter
+          />
+        </div>
+
+        {selectedProjects.length > 0 && (
+          <div className="col-12">
+            <div className="p-3" style={{ background: '#f8f9fa', borderRadius: '6px' }}>
+              <h4 className="mt-0 mb-3">Project Allocation Percentages</h4>
+              <div className="grid">
+                {selectedProjects.map(projectId => {
+                  const project = projects.find(p => p.id === projectId);
+                  return project ? (
+                    <div key={projectId} className="col-12 md:col-6 mb-2">
+                      <label htmlFor={`allocation-${projectId}`} className="block mb-2">
+                        {project.project_team_name}
+                      </label>
+                      <InputNumber
+                        id={`allocation-${projectId}`}
+                        value={projectAllocations[projectId] || 0}
+                        onValueChange={(e) => handleAllocationChange(projectId, e.value)}
+                        suffix="%"
+                        min={0}
+                        max={100}
+                        showButtons
+                        buttonLayout="horizontal"
+                        step={5}
+                        incrementButtonIcon="pi pi-plus"
+                        decrementButtonIcon="pi pi-minus"
+                      />
+                    </div>
+                  ) : null;
+                })}
+              </div>
+              <div className="mt-3">
+                <small className="text-muted">
+                  Total Allocation: {Object.values(projectAllocations).reduce((sum, val) => sum + (val || 0), 0)}%
+                </small>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Visa Section */}
         <div className="col-12">
