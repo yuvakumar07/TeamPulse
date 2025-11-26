@@ -60,10 +60,17 @@ const getAllEmployees = async (req, res) => {
                DISTINCT CONCAT(p.project_team_name, ':', pe.allocation_percentage)
                ORDER BY p.project_team_name
                SEPARATOR '||'
-             ) as allocated_projects
+             ) as allocated_projects,
+             COUNT(DISTINCT a.id) as asset_count,
+             GROUP_CONCAT(
+               DISTINCT CONCAT(a.asset_tag, ':', a.asset_type, ':', a.status)
+               ORDER BY a.asset_tag
+               SEPARATOR '||'
+             ) as assigned_assets
       FROM employees e
       LEFT JOIN project_employees pe ON e.id = pe.employee_id
       LEFT JOIN projects p ON pe.project_id = p.id
+      LEFT JOIN assets a ON e.id = a.assigned_to
     `;
     const queryParams = [];
     const countParams = [];
@@ -168,7 +175,11 @@ const getEmployeeById = async (req, res) => {
 
 // Create new employee
 const createEmployee = async (req, res) => {
+  const connection = await db.getConnection();
+
   try {
+    await connection.beginTransaction();
+
     const {
       sso,
       name,
@@ -194,11 +205,13 @@ const createEmployee = async (req, res) => {
       passport_number,
       passport_expiry_date,
       sponsor_company,
-      visa_notes
+      visa_notes,
+      projects // Array of {project_id, allocation_percentage}
     } = req.body;
 
     // Validation
     if (!name) {
+      await connection.rollback();
       return res.status(400).json({
         success: false,
         message: 'Name is required'
@@ -208,7 +221,7 @@ const createEmployee = async (req, res) => {
     // Calculate visa status based on dates
     const computedVisaStatus = calculateVisaStatus(visa_type || 'None', current_visa_start_date, current_visa_end_date);
 
-    const [result] = await db.query(
+    const [result] = await connection.query(
       `INSERT INTO employees
       (sso, name, role, role_type, phone, location, criticality, status, skills, last_working_day,
        possible_candidate, asset_id, asset_return_id, comments, attrition, offshore_manager_id, onsite_manager_id,
@@ -222,15 +235,39 @@ const createEmployee = async (req, res) => {
        i94_expiry_date, passport_number, passport_expiry_date, sponsor_company, visa_notes]
     );
 
+    const employeeId = result.insertId;
+
+    // Insert project assignments if provided
+    if (projects && Array.isArray(projects) && projects.length > 0) {
+      for (const proj of projects) {
+        if (proj.project_id && proj.allocation_percentage !== undefined) {
+          // Validate allocation percentage
+          if (proj.allocation_percentage < 0 || proj.allocation_percentage > 100) {
+            await connection.rollback();
+            return res.status(400).json({
+              success: false,
+              message: 'Allocation percentage must be between 0 and 100'
+            });
+          }
+
+          await connection.query(
+            `INSERT INTO project_employees (project_id, employee_id, allocation_percentage)
+             VALUES (?, ?, ?)`,
+            [proj.project_id, employeeId, proj.allocation_percentage]
+          );
+        }
+      }
+    }
+
     // Log the action if admin is authenticated
     if (req.admin) {
-      await db.query(
+      await connection.query(
         'INSERT INTO audit_logs (admin_id, action, entity_type, entity_id, description, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [
           req.admin.id,
           'CREATE',
           'employees',
-          result.insertId,
+          employeeId,
           `Created employee: ${name} (${sso || 'N/A'})`,
           req.ip || req.connection.remoteAddress,
           req.headers['user-agent'] || 'Unknown'
@@ -238,16 +275,19 @@ const createEmployee = async (req, res) => {
       );
     }
 
+    await connection.commit();
+
     res.status(201).json({
       success: true,
       message: 'Employee created successfully',
       data: {
-        id: result.insertId,
+        id: employeeId,
         sso,
         name
       }
     });
   } catch (error) {
+    await connection.rollback();
     console.error('Error creating employee:', error);
 
     // Handle duplicate SSO error
@@ -263,12 +303,18 @@ const createEmployee = async (req, res) => {
       message: 'Error creating employee',
       error: error.message
     });
+  } finally {
+    connection.release();
   }
 };
 
 // Update employee
 const updateEmployee = async (req, res) => {
+  const connection = await db.getConnection();
+
   try {
+    await connection.beginTransaction();
+
     const { id } = req.params;
     const {
       sso,
@@ -295,16 +341,18 @@ const updateEmployee = async (req, res) => {
       passport_number,
       passport_expiry_date,
       sponsor_company,
-      visa_notes
+      visa_notes,
+      projects // Array of {project_id, allocation_percentage}
     } = req.body;
 
     // Check if employee exists
-    const [existing] = await db.query(
+    const [existing] = await connection.query(
       'SELECT * FROM employees WHERE id = ?',
       [id]
     );
 
     if (existing.length === 0) {
+      await connection.rollback();
       return res.status(404).json({
         success: false,
         message: 'Employee not found'
@@ -314,7 +362,7 @@ const updateEmployee = async (req, res) => {
     // Calculate visa status based on dates
     const computedVisaStatus = calculateVisaStatus(visa_type, current_visa_start_date, current_visa_end_date);
 
-    const [result] = await db.query(
+    await connection.query(
       `UPDATE employees
       SET sso = ?, name = ?, role = ?, role_type = ?, phone = ?, location = ?,
           criticality = ?, status = ?, skills = ?, last_working_day = ?,
@@ -330,9 +378,35 @@ const updateEmployee = async (req, res) => {
        i94_expiry_date, passport_number, passport_expiry_date, sponsor_company, visa_notes, id]
     );
 
+    // Update project assignments
+    if (projects && Array.isArray(projects)) {
+      // Delete existing assignments
+      await connection.query('DELETE FROM project_employees WHERE employee_id = ?', [id]);
+
+      // Insert new assignments
+      for (const proj of projects) {
+        if (proj.project_id && proj.allocation_percentage !== undefined) {
+          // Validate allocation percentage
+          if (proj.allocation_percentage < 0 || proj.allocation_percentage > 100) {
+            await connection.rollback();
+            return res.status(400).json({
+              success: false,
+              message: 'Allocation percentage must be between 0 and 100'
+            });
+          }
+
+          await connection.query(
+            `INSERT INTO project_employees (project_id, employee_id, allocation_percentage)
+             VALUES (?, ?, ?)`,
+            [proj.project_id, id, proj.allocation_percentage]
+          );
+        }
+      }
+    }
+
     // Log the action if admin is authenticated
     if (req.admin) {
-      await db.query(
+      await connection.query(
         'INSERT INTO audit_logs (admin_id, action, entity_type, entity_id, description, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [
           req.admin.id,
@@ -346,6 +420,8 @@ const updateEmployee = async (req, res) => {
       );
     }
 
+    await connection.commit();
+
     res.json({
       success: true,
       message: 'Employee updated successfully',
@@ -356,6 +432,7 @@ const updateEmployee = async (req, res) => {
       }
     });
   } catch (error) {
+    await connection.rollback();
     console.error('Error updating employee:', error);
 
     if (error.code === 'ER_DUP_ENTRY') {
@@ -370,6 +447,8 @@ const updateEmployee = async (req, res) => {
       message: 'Error updating employee',
       error: error.message
     });
+  } finally {
+    connection.release();
   }
 };
 

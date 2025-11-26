@@ -209,6 +209,61 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
     );
   };
 
+  const assetsBodyTemplate = (rowData) => {
+    const assetCount = rowData.asset_count || 0;
+
+    if (assetCount === 0) {
+      return (
+        <div className="flex align-items-center gap-2">
+          <Tag value="0 Assets" severity="secondary" icon="pi pi-box" />
+        </div>
+      );
+    }
+
+    // Parse the assigned_assets string: "TAG1:Laptop:Assigned||TAG2:Monitor:Assigned"
+    const assets = rowData.assigned_assets ? rowData.assigned_assets.split('||').map(item => {
+      const [tag, type, status] = item.split(':');
+      return { tag, type, status };
+    }) : [];
+
+    const getStatusSeverity = (status) => {
+      switch (status) {
+        case 'Assigned': return 'info';
+        case 'Available': return 'success';
+        case 'Under Repair': return 'warning';
+        case 'Retired': return 'secondary';
+        case 'Lost': return 'danger';
+        default: return 'info';
+      }
+    };
+
+    return (
+      <div className="flex align-items-center gap-2">
+        <Tag
+          value={`${assetCount} Asset${assetCount !== 1 ? 's' : ''}`}
+          severity="success"
+          icon="pi pi-box"
+          style={{ cursor: 'pointer' }}
+          onClick={() => onViewAssets(rowData)}
+        />
+        {assets.length > 0 && assets.length <= 3 && (
+          <div className="flex flex-wrap gap-1">
+            {assets.map((asset, index) => (
+              <Tag
+                key={index}
+                value={`${asset.tag} (${asset.type})`}
+                severity={getStatusSeverity(asset.status)}
+                style={{ fontSize: '0.7rem', cursor: 'pointer' }}
+                onClick={() => onViewAssets(rowData)}
+                title={`${asset.tag} - ${asset.type} - ${asset.status}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const actionBodyTemplate = (rowData) => {
     return (
       <div className="flex gap-2">
@@ -411,6 +466,12 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
           header="Allocated Projects"
           body={allocatedProjectsBodyTemplate}
           style={{ minWidth: '250px' }}
+        />
+        <Column
+          field="asset_count"
+          header="Assets"
+          body={assetsBodyTemplate}
+          style={{ minWidth: '200px' }}
         />
         <Column
           header="Actions"
