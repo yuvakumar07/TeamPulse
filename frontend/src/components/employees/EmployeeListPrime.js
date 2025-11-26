@@ -184,6 +184,14 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
     return <span>{skills}</span>;
   };
 
+  const joiningDateBodyTemplate = (rowData) => {
+    if (!rowData.joining_date) {
+      return <span className="text-500">N/A</span>;
+    }
+    const date = new Date(rowData.joining_date);
+    return <span>{date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>;
+  };
+
   const allocatedProjectsBodyTemplate = (rowData) => {
     if (!rowData.allocated_projects) {
       return <span className="text-500">No projects</span>;
@@ -415,6 +423,13 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
         <Column field="id" header="ID" sortable style={{ minWidth: '80px' }} />
         <Column field="sso" header="SSO" sortable style={{ minWidth: '120px' }} />
         <Column field="name" header="Name" sortable style={{ minWidth: '150px' }} />
+        <Column
+          field="joining_date"
+          header="Joining Date"
+          body={joiningDateBodyTemplate}
+          sortable
+          style={{ minWidth: '140px' }}
+        />
         <Column field="role" header="Role" sortable style={{ minWidth: '150px' }} />
         <Column field="role_type" header="Role Type" sortable style={{ minWidth: '120px' }} />
         <Column field="phone" header="Phone" sortable style={{ minWidth: '130px' }} />
