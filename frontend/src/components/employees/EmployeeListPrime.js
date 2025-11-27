@@ -8,7 +8,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { Tag } from 'primereact/tag';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Toolbar } from 'primereact/toolbar';
-import { getAllEmployees, deleteEmployee } from '../../services/api';
+import { getAllEmployees, deleteEmployee, getAllProjects } from '../../services/api';
 import { exportEmployeesToExcel } from '../../utils/exportToExcel';
 import PermissionGuard from '../auth/PermissionGuard';
 import ImportEmployeesDialog from './ImportEmployeesDialog';
@@ -18,6 +18,8 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
   const [loading, setLoading] = useState(true);
   const [globalFilter, setGlobalFilter] = useState('');
   const [roleTypeFilter, setRoleTypeFilter] = useState('All');
+  const [projectFilter, setProjectFilter] = useState('All');
+  const [projects, setProjects] = useState([]);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [lazyState, setlazyState] = useState({
     first: 0,
@@ -51,9 +53,29 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
     return () => window.removeEventListener('resize', calculateTableHeight);
   }, []);
 
+  // Fetch all projects for filter dropdown
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await getAllProjects(1, 1000); // Fetch all projects
+        const projectOptions = [
+          { label: 'All Projects', value: 'All' },
+          ...response.data.data.map(project => ({
+            label: project.project_team_name,
+            value: project.project_team_name
+          }))
+        ];
+        setProjects(projectOptions);
+      } catch (err) {
+        console.error('Error fetching projects:', err);
+      }
+    };
+    fetchProjects();
+  }, []);
+
   useEffect(() => {
     loadEmployees();
-  }, [lazyState, roleTypeFilter, globalFilter]);
+  }, [lazyState, roleTypeFilter, projectFilter, globalFilter]);
 
   const loadEmployees = async () => {
     try {
@@ -63,7 +85,7 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
       const sortField = lazyState.sortField || 'id';
       const sortOrder = lazyState.sortOrder === 1 ? 'ASC' : 'DESC';
 
-      const response = await getAllEmployees(page, limit, roleTypeFilter, sortField, sortOrder, globalFilter);
+      const response = await getAllEmployees(page, limit, roleTypeFilter, sortField, sortOrder, globalFilter, projectFilter);
       setEmployees(response.data.data);
       setTotalRecords(response.data.pagination.total);
     } catch (err) {
@@ -366,19 +388,35 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
           style={{ width: '100%' }}
         />
       </span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <label htmlFor="roleTypeFilter">Role Type:</label>
-        <Dropdown
-          id="roleTypeFilter"
-          value={roleTypeFilter}
-          onChange={(e) => {
-            setRoleTypeFilter(e.value);
-            setlazyState({ ...lazyState, first: 0, page: 0 });
-          }}
-          options={roleTypeOptions}
-          placeholder="Select Role Type"
-          style={{ width: '200px' }}
-        />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label htmlFor="roleTypeFilter">Role Type:</label>
+          <Dropdown
+            id="roleTypeFilter"
+            value={roleTypeFilter}
+            onChange={(e) => {
+              setRoleTypeFilter(e.value);
+              setlazyState({ ...lazyState, first: 0, page: 0 });
+            }}
+            options={roleTypeOptions}
+            placeholder="Select Role Type"
+            style={{ width: '150px' }}
+          />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label htmlFor="projectFilter">Project:</label>
+          <Dropdown
+            id="projectFilter"
+            value={projectFilter}
+            onChange={(e) => {
+              setProjectFilter(e.value);
+              setlazyState({ ...lazyState, first: 0, page: 0 });
+            }}
+            options={projects}
+            placeholder="Select Project"
+            style={{ width: '200px' }}
+          />
+        </div>
       </div>
     </div>
   );

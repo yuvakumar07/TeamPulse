@@ -43,6 +43,7 @@ const getAllEmployees = async (req, res) => {
     const offset = (page - 1) * limit;
     const roleType = req.query.role_type;
     const search = req.query.search;
+    const project = req.query.project;
     const sortField = req.query.sortField || 'created_at';
     const sortOrder = req.query.sortOrder || 'DESC';
 
@@ -52,7 +53,12 @@ const getAllEmployees = async (req, res) => {
     const validSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
 
     // Build query based on filters
-    let countQuery = 'SELECT COUNT(*) as total FROM employees e';
+    let countQuery = `
+      SELECT COUNT(DISTINCT e.id) as total
+      FROM employees e
+      LEFT JOIN project_employees pe ON e.id = pe.employee_id
+      LEFT JOIN projects p ON pe.project_id = p.id
+    `;
     let dataQuery = `
       SELECT e.*,
              COALESCE(SUM(pe.allocation_percentage), 0) as total_allocation,
@@ -89,6 +95,13 @@ const getAllEmployees = async (req, res) => {
       conditions.push('(e.sso LIKE ? OR e.name LIKE ? OR e.role LIKE ? OR e.phone LIKE ? OR e.location LIKE ? OR e.skills LIKE ?)');
       queryParams.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
       countParams.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+    }
+
+    // Add project filter if provided
+    if (project && project.trim() !== '') {
+      conditions.push('p.project_team_name = ?');
+      queryParams.push(project.trim());
+      countParams.push(project.trim());
     }
 
     // Apply WHERE conditions

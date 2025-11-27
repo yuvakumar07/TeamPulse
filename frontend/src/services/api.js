@@ -38,7 +38,7 @@ api.interceptors.response.use(
 );
 
 // Employee API calls
-export const getAllEmployees = (page = 1, limit = 10, roleType = null, sortField = 'created_at', sortOrder = 'DESC', search = null) => {
+export const getAllEmployees = (page = 1, limit = 10, roleType = null, sortField = 'created_at', sortOrder = 'DESC', search = null, project = null) => {
   const params = { page, limit };
   if (roleType && roleType !== 'All') {
     params.role_type = roleType;
@@ -51,6 +51,9 @@ export const getAllEmployees = (page = 1, limit = 10, roleType = null, sortField
   }
   if (search && search.trim() !== '') {
     params.search = search.trim();
+  }
+  if (project && project !== 'All') {
+    params.project = project;
   }
   return api.get('/employees', { params });
 };

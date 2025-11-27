@@ -59,7 +59,7 @@ const AdminLogin = () => {
     <div className="admin-login-container">
       <div className="admin-login-card">
         <div className="admin-login-header">
-          <h1>TeamPulse Admin</h1>
+          <h1>Synchrony Admin</h1>
           <p>Sign in to access the admin panel</p>
         </div>
 
