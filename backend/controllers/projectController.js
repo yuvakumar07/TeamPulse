@@ -12,7 +12,7 @@ const getAllProjects = async (req, res) => {
     const sortOrder = req.query.sortOrder || 'DESC';
 
     // Whitelist of allowed sort fields to prevent SQL injection
-    const allowedSortFields = ['id', 'project_team_name', 'agile_board_name', 'agile_team_jira_key', 'project_status', 'created_at'];
+    const allowedSortFields = ['id', 'project_team_name', 'project_status', 'created_at'];
     const validSortField = allowedSortFields.includes(sortField) ? sortField : 'created_at';
     const validSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
 
@@ -21,7 +21,8 @@ const getAllProjects = async (req, res) => {
     let dataQuery = `
       SELECT p.*,
              COUNT(DISTINCT pe.employee_id) as employee_count,
-             SUM(pe.allocation_percentage) as total_allocation
+             SUM(pe.allocation_percentage) as total_allocation,
+             (SELECT COUNT(*) FROM project_teams pt WHERE pt.project_id = p.id) as team_count
       FROM projects p
       LEFT JOIN project_employees pe ON p.id = pe.project_id
     `;
@@ -39,9 +40,9 @@ const getAllProjects = async (req, res) => {
     // Add search filter if provided
     if (search && search.trim() !== '') {
       const searchPattern = `%${search.trim()}%`;
-      conditions.push('(p.project_team_name LIKE ? OR p.agile_board_name LIKE ? OR p.agile_team_jira_key LIKE ?)');
-      queryParams.push(searchPattern, searchPattern, searchPattern);
-      countParams.push(searchPattern, searchPattern, searchPattern);
+      conditions.push('p.project_team_name LIKE ?');
+      queryParams.push(searchPattern);
+      countParams.push(searchPattern);
     }
 
     // Apply WHERE conditions
@@ -103,17 +104,39 @@ const getProjectById = async (req, res) => {
       });
     }
 
-    // Get assigned employees with their details and total allocation
-    const [employees] = await db.query(
-      `SELECT pe.id as assignment_id, pe.allocation_percentage,
-              e.id, e.sso, e.name, e.role, e.role_type, e.location,
-              (SELECT COALESCE(SUM(pe2.allocation_percentage), 0)
-               FROM project_employees pe2
-               WHERE pe2.employee_id = e.id) as total_allocation
+    // Get project teams
+    const [teams] = await db.query(
+      'SELECT * FROM project_teams WHERE project_id = ? ORDER BY created_at',
+      [id]
+    );
+
+    // Get employees grouped by teams
+    const teamsWithEmployees = [];
+    for (const team of teams) {
+      const [employees] = await db.query(
+        `SELECT pe.id as assignment_id, pe.allocation_percentage, pe.team_id,
+                e.id, e.sso, e.name, e.role, e.role_type, e.location,
+                (SELECT COALESCE(SUM(pe2.allocation_percentage), 0)
+                 FROM project_employees pe2
+                 WHERE pe2.employee_id = e.id) as total_allocation
+         FROM project_employees pe
+         JOIN employees e ON pe.employee_id = e.id
+         WHERE pe.team_id = ?
+         ORDER BY e.name`,
+        [team.id]
+      );
+
+      teamsWithEmployees.push({
+        ...team,
+        employees: employees
+      });
+    }
+
+    // Get total employee count across all teams
+    const [countResult] = await db.query(
+      `SELECT COUNT(DISTINCT pe.employee_id) as total_employees
        FROM project_employees pe
-       JOIN employees e ON pe.employee_id = e.id
-       WHERE pe.project_id = ?
-       ORDER BY e.name`,
+       WHERE pe.project_id = ?`,
       [id]
     );
 
@@ -121,7 +144,8 @@ const getProjectById = async (req, res) => {
       success: true,
       data: {
         ...projects[0],
-        employees: employees
+        teams: teamsWithEmployees,
+        total_employees: countResult[0].total_employees
       }
     });
   } catch (error) {
@@ -143,8 +167,6 @@ const createProject = async (req, res) => {
 
     const {
       project_team_name,
-      agile_board_name,
-      agile_team_jira_key,
       project_status,
       employees // Array of {employee_id, allocation_percentage}
     } = req.body;
@@ -161,9 +183,9 @@ const createProject = async (req, res) => {
     // Insert project
     const [result] = await connection.query(
       `INSERT INTO projects
-      (project_team_name, agile_board_name, agile_team_jira_key, project_status)
-      VALUES (?, ?, ?, ?)`,
-      [project_team_name, agile_board_name, agile_team_jira_key, project_status || 'Planning']
+      (project_team_name, project_status)
+      VALUES (?, ?)`,
+      [project_team_name, project_status || 'Planning']
     );
 
     const projectId = result.insertId;
@@ -240,8 +262,6 @@ const updateProject = async (req, res) => {
     const { id } = req.params;
     const {
       project_team_name,
-      agile_board_name,
-      agile_team_jira_key,
       project_status,
       employees // Array of {employee_id, allocation_percentage}
     } = req.body;
@@ -263,9 +283,9 @@ const updateProject = async (req, res) => {
     // Update project
     await connection.query(
       `UPDATE projects
-      SET project_team_name = ?, agile_board_name = ?, agile_team_jira_key = ?, project_status = ?
+      SET project_team_name = ?, project_status = ?
       WHERE id = ?`,
-      [project_team_name, agile_board_name, agile_team_jira_key, project_status, id]
+      [project_team_name, project_status, id]
     );
 
     // Update employee assignments

@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { createProject, updateProject, getProjectById } from '../../services/api';
+import { createProject, updateProject, getProjectById, createProjectTeam, updateProjectTeam, deleteProjectTeam } from '../../services/api';
 import './ProjectForm.css';
 
 const ProjectForm = ({ project, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     project_team_name: '',
-    agile_board_name: '',
-    agile_team_jira_key: '',
     project_status: 'Planning'
   });
+  const [teams, setTeams] = useState([]);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -26,10 +25,10 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
 
       setFormData({
         project_team_name: projectData.project_team_name || '',
-        agile_board_name: projectData.agile_board_name || '',
-        agile_team_jira_key: projectData.agile_team_jira_key || '',
         project_status: projectData.project_status || 'Planning'
       });
+
+      setTeams(projectData.teams || []);
     } catch (err) {
       console.error('Error loading project:', err);
       toast.error('Failed to load project details');
@@ -60,6 +59,34 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
     return newErrors;
   };
 
+  const addTeam = () => {
+    setTeams([...teams, { agile_board_name: '', agile_team_jira_key: '', isNew: true }]);
+  };
+
+  const removeTeam = async (index) => {
+    const team = teams[index];
+
+    if (!team.isNew && team.id) {
+      try {
+        await deleteProjectTeam(team.id);
+        toast.success('Team deleted successfully!');
+      } catch (err) {
+        console.error('Error deleting team:', err);
+        toast.error('Failed to delete team');
+        return;
+      }
+    }
+
+    const newTeams = teams.filter((_, i) => i !== index);
+    setTeams(newTeams);
+  };
+
+  const updateTeam = (index, field, value) => {
+    const newTeams = [...teams];
+    newTeams[index][field] = value;
+    setTeams(newTeams);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -72,10 +99,30 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
     setSubmitting(true);
 
     try {
+      let projectId = project?.id;
+
       if (project) {
         await updateProject(project.id, formData);
       } else {
-        await createProject(formData);
+        const response = await createProject(formData);
+        projectId = response.data.data.id;
+      }
+
+      // Save teams
+      for (const team of teams) {
+        if (!team.agile_board_name.trim()) continue;
+
+        if (team.isNew) {
+          await createProjectTeam(projectId, {
+            agile_board_name: team.agile_board_name,
+            agile_team_jira_key: team.agile_team_jira_key
+          });
+        } else if (team.id) {
+          await updateProjectTeam(team.id, {
+            agile_board_name: team.agile_board_name,
+            agile_team_jira_key: team.agile_team_jira_key
+          });
+        }
       }
 
       toast.success(project ? 'Project updated successfully!' : 'Project created successfully!');
@@ -117,29 +164,6 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="agile_board_name">Agile Board Name</label>
-              <input
-                type="text"
-                id="agile_board_name"
-                name="agile_board_name"
-                value={formData.agile_board_name}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="agile_team_jira_key">Agile Team JIRA Key</label>
-              <input
-                type="text"
-                id="agile_team_jira_key"
-                name="agile_team_jira_key"
-                value={formData.agile_team_jira_key}
-                onChange={handleChange}
-                placeholder="e.g., PROJ-123"
-              />
-            </div>
-
-            <div className="form-group">
               <label htmlFor="project_status">Project Status</label>
               <select
                 id="project_status"
@@ -154,6 +178,56 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                 <option value="Cancelled">Cancelled</option>
               </select>
             </div>
+          </div>
+
+          <div className="teams-section">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3>Teams</h3>
+              <button type="button" className="btn btn-secondary" onClick={addTeam}>
+                + Add Team
+              </button>
+            </div>
+
+            {teams.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#666', padding: '1rem' }}>
+                No teams added yet. Click "Add Team" to create one.
+              </p>
+            ) : (
+              <div className="teams-list">
+                {teams.map((team, index) => (
+                  <div key={index} className="team-item">
+                    <div className="form-grid" style={{ flex: 1 }}>
+                      <div className="form-group">
+                        <label>Agile Board Name</label>
+                        <input
+                          type="text"
+                          value={team.agile_board_name}
+                          onChange={(e) => updateTeam(index, 'agile_board_name', e.target.value)}
+                          placeholder="Enter board name"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Agile Team JIRA Key</label>
+                        <input
+                          type="text"
+                          value={team.agile_team_jira_key || ''}
+                          onChange={(e) => updateTeam(index, 'agile_team_jira_key', e.target.value)}
+                          placeholder="e.g., PROJ-123"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={() => removeTeam(index)}
+                      style={{ marginLeft: '1rem', height: 'fit-content' }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="form-actions">

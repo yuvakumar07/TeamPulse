@@ -115,6 +115,11 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
     return <Tag value={rowData.project_status} severity={getSeverity(rowData.project_status)} />;
   };
 
+  const teamsBodyTemplate = (rowData) => {
+    const teamCount = rowData.team_count || 0;
+    return <span>{teamCount} {teamCount === 1 ? 'team' : 'teams'}</span>;
+  };
+
   const actionBodyTemplate = (rowData) => {
     return (
       <div className="flex gap-2">
@@ -252,8 +257,7 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
       >
         <Column field="id" header="ID" sortable style={{ minWidth: '80px' }} />
         <Column field="project_team_name" header="Project Team Name" sortable style={{ minWidth: '200px' }} />
-        <Column field="agile_board_name" header="Agile Board" sortable style={{ minWidth: '200px' }} />
-        <Column field="agile_team_jira_key" header="JIRA Key" sortable style={{ minWidth: '150px' }} />
+        <Column field="team_count" header="Teams" body={teamsBodyTemplate} style={{ minWidth: '100px' }} />
         <Column field="project_status" header="Status" body={statusBodyTemplate} sortable style={{ minWidth: '120px' }} />
         <Column field="employee_count" header="Employees" style={{ minWidth: '100px' }} />
         <Column header="Actions" body={actionBodyTemplate} exportable={false} style={{ minWidth: '200px' }} />

@@ -85,6 +85,17 @@ export const updateProject = (id, data) => api.put(`/projects/${id}`, data);
 export const deleteProject = (id) => api.delete(`/projects/${id}`);
 export const assignEmployeesToProject = (projectId, data) => api.put(`/projects/${projectId}/employees`, data);
 
+// Project Teams API calls
+export const getProjectTeams = (projectId) => api.get(`/projects/${projectId}/teams`);
+export const createProjectTeam = (projectId, data) => api.post(`/projects/${projectId}/teams`, data);
+export const updateProjectTeam = (teamId, data) => api.put(`/projects/teams/${teamId}`, data);
+export const deleteProjectTeam = (teamId) => api.delete(`/projects/teams/${teamId}`);
+
+// Project Team Employees API calls
+export const getTeamEmployees = (teamId) => api.get(`/projects/teams/${teamId}/employees`);
+export const assignEmployeesToTeam = (teamId, data) => api.put(`/projects/teams/${teamId}/employees`, data);
+export const removeEmployeeFromTeam = (assignmentId) => api.delete(`/projects/team-employees/${assignmentId}`);
+
 // Visa History API calls
 export const getVisaHistory = (employeeId) => api.get(`/visa/employee/${employeeId}`);
 export const getVisaHistoryById = (id) => api.get(`/visa/${id}`);

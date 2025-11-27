@@ -1,20 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { getProjectById, getAllEmployees, assignEmployeesToProject } from '../../services/api';
+import { getProjectById, getAllEmployees, assignEmployeesToTeam } from '../../services/api';
 import './EmployeeAssignment.css';
 
 const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
+  const [teams, setTeams] = useState([]);
+  const [selectedTeam, setSelectedTeam] = useState(null);
   const [availableEmployees, setAvailableEmployees] = useState([]);
   const [selectedEmployees, setSelectedEmployees] = useState([]);
-  const [loadingEmployees, setLoadingEmployees] = useState(true);
+  const [loadingData, setLoadingData] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    loadProjectData();
     fetchAvailableEmployees();
-    loadProjectEmployees();
   }, []);
+
+  useEffect(() => {
+    if (selectedTeam) {
+      loadTeamEmployees();
+    }
+  }, [selectedTeam]);
 
   useEffect(() => {
     // Close dropdown when clicking outside
@@ -30,56 +38,80 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
     };
   }, [showDropdown]);
 
+  const loadProjectData = async () => {
+    try {
+      setLoadingData(true);
+      const response = await getProjectById(project.id);
+      const projectData = response.data.data;
+
+      const projectTeams = projectData.teams || [];
+      setTeams(projectTeams);
+
+      // Auto-select first team if available
+      if (projectTeams.length > 0) {
+        setSelectedTeam(projectTeams[0]);
+      }
+    } catch (err) {
+      console.error('Error loading project data:', err);
+      toast.error('Failed to load project details');
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
   const fetchAvailableEmployees = async () => {
     try {
-      setLoadingEmployees(true);
       // Fetch all employees without pagination for selection
       const response = await getAllEmployees(1, 1000, 'All');
       setAvailableEmployees(response.data.data || []);
     } catch (err) {
       console.error('Error fetching employees:', err);
       toast.error('Failed to load employees list');
-    } finally {
-      setLoadingEmployees(false);
     }
   };
 
-  const loadProjectEmployees = async () => {
-    try {
-      const response = await getProjectById(project.id);
-      const projectData = response.data.data;
-
-      // Load existing employee assignments
-      if (projectData.employees && projectData.employees.length > 0) {
-        const assignments = projectData.employees.map(emp => {
-          const totalAllocation = parseFloat(emp.total_allocation) || 0;
-          const thisProjectAllocation = parseFloat(emp.allocation_percentage) || 0;
-          // Calculate allocation from other projects
-          const otherProjectsAllocation = totalAllocation - thisProjectAllocation;
-
-          return {
-            employee_id: emp.id,
-            employee_name: emp.name,
-            employee_sso: emp.sso,
-            employee_role: emp.role,
-            other_projects_allocation: otherProjectsAllocation,
-            allocation_percentage: thisProjectAllocation
-          };
-        });
-        setSelectedEmployees(assignments);
-      }
-    } catch (err) {
-      console.error('Error loading project employees:', err);
-      toast.error('Failed to load project employee assignments');
+  const loadTeamEmployees = () => {
+    if (!selectedTeam || !selectedTeam.employees) {
+      setSelectedEmployees([]);
+      return;
     }
+
+    // Load existing employee assignments for the selected team
+    const assignments = selectedTeam.employees.map(emp => {
+      const totalAllocation = parseFloat(emp.total_allocation) || 0;
+      const thisTeamAllocation = parseFloat(emp.allocation_percentage) || 0;
+      const otherProjectsAllocation = totalAllocation - thisTeamAllocation;
+
+      return {
+        employee_id: emp.id,
+        employee_name: emp.name,
+        employee_sso: emp.sso,
+        employee_role: emp.role,
+        other_projects_allocation: otherProjectsAllocation,
+        allocation_percentage: thisTeamAllocation
+      };
+    });
+    setSelectedEmployees(assignments);
   };
 
   const handleEmployeeSelect = (employee) => {
     if (!employee) return;
 
-    // Check if already selected
+    // Check if already selected in current team
     if (selectedEmployees.some(emp => emp.employee_id === employee.id)) {
-      toast.warning('This employee is already assigned to the project');
+      toast.warning('This employee is already assigned to this team');
+      return;
+    }
+
+    // Check if employee is already in another team in this project
+    const employeeInOtherTeam = teams.find(team =>
+      team.id !== selectedTeam?.id &&
+      team.employees &&
+      team.employees.some(emp => emp.id === employee.id)
+    );
+
+    if (employeeInOtherTeam) {
+      toast.warning(`This employee is already assigned to "${employeeInOtherTeam.agile_board_name}" team`);
       return;
     }
 
@@ -143,6 +175,12 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!selectedTeam) {
+      toast.warning('Please select a team first');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -153,11 +191,20 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
         }))
       };
 
-      await assignEmployeesToProject(project.id, dataToSubmit);
+      await assignEmployeesToTeam(selectedTeam.id, dataToSubmit);
 
-      toast.success('Employee assignments updated successfully!');
-      onSuccess();
-      onClose();
+      toast.success(`Employee assignments updated for "${selectedTeam.agile_board_name}"!`);
+
+      // Reload project data to get updated employee lists
+      await loadProjectData();
+
+      // If we still have the same team selected, reload its employees
+      if (selectedTeam) {
+        const updatedTeam = teams.find(t => t.id === selectedTeam.id);
+        if (updatedTeam) {
+          setSelectedTeam(updatedTeam);
+        }
+      }
     } catch (err) {
       console.error('Error saving employee assignments:', err);
       toast.error(err.response?.data?.message || 'Failed to save employee assignments');
@@ -166,26 +213,103 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
     }
   };
 
-  const filteredEmployees = availableEmployees.filter(emp =>
-    !selectedEmployees.some(selected => selected.employee_id === emp.id) &&
-    (searchTerm === '' ||
-     emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     (emp.sso && emp.sso.toLowerCase().includes(searchTerm.toLowerCase())) ||
-     (emp.role && emp.role.toLowerCase().includes(searchTerm.toLowerCase())))
-  );
+  // Get all employee IDs that are already assigned to OTHER teams in this project
+  // (Current team's employees are handled separately in selectedEmployees)
+  const assignedEmployeeIds = new Set();
+  teams.forEach(team => {
+    // Exclude the currently selected team since its employees are in selectedEmployees
+    if (team.id !== selectedTeam?.id && team.employees) {
+      team.employees.forEach(emp => {
+        assignedEmployeeIds.add(emp.id);
+      });
+    }
+  });
+
+  const filteredEmployees = availableEmployees.filter(emp => {
+    // Exclude if already in selected employees for current team
+    if (selectedEmployees.some(selected => selected.employee_id === emp.id)) {
+      return false;
+    }
+
+    // Exclude if already assigned to any team in the project
+    if (assignedEmployeeIds.has(emp.id)) {
+      return false;
+    }
+
+    // Apply search filter
+    if (searchTerm === '') return true;
+
+    return emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           (emp.sso && emp.sso.toLowerCase().includes(searchTerm.toLowerCase())) ||
+           (emp.role && emp.role.toLowerCase().includes(searchTerm.toLowerCase()));
+  });
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content employee-assignment-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Assign Employees - {project.project_team_name}</h2>
+          <h2>Assign Employees to Teams - {project.project_team_name}</h2>
           <button className="close-btn" onClick={onClose}>&times;</button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="employee-assignment-section">
-            <div className="employee-selector">
-              <label htmlFor="employee-search">Add Employee</label>
+        {loadingData ? (
+          <div style={{ padding: '2rem', textAlign: 'center' }}>Loading teams...</div>
+        ) : teams.length === 0 ? (
+          <div style={{ padding: '2rem', textAlign: 'center' }}>
+            <p>No teams found for this project.</p>
+            <p style={{ fontSize: '0.9rem', color: '#6c757d', marginTop: '0.5rem' }}>
+              Please create teams in the project edit form before assigning employees.
+            </p>
+            <button className="btn btn-cancel" onClick={onClose} style={{ marginTop: '1rem' }}>
+              Close
+            </button>
+          </div>
+        ) : (
+          <>
+            <div style={{ padding: '1rem', borderBottom: '1px solid #e9ecef' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#495057' }}>
+                Select Team:
+              </label>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {teams.map((team) => (
+                  <button
+                    key={team.id}
+                    type="button"
+                    onClick={() => setSelectedTeam(team)}
+                    className={`team-tab ${selectedTeam?.id === team.id ? 'active' : ''}`}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      border: selectedTeam?.id === team.id ? '2px solid #007bff' : '1px solid #ced4da',
+                      backgroundColor: selectedTeam?.id === team.id ? '#007bff' : 'white',
+                      color: selectedTeam?.id === team.id ? 'white' : '#333',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: selectedTeam?.id === team.id ? '600' : '400',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {team.agile_board_name}
+                    {team.employees && team.employees.length > 0 && (
+                      <span style={{
+                        marginLeft: '0.5rem',
+                        padding: '0.15rem 0.4rem',
+                        backgroundColor: selectedTeam?.id === team.id ? 'rgba(255,255,255,0.3)' : '#e9ecef',
+                        borderRadius: '10px',
+                        fontSize: '0.75rem'
+                      }}>
+                        {team.employees.length}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div className="employee-assignment-section">
+                <div className="employee-selector">
+                  <label htmlFor="employee-search">Add Employee to {selectedTeam?.agile_board_name}</label>
               <div className="searchable-dropdown">
                 <input
                   type="text"
@@ -194,7 +318,7 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
                   value={searchTerm}
                   onChange={handleSearchChange}
                   onFocus={handleSearchFocus}
-                  disabled={loadingEmployees}
+                  disabled={!selectedTeam}
                   className="searchable-input"
                   autoComplete="off"
                 />
@@ -253,7 +377,7 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
                       <th>SSO</th>
                       <th>Role</th>
                       <th>Current Total</th>
-                      <th>This Project %</th>
+                      <th>This Team %</th>
                       <th>Action</th>
                     </tr>
                   </thead>
@@ -305,7 +429,7 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
             )}
 
             {selectedEmployees.length === 0 && (
-              <p className="no-employees">No employees assigned yet. Select employees from the dropdown above.</p>
+              <p className="no-employees">No employees assigned to this team yet. Select employees from the dropdown above.</p>
             )}
           </div>
 
@@ -313,11 +437,13 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
             <button type="button" className="btn btn-cancel" onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary" disabled={submitting}>
+            <button type="submit" className="btn btn-primary" disabled={submitting || !selectedTeam}>
               {submitting ? 'Saving...' : 'Save Assignments'}
             </button>
           </div>
         </form>
+          </>
+        )}
       </div>
     </div>
   );
