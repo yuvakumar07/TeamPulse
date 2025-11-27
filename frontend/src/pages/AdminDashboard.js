@@ -89,7 +89,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {stats && (
+      {stats && stats.employeeStats && (
         <>
           {/* Employee Statistics */}
           <section className="dashboard-section">
@@ -98,7 +98,7 @@ const AdminDashboard = () => {
               <div className="stat-card stat-primary">
                 <div className="stat-icon">👥</div>
                 <div className="stat-content">
-                  <h3>{stats.employeeStats.total_employees || 0}</h3>
+                  <h3>{stats.employeeStats?.total_employees || 0}</h3>
                   <p>Total Employees</p>
                 </div>
               </div>
@@ -106,7 +106,7 @@ const AdminDashboard = () => {
               <div className="stat-card stat-success">
                 <div className="stat-icon">✓</div>
                 <div className="stat-content">
-                  <h3>{stats.employeeStats.active_employees || 0}</h3>
+                  <h3>{stats.employeeStats?.active_employees || 0}</h3>
                   <p>Active Employees</p>
                 </div>
               </div>
@@ -114,7 +114,7 @@ const AdminDashboard = () => {
               <div className="stat-card stat-warning">
                 <div className="stat-icon">⚠</div>
                 <div className="stat-content">
-                  <h3>{stats.employeeStats.at_risk_count || 0}</h3>
+                  <h3>{stats.employeeStats?.at_risk_count || 0}</h3>
                   <p>At Risk</p>
                 </div>
               </div>
@@ -122,7 +122,7 @@ const AdminDashboard = () => {
               <div className="stat-card stat-danger">
                 <div className="stat-icon">⚡</div>
                 <div className="stat-content">
-                  <h3>{stats.employeeStats.critical_employees || 0}</h3>
+                  <h3>{stats.employeeStats?.critical_employees || 0}</h3>
                   <p>Critical Priority</p>
                 </div>
               </div>
@@ -130,7 +130,7 @@ const AdminDashboard = () => {
               <div className="stat-card">
                 <div className="stat-icon">📊</div>
                 <div className="stat-content">
-                  <h3>{stats.employeeStats.inactive_employees || 0}</h3>
+                  <h3>{stats.employeeStats?.inactive_employees || 0}</h3>
                   <p>Inactive</p>
                 </div>
               </div>
@@ -138,7 +138,7 @@ const AdminDashboard = () => {
               <div className="stat-card">
                 <div className="stat-icon">🏖</div>
                 <div className="stat-content">
-                  <h3>{stats.employeeStats.on_leave_employees || 0}</h3>
+                  <h3>{stats.employeeStats?.on_leave_employees || 0}</h3>
                   <p>On Leave</p>
                 </div>
               </div>
@@ -146,7 +146,7 @@ const AdminDashboard = () => {
               <div className="stat-card">
                 <div className="stat-icon">📉</div>
                 <div className="stat-content">
-                  <h3>{stats.employeeStats.attrition_count || 0}</h3>
+                  <h3>{stats.employeeStats?.attrition_count || 0}</h3>
                   <p>Attrition</p>
                 </div>
               </div>
@@ -154,7 +154,7 @@ const AdminDashboard = () => {
               <div className="stat-card">
                 <div className="stat-icon">🔴</div>
                 <div className="stat-content">
-                  <h3>{stats.employeeStats.terminated_employees || 0}</h3>
+                  <h3>{stats.employeeStats?.terminated_employees || 0}</h3>
                   <p>Terminated</p>
                 </div>
               </div>
@@ -200,7 +200,7 @@ const AdminDashboard = () => {
                         <div
                           className="role-bar-fill"
                           style={{
-                            width: `${(role.count / stats.employeeStats.total_employees) * 100}%`
+                            width: `${(role.count / (stats.employeeStats?.total_employees || 1)) * 100}%`
                           }}
                         ></div>
                       </div>
@@ -219,11 +219,11 @@ const AdminDashboard = () => {
             <div className="admin-stats">
               <div className="admin-stat-item">
                 <span className="admin-stat-label">Total Admin Users:</span>
-                <span className="admin-stat-value">{stats.adminStats.total_admins || 0}</span>
+                <span className="admin-stat-value">{stats.adminStats?.total_admins || 0}</span>
               </div>
               <div className="admin-stat-item">
                 <span className="admin-stat-label">Active Admin Users:</span>
-                <span className="admin-stat-value">{stats.adminStats.active_admins || 0}</span>
+                <span className="admin-stat-value">{stats.adminStats?.active_admins || 0}</span>
               </div>
             </div>
           </section>

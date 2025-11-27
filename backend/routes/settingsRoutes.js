@@ -2,11 +2,11 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
-const authMiddleware = require('../middleware/authMiddleware');
-const permissionsMiddleware = require('../middleware/permissionsMiddleware');
+const { verifyToken, checkAdminStatus } = require('../middleware/authMiddleware');
+const { requirePermission } = require('../middleware/permissionsMiddleware');
 
 // Get current database configuration
-router.get('/database', authMiddleware, permissionsMiddleware(['admin_users.view']), (req, res) => {
+router.get('/database', verifyToken, checkAdminStatus, requirePermission('admin_users.view'), (req, res) => {
   try {
     const dbType = process.env.DB_TYPE || 'mysql';
 
@@ -35,7 +35,7 @@ router.get('/database', authMiddleware, permissionsMiddleware(['admin_users.view
 });
 
 // Update database configuration
-router.post('/database', authMiddleware, permissionsMiddleware(['admin_users.update']), (req, res) => {
+router.post('/database', verifyToken, checkAdminStatus, requirePermission('admin_users.update'), (req, res) => {
   try {
     const { dbType } = req.body;
 
@@ -83,7 +83,7 @@ router.post('/database', authMiddleware, permissionsMiddleware(['admin_users.upd
 });
 
 // Initialize SQLite database
-router.post('/database/initialize-sqlite', authMiddleware, permissionsMiddleware(['admin_users.update']), async (req, res) => {
+router.post('/database/initialize-sqlite', verifyToken, checkAdminStatus, requirePermission('admin_users.update'), async (req, res) => {
   try {
     const { spawn } = require('child_process');
     const scriptPath = path.join(__dirname, '..', 'scripts', 'initializeSqlite.js');
@@ -126,7 +126,7 @@ router.post('/database/initialize-sqlite', authMiddleware, permissionsMiddleware
 });
 
 // Check database status
-router.get('/database/status', authMiddleware, (req, res) => {
+router.get('/database/status', verifyToken, checkAdminStatus, (req, res) => {
   try {
     const dbType = process.env.DB_TYPE || 'mysql';
     const db = require('../config/database');

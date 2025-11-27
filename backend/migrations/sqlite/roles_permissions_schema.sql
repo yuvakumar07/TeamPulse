@@ -133,10 +133,21 @@ WHERE action = 'view'
 -- For new installations, the admin_users table should be created with role_id
 -- For existing installations, you may need to recreate the table
 
--- Update existing admin user to Super Admin role
-UPDATE admin_users
-SET role_id = (SELECT id FROM roles WHERE name = 'super_admin')
-WHERE username = 'admin';
+-- Insert default admin user with Super Admin role
+-- Password hash is bcrypt hash of 'admin123'
+INSERT OR REPLACE INTO admin_users (id, username, email, password_hash, full_name, role_id, status)
+VALUES (
+  1,
+  'admin',
+  'admin@teampulse.com',
+  '$2b$10$4.bFoTAvpf4mdMP9erT5f.WG8yOBZLymsDQpBWFJoM/kkKaSHWDkK',
+  'System Administrator',
+  (SELECT id FROM roles WHERE name = 'super_admin'),
+  'Active'
+);
+
+-- Note: The password for the default admin is 'admin123'
+-- You should change this password immediately after first login
 
 -- Create index for admin_users role_id
 CREATE INDEX IF NOT EXISTS idx_admin_users_role_id ON admin_users(role_id);

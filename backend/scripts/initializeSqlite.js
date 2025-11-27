@@ -47,23 +47,16 @@ try {
     console.log(`Running migration: ${migration}`);
     const sql = fs.readFileSync(migrationPath, 'utf8');
 
-    // Split by semicolon and execute each statement
-    const statements = sql
-      .split(';')
-      .map(s => s.trim())
-      .filter(s => s.length > 0 && !s.startsWith('--'));
-
-    for (const statement of statements) {
-      try {
-        db.exec(statement);
-      } catch (error) {
-        // Some statements might fail if they already exist, which is okay
-        if (!error.message.includes('already exists') &&
-            !error.message.includes('duplicate') &&
-            !error.message.includes('UNIQUE constraint failed')) {
-          console.error(`Error in statement: ${statement.substring(0, 50)}...`);
-          throw error;
-        }
+    // Execute the entire SQL file at once to handle triggers and transactions properly
+    try {
+      db.exec(sql);
+    } catch (error) {
+      // Some statements might fail if they already exist, which is okay
+      if (!error.message.includes('already exists') &&
+          !error.message.includes('duplicate') &&
+          !error.message.includes('UNIQUE constraint failed')) {
+        console.error(`Error in migration ${migration}:`, error.message);
+        throw error;
       }
     }
 
@@ -112,16 +105,8 @@ try {
     console.log('Note: Some visa columns may already exist');
   }
 
-  // Add role_id column to admin_users if it doesn't exist
-  console.log('Adding role_id to admin_users table...');
-  try {
-    db.exec("ALTER TABLE admin_users ADD COLUMN role_id INTEGER REFERENCES roles(id) ON DELETE SET NULL");
-    console.log('✓ role_id column added to admin_users');
-  } catch (error) {
-    if (!error.message.includes('duplicate column name')) {
-      console.log(`Note: ${error.message}`);
-    }
-  }
+  // Note: role_id is now added in the admin_schema.sql migration
+  console.log('✓ Admin users and roles configured');
 
   console.log('\n✅ SQLite database initialized successfully!');
   console.log(`Database location: ${dbPath}`);

@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS admin_users (
   email TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   full_name TEXT NOT NULL,
+  role_id INTEGER,
   status TEXT DEFAULT 'Active' CHECK(status IN ('Active', 'Inactive', 'Suspended')),
   last_login TEXT NULL,
   created_at TEXT DEFAULT (datetime('now')),
@@ -44,17 +45,5 @@ CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_logs(action);
 CREATE INDEX IF NOT EXISTS idx_audit_entity_type ON audit_logs(entity_type);
 CREATE INDEX IF NOT EXISTS idx_audit_created_at ON audit_logs(created_at);
 
--- Insert default admin user (username: admin, password: admin123)
--- Password hash is bcrypt hash of 'admin123'
-INSERT OR REPLACE INTO admin_users (id, username, email, password_hash, full_name, status)
-VALUES (
-  1,
-  'admin',
-  'admin@teampulse.com',
-  '$2b$10$4.bFoTAvpf4mdMP9erT5f.WG8yOBZLymsDQpBWFJoM/kkKaSHWDkK',
-  'System Administrator',
-  'Active'
-);
-
--- Note: The password for the default admin is 'admin123'
--- You should change this password immediately after first login
+-- Note: Default admin user will be created in roles_permissions_schema.sql
+-- after roles are set up, so the admin can be assigned the super_admin role

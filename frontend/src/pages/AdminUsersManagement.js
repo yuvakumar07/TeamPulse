@@ -50,11 +50,14 @@ const AdminUsersManagement = () => {
   const fetchRoles = async () => {
     try {
       const response = await authService.getAllRoles();
-      if (response.success) {
+      if (response.success && Array.isArray(response.data)) {
         setRoles(response.data);
+      } else {
+        setRoles([]);
       }
     } catch (err) {
       console.error('Failed to fetch roles:', err);
+      setRoles([]);
     }
   };
 
@@ -62,13 +65,15 @@ const AdminUsersManagement = () => {
     try {
       setLoading(true);
       const response = await authService.getAllAdmins(pagination.page, pagination.limit);
-      if (response.success) {
+      if (response.success && Array.isArray(response.data)) {
         setAdmins(response.data);
-        setPagination(prev => ({ ...prev, total: response.pagination.total }));
+        setPagination(prev => ({ ...prev, total: response.pagination?.total || 0 }));
       } else {
+        setAdmins([]);
         toast.error(response.message || 'Failed to load admin users');
       }
     } catch (err) {
+      setAdmins([]);
       toast.error(err.response?.data?.message || 'An error occurred while fetching admin users');
     } finally {
       setLoading(false);
@@ -78,12 +83,15 @@ const AdminUsersManagement = () => {
   const fetchAuditLogs = async () => {
     try {
       const response = await authService.getAuditLogs(auditPagination.page, auditPagination.limit);
-      if (response.success) {
+      if (response.success && Array.isArray(response.data)) {
         setAuditLogs(response.data);
-        setAuditPagination(prev => ({ ...prev, total: response.pagination.total }));
+        setAuditPagination(prev => ({ ...prev, total: response.pagination?.total || 0 }));
+      } else {
+        setAuditLogs([]);
       }
     } catch (err) {
       console.error('Failed to fetch audit logs:', err);
+      setAuditLogs([]);
     }
   };
 
@@ -306,10 +314,10 @@ const AdminUsersManagement = () => {
 
   const roleOptions = [
     { label: 'No Role Assigned', value: '' },
-    ...roles.map(role => ({
-      label: `${role.display_name} (${role.permission_count} permissions)`,
+    ...(Array.isArray(roles) ? roles.map(role => ({
+      label: `${role.display_name} (${role.permission_count || 0} permissions)`,
       value: role.id
-    }))
+    })) : [])
   ];
 
   // Audit log customization
@@ -353,7 +361,7 @@ const AdminUsersManagement = () => {
       {/* Audit Logs Section */}
       {showAuditLogs && (
         <Card title="Audit Logs" className="mb-4">
-          {auditLogs.length > 0 ? (
+          {Array.isArray(auditLogs) && auditLogs.length > 0 ? (
             <Timeline value={auditLogs} align="alternate" content={auditLogContent} marker={auditLogMarker} />
           ) : (
             <p className="text-center text-500">No audit logs found</p>

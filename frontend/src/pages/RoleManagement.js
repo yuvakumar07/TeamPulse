@@ -43,12 +43,14 @@ const RoleManagement = () => {
     try {
       setLoading(true);
       const response = await authService.getAllRoles();
-      if (response.success) {
+      if (response.success && Array.isArray(response.data)) {
         setRoles(response.data);
       } else {
+        setRoles([]);
         toast.error(response.message || 'Failed to load roles');
       }
     } catch (err) {
+      setRoles([]);
       toast.error(err.response?.data?.message || 'An error occurred while fetching roles');
     } finally {
       setLoading(false);
