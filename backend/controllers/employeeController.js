@@ -65,7 +65,7 @@ const getAllEmployees = async (req, res) => {
       SELECT e.*,
              COALESCE(SUM(pe.allocation_percentage), 0) as total_allocation,
              GROUP_CONCAT(
-               DISTINCT CONCAT(p.project_team_name, ':', pe.allocation_percentage)
+               DISTINCT CONCAT(p.project_team_name, ':', IFNULL(pt.agile_board_name, 'Not Assigned'), ':', pe.allocation_percentage)
                ORDER BY p.project_team_name
                SEPARATOR '||'
              ) as allocated_projects,

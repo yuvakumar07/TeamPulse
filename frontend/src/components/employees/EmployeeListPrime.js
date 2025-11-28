@@ -287,21 +287,34 @@ const EmployeeListPrime = ({ onViewAssets }) => {
       return <span className="text-500">No projects</span>;
     }
 
-    // Parse the allocated_projects string: "Project1:50||Project2:30"
+    // Parse the allocated_projects string: "Project1:TeamName1:50||Project2:TeamName2:30"
     const projects = rowData.allocated_projects.split('||').map(item => {
-      const [name, allocation] = item.split(':');
-      return { name, allocation };
+      const [name, teamName, allocation] = item.split(':');
+      return { name, teamName, allocation };
     });
 
     return (
       <div className="flex flex-wrap gap-1">
         {projects.map((project, index) => (
-          <Tag
-            key={index}
-            value={`${project.name} (${project.allocation}%)`}
-            severity="info"
-            style={{ fontSize: '0.75rem' }}
-          />
+          <div key={index} style={{ marginBottom: '4px', width: '100%' }}>
+            <Tag
+              value={`${project.name}`}
+              severity="info"
+              style={{ fontSize: '0.75rem', marginRight: '4px' }}
+            />
+            {project.teamName && project.teamName !== 'Not Assigned' && (
+              <Tag
+                value={project.teamName}
+                severity="success"
+                style={{ fontSize: '0.7rem', marginRight: '4px' }}
+              />
+            )}
+            <Tag
+              value={`${project.allocation}%`}
+              severity="warning"
+              style={{ fontSize: '0.7rem' }}
+            />
+          </div>
         ))}
       </div>
     );
@@ -598,9 +611,9 @@ const EmployeeListPrime = ({ onViewAssets }) => {
         />
         <Column
           field="allocated_projects"
-          header="Allocated Projects"
+          header="Projects & Teams"
           body={allocatedProjectsBodyTemplate}
-          style={{ minWidth: '250px' }}
+          style={{ minWidth: '300px' }}
         />
         <Column
           field="asset_count"
