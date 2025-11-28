@@ -30,6 +30,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
     asset_return_id: '',
     comments: '',
     attrition: 'No',
+    notice_period_days: null,
     offshore_manager_id: null,
     onsite_manager_id: null,
     visa_type: 'None',
@@ -100,6 +101,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
         asset_return_id: employee.asset_return_id || '',
         comments: employee.comments || '',
         attrition: employee.attrition || 'No',
+        notice_period_days: employee.notice_period_days || null,
         offshore_manager_id: employee.offshore_manager_id || null,
         onsite_manager_id: employee.onsite_manager_id || null,
         visa_type: employee.visa_type || 'None',
@@ -409,6 +411,20 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                   value={formData.attrition}
                   options={attritionOptions}
                   onChange={(e) => handleChange('attrition', e.value)}
+                />
+              </div>
+
+              <div className="field col-12 md:col-3">
+                <label htmlFor="notice_period_days">Notice Period Days</label>
+                <InputNumber
+                  id="notice_period_days"
+                  value={formData.notice_period_days}
+                  onValueChange={(e) => handleChange('notice_period_days', e.value)}
+                  min={0}
+                  max={365}
+                  suffix=" days"
+                  placeholder="e.g., 30, 60, 90"
+                  useGrouping={false}
                 />
               </div>
 

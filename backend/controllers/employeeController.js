@@ -220,6 +220,7 @@ const createEmployee = async (req, res) => {
       asset_return_id,
       comments,
       attrition,
+      notice_period_days,
       offshore_manager_id,
       onsite_manager_id,
       visa_type,
@@ -248,13 +249,13 @@ const createEmployee = async (req, res) => {
     const [result] = await connection.query(
       `INSERT INTO employees
       (sso, name, role, role_type, phone, location, criticality, status, skills, joining_date, last_working_day,
-       possible_candidate, asset_id, asset_return_id, comments, attrition, offshore_manager_id, onsite_manager_id,
+       possible_candidate, asset_id, asset_return_id, comments, attrition, notice_period_days, offshore_manager_id, onsite_manager_id,
        visa_type, visa_status, current_visa_start_date, current_visa_end_date, i94_expiry_date,
        passport_number, passport_expiry_date, sponsor_company, visa_notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [sso, name, role, role_type, phone, location, criticality || 'Medium', status || 'Active',
        skills, joining_date, last_working_day, possible_candidate, asset_id, asset_return_id, comments,
-       attrition || 'No', offshore_manager_id, onsite_manager_id,
+       attrition || 'No', notice_period_days, offshore_manager_id, onsite_manager_id,
        visa_type || 'None', computedVisaStatus, current_visa_start_date, current_visa_end_date,
        i94_expiry_date, passport_number, passport_expiry_date, sponsor_company, visa_notes]
     );
@@ -357,6 +358,7 @@ const updateEmployee = async (req, res) => {
       asset_return_id,
       comments,
       attrition,
+      notice_period_days,
       offshore_manager_id,
       onsite_manager_id,
       visa_type,
@@ -392,13 +394,13 @@ const updateEmployee = async (req, res) => {
       SET sso = ?, name = ?, role = ?, role_type = ?, phone = ?, location = ?,
           criticality = ?, status = ?, skills = ?, joining_date = ?, last_working_day = ?,
           possible_candidate = ?, asset_id = ?, asset_return_id = ?, comments = ?,
-          attrition = ?, offshore_manager_id = ?, onsite_manager_id = ?,
+          attrition = ?, notice_period_days = ?, offshore_manager_id = ?, onsite_manager_id = ?,
           visa_type = ?, visa_status = ?, current_visa_start_date = ?, current_visa_end_date = ?,
           i94_expiry_date = ?, passport_number = ?, passport_expiry_date = ?, sponsor_company = ?, visa_notes = ?
       WHERE id = ?`,
       [sso, name, role, role_type, phone, location, criticality, status, skills,
        joining_date, last_working_day, possible_candidate, asset_id, asset_return_id, comments,
-       attrition, offshore_manager_id, onsite_manager_id,
+       attrition, notice_period_days, offshore_manager_id, onsite_manager_id,
        visa_type, computedVisaStatus, current_visa_start_date, current_visa_end_date,
        i94_expiry_date, passport_number, passport_expiry_date, sponsor_company, visa_notes, id]
     );
