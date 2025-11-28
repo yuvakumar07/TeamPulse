@@ -15,6 +15,8 @@ import './primereact-custom.css';
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
 import EmployeesPage from './pages/EmployeesPage';
+import AddEmployeePage from './pages/AddEmployeePage';
+import EditEmployeePage from './pages/EditEmployeePage';
 import ProjectsPage from './pages/ProjectsPage';
 import AssetsPage from './pages/AssetsPage';
 import AdminLogin from './pages/AdminLogin';
@@ -59,6 +61,22 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <EmployeesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/employees/add"
+              element={
+                <ProtectedRoute>
+                  <AddEmployeePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/employees/edit/:id"
+              element={
+                <ProtectedRoute>
+                  <EditEmployeePage />
                 </ProtectedRoute>
               }
             />

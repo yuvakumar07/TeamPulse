@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -13,7 +14,8 @@ import { exportEmployeesToExcel } from '../../utils/exportToExcel';
 import PermissionGuard from '../auth/PermissionGuard';
 import ImportEmployeesDialog from './ImportEmployeesDialog';
 
-const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
+const EmployeeListPrime = ({ onViewAssets }) => {
+  const navigate = useNavigate();
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -380,7 +382,7 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
             rounded
             outlined
             className="p-button-success"
-            onClick={() => onEdit(rowData)}
+            onClick={() => navigate(`/admin/employees/edit/${rowData.id}`)}
             tooltip="Edit"
             tooltipOptions={{ position: 'top' }}
           />
@@ -432,7 +434,7 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
           <Button
             label="Add Employee"
             icon="pi pi-plus"
-            onClick={onAdd}
+            onClick={() => navigate('/admin/employees/add')}
           />
         </PermissionGuard>
       </div>
