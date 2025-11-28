@@ -140,11 +140,26 @@ const getProjectById = async (req, res) => {
       [id]
     );
 
+    // Get allocated employees (not assigned to any specific team yet)
+    const [allocatedEmployees] = await db.query(
+      `SELECT pe.id as assignment_id, pe.allocation_percentage,
+              e.id, e.sso, e.name, e.role, e.role_type, e.location,
+              (SELECT COALESCE(SUM(pe2.allocation_percentage), 0)
+               FROM project_employees pe2
+               WHERE pe2.employee_id = e.id) as total_allocation
+       FROM project_employees pe
+       JOIN employees e ON pe.employee_id = e.id
+       WHERE pe.project_id = ? AND pe.team_id IS NULL
+       ORDER BY e.name`,
+      [id]
+    );
+
     res.json({
       success: true,
       data: {
         ...projects[0],
         teams: teamsWithEmployees,
+        allocated_employees: allocatedEmployees,
         total_employees: countResult[0].total_employees
       }
     });

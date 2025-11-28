@@ -9,6 +9,7 @@ const {
   deleteProject
 } = require('../controllers/projectController');
 const {
+  getAllTeams,
   getProjectTeams,
   createProjectTeam,
   updateProjectTeam,
@@ -36,6 +37,8 @@ router.put('/:id/employees', requirePermission('projects.update'), assignEmploye
 router.delete('/:id', requirePermission('projects.delete'), deleteProject);
 
 // Project teams routes
+// Note: Specific routes must come BEFORE parameterized routes
+router.get('/teams/all', requirePermission('projects.view'), getAllTeams); // Changed path to avoid conflict
 router.get('/:projectId/teams', requirePermission('projects.view'), getProjectTeams);
 router.post('/:projectId/teams', requirePermission('projects.update'), createProjectTeam);
 router.put('/teams/:teamId', requirePermission('projects.update'), updateProjectTeam);

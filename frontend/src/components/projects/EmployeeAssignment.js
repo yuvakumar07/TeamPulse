@@ -19,10 +19,14 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
   }, []);
 
   useEffect(() => {
+    console.log('useEffect triggered - selectedTeam changed:', selectedTeam?.agile_board_name, 'ID:', selectedTeam?.id);
+
     if (selectedTeam) {
       loadTeamEmployees();
+    } else {
+      setSelectedEmployees([]);
     }
-  }, [selectedTeam]);
+  }, [selectedTeam?.id]); // Depend on team ID instead of team object
 
   useEffect(() => {
     // Close dropdown when clicking outside
@@ -44,16 +48,29 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
       const response = await getProjectById(project.id);
       const projectData = response.data.data;
 
+      console.log('Project data received:', projectData);
       const projectTeams = projectData.teams || [];
+      console.log('Project teams:', projectTeams);
+      console.log('Teams count:', projectTeams.length);
+
+      // Log each team's employee count
+      projectTeams.forEach(team => {
+        console.log(`Team "${team.agile_board_name}" has ${team.employees?.length || 0} employees`);
+      });
+
       setTeams(projectTeams);
 
       // Auto-select first team if available
       if (projectTeams.length > 0) {
         setSelectedTeam(projectTeams[0]);
       }
+
+      // Return the teams for use in handleSubmit
+      return projectTeams;
     } catch (err) {
       console.error('Error loading project data:', err);
       toast.error('Failed to load project details');
+      return [];
     } finally {
       setLoadingData(false);
     }
@@ -70,14 +87,25 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
     }
   };
 
-  const loadTeamEmployees = () => {
-    if (!selectedTeam || !selectedTeam.employees) {
+  const loadTeamEmployees = (team = selectedTeam) => {
+    console.log('loadTeamEmployees called for team:', team?.agile_board_name);
+    console.log('Team employees:', team?.employees);
+    console.log('Team object:', team);
+
+    if (!team) {
+      console.log('No team selected');
+      setSelectedEmployees([]);
+      return;
+    }
+
+    if (!team.employees || team.employees.length === 0) {
+      console.log('Team has no employees array or empty array');
       setSelectedEmployees([]);
       return;
     }
 
     // Load existing employee assignments for the selected team
-    const assignments = selectedTeam.employees.map(emp => {
+    const assignments = team.employees.map(emp => {
       const totalAllocation = parseFloat(emp.total_allocation) || 0;
       const thisTeamAllocation = parseFloat(emp.allocation_percentage) || 0;
       const otherProjectsAllocation = totalAllocation - thisTeamAllocation;
@@ -91,6 +119,8 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
         allocation_percentage: thisTeamAllocation
       };
     });
+
+    console.log('Loaded assignments:', assignments);
     setSelectedEmployees(assignments);
   };
 
@@ -196,11 +226,11 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
       toast.success(`Employee assignments updated for "${selectedTeam.agile_board_name}"!`);
 
       // Reload project data to get updated employee lists
-      await loadProjectData();
+      const updatedTeams = await loadProjectData();
 
-      // If we still have the same team selected, reload its employees
-      if (selectedTeam) {
-        const updatedTeam = teams.find(t => t.id === selectedTeam.id);
+      // If we still have the same team selected, reload its employees from the updated teams
+      if (selectedTeam && updatedTeams) {
+        const updatedTeam = updatedTeams.find(t => t.id === selectedTeam.id);
         if (updatedTeam) {
           setSelectedTeam(updatedTeam);
         }
@@ -275,7 +305,13 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
                   <button
                     key={team.id}
                     type="button"
-                    onClick={() => setSelectedTeam(team)}
+                    onClick={() => {
+                      console.log('Team tab clicked:', team.agile_board_name, 'ID:', team.id);
+                      console.log('Team has employees:', team.employees?.length);
+                      setSelectedTeam(team);
+                      // Immediately load employees for the clicked team
+                      loadTeamEmployees(team);
+                    }}
                     className={`team-tab ${selectedTeam?.id === team.id ? 'active' : ''}`}
                     style={{
                       padding: '0.5rem 1rem',

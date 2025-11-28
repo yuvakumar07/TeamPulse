@@ -1,5 +1,29 @@
 const db = require('../config/database');
 
+// Get all teams across all projects
+const getAllTeams = async (req, res) => {
+  try {
+    const [teams] = await db.query(
+      `SELECT pt.*, p.project_team_name
+       FROM project_teams pt
+       JOIN projects p ON pt.project_id = p.id
+       ORDER BY p.project_team_name, pt.agile_board_name`
+    );
+
+    res.json({
+      success: true,
+      data: teams
+    });
+  } catch (error) {
+    console.error('Error fetching all teams:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching teams',
+      error: error.message
+    });
+  }
+};
+
 // Get all teams for a project
 const getProjectTeams = async (req, res) => {
   try {
@@ -260,6 +284,7 @@ const deleteProjectTeam = async (req, res) => {
 };
 
 module.exports = {
+  getAllTeams,
   getProjectTeams,
   createProjectTeam,
   updateProjectTeam,

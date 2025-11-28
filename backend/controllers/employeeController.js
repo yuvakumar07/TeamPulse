@@ -44,6 +44,7 @@ const getAllEmployees = async (req, res) => {
     const roleType = req.query.role_type;
     const search = req.query.search;
     const project = req.query.project;
+    const team = req.query.team;
     const sortField = req.query.sortField || 'created_at';
     const sortOrder = req.query.sortOrder || 'DESC';
 
@@ -58,6 +59,7 @@ const getAllEmployees = async (req, res) => {
       FROM employees e
       LEFT JOIN project_employees pe ON e.id = pe.employee_id
       LEFT JOIN projects p ON pe.project_id = p.id
+      LEFT JOIN project_teams pt ON pe.team_id = pt.id
     `;
     let dataQuery = `
       SELECT e.*,
@@ -76,6 +78,7 @@ const getAllEmployees = async (req, res) => {
       FROM employees e
       LEFT JOIN project_employees pe ON e.id = pe.employee_id
       LEFT JOIN projects p ON pe.project_id = p.id
+      LEFT JOIN project_teams pt ON pe.team_id = pt.id
       LEFT JOIN assets a ON e.id = a.assigned_to
     `;
     const queryParams = [];
@@ -102,6 +105,13 @@ const getAllEmployees = async (req, res) => {
       conditions.push('p.project_team_name = ?');
       queryParams.push(project.trim());
       countParams.push(project.trim());
+    }
+
+    // Add team filter if provided
+    if (team && team.trim() !== '') {
+      conditions.push('pt.agile_board_name = ?');
+      queryParams.push(team.trim());
+      countParams.push(team.trim());
     }
 
     // Apply WHERE conditions
@@ -265,9 +275,9 @@ const createEmployee = async (req, res) => {
           }
 
           await connection.query(
-            `INSERT INTO project_employees (project_id, employee_id, allocation_percentage)
-             VALUES (?, ?, ?)`,
-            [proj.project_id, employeeId, proj.allocation_percentage]
+            `INSERT INTO project_employees (project_id, team_id, employee_id, allocation_percentage)
+             VALUES (?, ?, ?, ?)`,
+            [proj.project_id, proj.team_id || null, employeeId, proj.allocation_percentage]
           );
         }
       }
@@ -411,9 +421,9 @@ const updateEmployee = async (req, res) => {
           }
 
           await connection.query(
-            `INSERT INTO project_employees (project_id, employee_id, allocation_percentage)
-             VALUES (?, ?, ?)`,
-            [proj.project_id, id, proj.allocation_percentage]
+            `INSERT INTO project_employees (project_id, team_id, employee_id, allocation_percentage)
+             VALUES (?, ?, ?, ?)`,
+            [proj.project_id, proj.team_id || null, id, proj.allocation_percentage]
           );
         }
       }

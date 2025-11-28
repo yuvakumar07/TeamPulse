@@ -38,7 +38,7 @@ api.interceptors.response.use(
 );
 
 // Employee API calls
-export const getAllEmployees = (page = 1, limit = 10, roleType = null, sortField = 'created_at', sortOrder = 'DESC', search = null, project = null) => {
+export const getAllEmployees = (page = 1, limit = 10, roleType = null, sortField = 'created_at', sortOrder = 'DESC', search = null, project = null, team = null) => {
   const params = { page, limit };
   if (roleType && roleType !== 'All') {
     params.role_type = roleType;
@@ -54,6 +54,9 @@ export const getAllEmployees = (page = 1, limit = 10, roleType = null, sortField
   }
   if (project && project !== 'All') {
     params.project = project;
+  }
+  if (team && team !== 'All') {
+    params.team = team;
   }
   return api.get('/employees', { params });
 };
@@ -86,6 +89,7 @@ export const deleteProject = (id) => api.delete(`/projects/${id}`);
 export const assignEmployeesToProject = (projectId, data) => api.put(`/projects/${projectId}/employees`, data);
 
 // Project Teams API calls
+export const getAllTeams = () => api.get('/projects/teams/all');
 export const getProjectTeams = (projectId) => api.get(`/projects/${projectId}/teams`);
 export const createProjectTeam = (projectId, data) => api.post(`/projects/${projectId}/teams`, data);
 export const updateProjectTeam = (teamId, data) => api.put(`/projects/teams/${teamId}`, data);

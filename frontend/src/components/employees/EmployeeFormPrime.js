@@ -10,14 +10,14 @@ import { Button } from 'primereact/button';
 import { Divider } from 'primereact/divider';
 import { MultiSelect } from 'primereact/multiselect';
 import { classNames } from 'primereact/utils';
-import { createEmployee, updateEmployee, getAllProjects } from '../../services/api';
+import { createEmployee, updateEmployee, getAllProjects, getAllTeams, getProjectTeams } from '../../services/api';
 
 const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
   const [formData, setFormData] = useState({
     sso: '',
     name: '',
     role: '',
-    role_type: 'Full-Time',
+    role_type: 'DEV',
     phone: '',
     location: '',
     criticality: 'Medium',
@@ -44,8 +44,10 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [projects, setProjects] = useState([]);
+  const [allTeams, setAllTeams] = useState([]); // All teams across all projects
   const [selectedProjects, setSelectedProjects] = useState([]);
-  const [projectAllocations, setProjectAllocations] = useState({});
+  const [projectAllocations, setProjectAllocations] = useState({}); // { projectId: allocationPercentage }
+  const [projectTeamSelections, setProjectTeamSelections] = useState({}); // { projectId: teamId }
 
   // Fetch all projects on component mount
   useEffect(() => {
@@ -63,13 +65,29 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
     fetchProjects();
   }, []);
 
+  // Fetch all teams on component mount
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const response = await getAllTeams();
+        if (response.data.success) {
+          setAllTeams(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching teams:', error);
+        toast.error('Failed to load teams');
+      }
+    };
+    fetchTeams();
+  }, []);
+
   useEffect(() => {
     if (employee) {
       setFormData({
         sso: employee.sso || '',
         name: employee.name || '',
         role: employee.role || '',
-        role_type: employee.role_type || 'Full-Time',
+        role_type: employee.role_type || 'DEV',
         phone: employee.phone || '',
         location: employee.location || '',
         criticality: employee.criticality || 'Medium',
@@ -127,7 +145,7 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
       sso: '',
       name: '',
       role: '',
-      role_type: 'Full-Time',
+      role_type: 'DEV',
       phone: '',
       location: '',
       criticality: 'Medium',
@@ -153,6 +171,7 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
     setErrors({});
     setSelectedProjects([]);
     setProjectAllocations({});
+    setProjectTeamSelections({});
   };
 
   const handleChange = (name, value) => {
@@ -193,6 +212,13 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
     }));
   };
 
+  const handleTeamSelection = (projectId, teamId) => {
+    setProjectTeamSelections(prev => ({
+      ...prev,
+      [projectId]: teamId
+    }));
+  };
+
   const validate = () => {
     const newErrors = {};
     if (!formData.name.trim()) {
@@ -228,9 +254,10 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
         current_visa_end_date: formData.current_visa_end_date ? formData.current_visa_end_date.toISOString().split('T')[0] : null,
         i94_expiry_date: formData.i94_expiry_date ? formData.i94_expiry_date.toISOString().split('T')[0] : null,
         passport_expiry_date: formData.passport_expiry_date ? formData.passport_expiry_date.toISOString().split('T')[0] : null,
-        // Add project assignments
+        // Add project assignments with team selections
         projects: selectedProjects.map(projectId => ({
           project_id: projectId,
+          team_id: projectTeamSelections[projectId] || null,
           allocation_percentage: projectAllocations[projectId] || 0
         }))
       };
@@ -257,10 +284,9 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
   };
 
   const roleTypeOptions = [
-    { label: 'Full-Time', value: 'Full-Time' },
-    { label: 'Part-Time', value: 'Part-Time' },
-    { label: 'Contract', value: 'Contract' },
-    { label: 'Intern', value: 'Intern' }
+    { label: 'DEV', value: 'DEV' },
+    { label: 'QA', value: 'QA' },
+  
   ];
 
   const criticalityOptions = [
@@ -519,36 +545,81 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
         {selectedProjects.length > 0 && (
           <div className="col-12">
             <div className="p-3" style={{ background: '#f8f9fa', borderRadius: '6px' }}>
-              <h4 className="mt-0 mb-3">Project Allocation Percentages</h4>
+              <h4 className="mt-0 mb-3">Project & Team Assignments</h4>
               <div className="grid">
                 {selectedProjects.map(projectId => {
                   const project = projects.find(p => p.id === projectId);
+                  const projectTeams = allTeams.filter(team => team.project_id === projectId);
+
                   return project ? (
-                    <div key={projectId} className="col-12 md:col-6 mb-2">
-                      <label htmlFor={`allocation-${projectId}`} className="block mb-2">
+                    <div key={projectId} className="col-12 mb-3" style={{ borderBottom: '1px solid #dee2e6', paddingBottom: '1rem' }}>
+                      <h5 className="mb-2" style={{ color: '#495057' }}>
+                        <i className="pi pi-briefcase mr-2"></i>
                         {project.project_team_name}
-                      </label>
-                      <InputNumber
-                        id={`allocation-${projectId}`}
-                        value={projectAllocations[projectId] || 0}
-                        onValueChange={(e) => handleAllocationChange(projectId, e.value)}
-                        suffix="%"
-                        min={0}
-                        max={100}
-                        showButtons
-                        buttonLayout="horizontal"
-                        step={5}
-                        incrementButtonIcon="pi pi-plus"
-                        decrementButtonIcon="pi pi-minus"
-                      />
+                      </h5>
+
+                      <div className="grid">
+                        <div className="col-12 md:col-6 mb-2">
+                          <label htmlFor={`team-${projectId}`} className="block mb-2">
+                            Agile Board Name
+                          </label>
+                          <Dropdown
+                            id={`team-${projectId}`}
+                            value={projectTeamSelections[projectId] || null}
+                            options={[
+                              { label: 'No Team (Allocated Only)', value: null },
+                              ...projectTeams.map(team => ({
+                                label: team.agile_board_name,
+                                value: team.id
+                              }))
+                            ]}
+                            onChange={(e) => handleTeamSelection(projectId, e.value)}
+                            placeholder="Select agile board"
+                            className="w-full"
+                          />
+                          {projectTeams.length === 0 && (
+                            <small className="text-muted">No teams available for this project</small>
+                          )}
+                        </div>
+
+                        <div className="col-12 md:col-6 mb-2">
+                          <label htmlFor={`allocation-${projectId}`} className="block mb-2">
+                            Allocation Percentage
+                          </label>
+                          <InputNumber
+                            id={`allocation-${projectId}`}
+                            value={projectAllocations[projectId] || 0}
+                            onValueChange={(e) => handleAllocationChange(projectId, e.value)}
+                            suffix="%"
+                            min={0}
+                            max={100}
+                            showButtons
+                            buttonLayout="horizontal"
+                            step={5}
+                            incrementButtonIcon="pi pi-plus"
+                            decrementButtonIcon="pi pi-minus"
+                            className="w-full"
+                          />
+                        </div>
+                      </div>
                     </div>
                   ) : null;
                 })}
               </div>
-              <div className="mt-3">
-                <small className="text-muted">
-                  Total Allocation: {Object.values(projectAllocations).reduce((sum, val) => sum + (val || 0), 0)}%
-                </small>
+              <div className="mt-3 p-2" style={{ background: '#fff', borderRadius: '4px', border: '1px solid #dee2e6' }}>
+                <strong>Total Allocation: </strong>
+                <span style={{
+                  color: Object.values(projectAllocations).reduce((sum, val) => sum + (val || 0), 0) > 100 ? '#dc3545' : '#28a745',
+                  fontWeight: 'bold'
+                }}>
+                  {Object.values(projectAllocations).reduce((sum, val) => sum + (val || 0), 0)}%
+                </span>
+                {Object.values(projectAllocations).reduce((sum, val) => sum + (val || 0), 0) > 100 && (
+                  <span className="ml-2" style={{ color: '#dc3545' }}>
+                    <i className="pi pi-exclamation-triangle mr-1"></i>
+                    Over-allocated!
+                  </span>
+                )}
               </div>
             </div>
           </div>

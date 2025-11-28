@@ -8,7 +8,7 @@ const EmployeeForm = ({ employee, onClose, onSuccess }) => {
     sso: '',
     name: '',
     role: '',
-    role_type: 'Full-Time',
+    role_type: 'DEV',
     phone: '',
     location: '',
     criticality: 'Medium',
@@ -40,7 +40,7 @@ const EmployeeForm = ({ employee, onClose, onSuccess }) => {
         sso: employee.sso || '',
         name: employee.name || '',
         role: employee.role || '',
-        role_type: employee.role_type || 'Full-Time',
+        role_type: employee.role_type || 'DEV',
         phone: employee.phone || '',
         location: employee.location || '',
         criticality: employee.criticality || 'Medium',
@@ -191,10 +191,9 @@ const EmployeeForm = ({ employee, onClose, onSuccess }) => {
                 value={formData.role_type}
                 onChange={handleChange}
               >
-                <option value="Full-Time">Full-Time</option>
-                <option value="Part-Time">Part-Time</option>
-                <option value="Contract">Contract</option>
-                <option value="Intern">Intern</option>
+                <option value="DEV">Dev</option>
+                <option value="QA">QA</option>
+              
               </select>
             </div>
           </div>

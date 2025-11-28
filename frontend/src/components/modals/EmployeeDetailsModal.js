@@ -1,11 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import { Dialog } from 'primereact/dialog';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import { Tag } from 'primereact/tag';
+import { InputText } from 'primereact/inputtext';
+import { TabView, TabPanel } from 'primereact/tabview';
 import { getProjectById } from '../../services/api';
 import './EmployeeDetailsModal.css';
 
 const EmployeeDetailsModal = ({ projectId, projectName, isOpen, onClose }) => {
   const [teams, setTeams] = useState([]);
+  const [allocatedEmployees, setAllocatedEmployees] = useState([]);
+  const [projectData, setProjectData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [globalFilter, setGlobalFilter] = useState('');
+  const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
     if (isOpen && projectId) {
@@ -18,7 +28,9 @@ const EmployeeDetailsModal = ({ projectId, projectName, isOpen, onClose }) => {
       setLoading(true);
       setError(null);
       const response = await getProjectById(projectId);
+      setProjectData(response.data.data);
       setTeams(response.data.data.teams || []);
+      setAllocatedEmployees(response.data.data.allocated_employees || []);
     } catch (err) {
       console.error('Error fetching project details:', err);
       setError('Failed to load project details');
@@ -29,130 +41,195 @@ const EmployeeDetailsModal = ({ projectId, projectName, isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  // Calculate total employees across all teams
-  const allEmployees = teams.flatMap(team => team.employees || []);
-  const totalEmployees = allEmployees.length;
-  const totalAllocation = allEmployees.reduce((sum, emp) => sum + parseFloat(emp.allocation_percentage || 0), 0);
+  // Assigned employees (employees assigned to specific teams)
+  const assignedEmployees = teams.flatMap(team =>
+    (team.employees || []).map(emp => ({
+      ...emp,
+      team_name: team.agile_board_name,
+      team_jira_key: team.agile_team_jira_key,
+      assignment_type: 'Assigned to Team'
+    }))
+  );
+
+  // Allocated employees (employees allocated to project but not assigned to teams)
+  const allocatedOnly = allocatedEmployees.map(emp => ({
+    ...emp,
+    team_name: 'Not Assigned',
+    team_jira_key: null,
+    assignment_type: 'Allocated Only'
+  }));
+
+  // All employees combined
+  const allEmployees = [...assignedEmployees, ...allocatedOnly];
+
+  // Use backend's DISTINCT count for unique employees
+  const totalUniqueEmployees = projectData?.total_employees || 0;
+  const totalAssignments = allEmployees.length;
+  const totalAllocatedOnly = allocatedOnly.length;
+  const totalAssigned = assignedEmployees.length;
+
+  // Column templates
+  const roleTypeBodyTemplate = (rowData) => {
+    const getSeverity = (roleType) => {
+      switch (roleType) {
+        case 'Onsite': return 'success';
+        case 'Offshore': return 'info';
+        case 'Contractor': return 'warning';
+        default: return null;
+      }
+    };
+    return <Tag value={rowData.role_type || 'N/A'} severity={getSeverity(rowData.role_type)} />;
+  };
+
+  const allocationBodyTemplate = (rowData) => {
+    const allocation = parseFloat(rowData.allocation_percentage || 0);
+    const getSeverity = () => {
+      if (allocation > 100) return 'danger';
+      if (allocation === 100) return 'success';
+      if (allocation >= 75) return 'info';
+      return 'warning';
+    };
+    return <Tag value={`${allocation.toFixed(2)}%`} severity={getSeverity()} />;
+  };
+
+  const teamBodyTemplate = (rowData) => {
+    return (
+      <div>
+        <div>{rowData.team_name}</div>
+        {rowData.team_jira_key && (
+          <small style={{ color: '#6c757d' }}>JIRA: {rowData.team_jira_key}</small>
+        )}
+      </div>
+    );
+  };
+
+  const assignmentTypeBodyTemplate = (rowData) => {
+    const getSeverity = () => {
+      return rowData.assignment_type === 'Assigned to Team' ? 'success' : 'warning';
+    };
+    return <Tag value={rowData.assignment_type} severity={getSeverity()} />;
+  };
+
+  const getHeader = (title, count) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+      <div>
+        <strong>{title}: {count}</strong>
+      </div>
+      <span className="p-input-icon-left">
+        <i className="pi pi-search" />
+        <InputText
+          type="search"
+          value={globalFilter}
+          onChange={(e) => setGlobalFilter(e.target.value)}
+          placeholder="Search employees..."
+          style={{ width: '250px' }}
+        />
+      </span>
+    </div>
+  );
+
+  const allHeader = getHeader('Total Employees', totalAssignments);
+  const assignedHeader = getHeader('Assigned to Teams', totalAssigned);
+  const allocatedHeader = getHeader('Allocated Only', totalAllocatedOnly);
+
+  const renderDataTable = (data, header) => (
+    <DataTable
+      value={data}
+      dataKey="id"
+      paginator={data.length > 10}
+      rows={10}
+      rowsPerPageOptions={[5, 10, 25, 50]}
+      globalFilter={globalFilter}
+      header={header}
+      emptyMessage="No employees found"
+      stripedRows
+      showGridlines
+      responsiveLayout="scroll"
+      paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} Employees"
+    >
+      <Column field="sso" header="SSO" sortable style={{ minWidth: '100px' }} />
+      <Column field="name" header="Name" sortable style={{ minWidth: '200px' }} />
+      <Column field="role" header="Role" sortable style={{ minWidth: '150px' }} />
+      <Column field="role_type" header="Role Type" body={roleTypeBodyTemplate} sortable style={{ minWidth: '120px' }} />
+      <Column field="location" header="Location" sortable style={{ minWidth: '120px' }} />
+      <Column field="team_name" header="Team" body={teamBodyTemplate} sortable style={{ minWidth: '180px' }} />
+      <Column field="assignment_type" header="Status" body={assignmentTypeBodyTemplate} sortable style={{ minWidth: '150px' }} />
+      <Column field="allocation_percentage" header="Allocation" body={allocationBodyTemplate} sortable style={{ minWidth: '120px' }} />
+    </DataTable>
+  );
 
   return (
-    <div className="employee-modal-overlay" onClick={onClose}>
-      <div className="employee-modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="employee-modal-header">
-          <h2>Project Details: {projectName}</h2>
-          <button className="close-btn" onClick={onClose}>&times;</button>
+    <Dialog
+      visible={isOpen}
+      onHide={onClose}
+      header={`Project Details: ${projectName}`}
+      style={{ width: '90vw', maxWidth: '1400px' }}
+      modal
+      className="employee-details-modal"
+    >
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          <i className="pi pi-spinner pi-spin" style={{ fontSize: '2rem' }}></i>
+          <p>Loading project details...</p>
         </div>
+      ) : error ? (
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#dc3545' }}>
+          <i className="pi pi-exclamation-circle" style={{ fontSize: '2rem' }}></i>
+          <p>{error}</p>
+        </div>
+      ) : (
+        <>
+          <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '6px' }}>
+            <strong>Summary:</strong>{' '}
+            <span style={{ marginLeft: '0.5rem' }}>
+              Unique Employees: <strong>{totalUniqueEmployees}</strong>
+            </span>
+            <span style={{ marginLeft: '1.5rem' }}>
+              Assigned to Teams: <Tag value={totalAssigned} severity="success" />
+            </span>
+            <span style={{ marginLeft: '1rem' }}>
+              Allocated Only: <Tag value={totalAllocatedOnly} severity="warning" />
+            </span>
+          </div>
 
-        <div className="employee-modal-body">
-          {loading ? (
-            <div className="loading">Loading project details...</div>
-          ) : error ? (
-            <div className="error">{error}</div>
-          ) : (
-            <>
-              <div className="allocation-summary-box" style={{ marginBottom: '1rem' }}>
-                <strong>Total Employees: {totalEmployees}</strong>
-                {totalEmployees > 0 && (
-                  <span style={{ marginLeft: '1rem' }}>Total Allocation: {totalAllocation.toFixed(2)}%</span>
-                )}
-                {totalAllocation > 100 && (
-                  <span className="warning-text"> (Exceeds 100%)</span>
-                )}
-              </div>
-
-              {teams.length === 0 ? (
-                <p className="no-data">No teams created for this project</p>
-              ) : (
-                <div className="teams-with-employees">
-                  {teams.map((team) => (
-                    <div key={team.id} className="team-section" style={{ marginBottom: '1.5rem' }}>
-                      <div className="team-header" style={{
-                        backgroundColor: '#f8f9fa',
-                        padding: '0.75rem',
-                        borderRadius: '6px 6px 0 0',
-                        border: '1px solid #dee2e6',
-                        borderBottom: 'none'
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div>
-                            <h4 style={{ margin: 0, fontSize: '1rem', color: '#333' }}>{team.agile_board_name}</h4>
-                            {team.agile_team_jira_key && (
-                              <span style={{ fontSize: '0.85rem', color: '#6c757d' }}>JIRA: {team.agile_team_jira_key}</span>
-                            )}
-                          </div>
-                          <span style={{
-                            backgroundColor: '#007bff',
-                            color: 'white',
-                            padding: '0.25rem 0.75rem',
-                            borderRadius: '12px',
-                            fontSize: '0.85rem',
-                            fontWeight: '600'
-                          }}>
-                            {team.employees?.length || 0} {(team.employees?.length || 0) === 1 ? 'employee' : 'employees'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {team.employees && team.employees.length > 0 ? (
-                        <div className="employee-details-table-container" style={{ border: '1px solid #dee2e6', borderRadius: '0 0 6px 6px' }}>
-                          <table className="employee-details-table" style={{ marginBottom: 0 }}>
-                            <thead>
-                              <tr>
-                                <th>SSO</th>
-                                <th>Name</th>
-                                <th>Role</th>
-                                <th>Role Type</th>
-                                <th>Location</th>
-                                <th>Allocation %</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {team.employees.map((employee) => (
-                                <tr key={employee.id}>
-                                  <td>{employee.sso || 'N/A'}</td>
-                                  <td className="employee-name">{employee.name}</td>
-                                  <td>{employee.role || 'N/A'}</td>
-                                  <td>
-                                    <span className="role-type-badge">
-                                      {employee.role_type || 'N/A'}
-                                    </span>
-                                  </td>
-                                  <td>{employee.location || 'N/A'}</td>
-                                  <td>
-                                    <span className="allocation-badge">
-                                      {parseFloat(employee.allocation_percentage).toFixed(2)}%
-                                    </span>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      ) : (
-                        <div style={{
-                          border: '1px solid #dee2e6',
-                          borderTop: 'none',
-                          borderRadius: '0 0 6px 6px',
-                          padding: '1rem',
-                          textAlign: 'center',
-                          color: '#6c757d',
-                          backgroundColor: 'white'
-                        }}>
-                          No employees assigned to this team
-                        </div>
-                      )}
-                    </div>
-                  ))}
+          <TabView activeIndex={activeTab} onTabChange={(e) => setActiveTab(e.index)}>
+            <TabPanel header={`All Employees (${totalAssignments})`}>
+              {allEmployees.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: '#6c757d' }}>
+                  <i className="pi pi-info-circle" style={{ fontSize: '2rem' }}></i>
+                  <p>No employees allocated to this project</p>
                 </div>
+              ) : (
+                renderDataTable(allEmployees, allHeader)
               )}
-            </>
-          )}
-        </div>
+            </TabPanel>
 
-        <div className="employee-modal-footer">
-          <button className="btn btn-close" onClick={onClose}>Close</button>
-        </div>
-      </div>
-    </div>
+            <TabPanel header={`Assigned to Teams (${totalAssigned})`}>
+              {assignedEmployees.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: '#6c757d' }}>
+                  <i className="pi pi-info-circle" style={{ fontSize: '2rem' }}></i>
+                  <p>No employees assigned to teams yet</p>
+                </div>
+              ) : (
+                renderDataTable(assignedEmployees, assignedHeader)
+              )}
+            </TabPanel>
+
+            <TabPanel header={`Allocated Only (${totalAllocatedOnly})`}>
+              {allocatedOnly.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: '#6c757d' }}>
+                  <i className="pi pi-info-circle" style={{ fontSize: '2rem' }}></i>
+                  <p>All employees are assigned to teams</p>
+                </div>
+              ) : (
+                renderDataTable(allocatedOnly, allocatedHeader)
+              )}
+            </TabPanel>
+          </TabView>
+        </>
+      )}
+    </Dialog>
   );
 };
 

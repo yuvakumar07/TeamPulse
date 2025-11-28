@@ -105,6 +105,15 @@ const assignEmployeesToTeam = async (req, res) => {
           });
         }
 
+        // Delete any "allocated only" record (team_id = NULL) for this employee in this project
+        // This prevents duplicate allocations when moving from "allocated only" to "assigned to team"
+        await connection.query(
+          `DELETE FROM project_employees
+           WHERE project_id = ? AND employee_id = ? AND team_id IS NULL`,
+          [team.project_id, emp.employee_id]
+        );
+
+        // Insert the new team assignment
         await connection.query(
           `INSERT INTO project_employees (project_id, team_id, employee_id, allocation_percentage)
            VALUES (?, ?, ?, ?)`,

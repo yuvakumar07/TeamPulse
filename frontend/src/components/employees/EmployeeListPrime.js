@@ -8,7 +8,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { Tag } from 'primereact/tag';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Toolbar } from 'primereact/toolbar';
-import { getAllEmployees, deleteEmployee, getAllProjects } from '../../services/api';
+import { getAllEmployees, deleteEmployee, getAllProjects, getAllTeams } from '../../services/api';
 import { exportEmployeesToExcel } from '../../utils/exportToExcel';
 import PermissionGuard from '../auth/PermissionGuard';
 import ImportEmployeesDialog from './ImportEmployeesDialog';
@@ -19,7 +19,10 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
   const [globalFilter, setGlobalFilter] = useState('');
   const [roleTypeFilter, setRoleTypeFilter] = useState('All');
   const [projectFilter, setProjectFilter] = useState('All');
+  const [teamFilter, setTeamFilter] = useState('All');
   const [projects, setProjects] = useState([]);
+  const [allTeams, setAllTeams] = useState([]); // Store all teams
+  const [teams, setTeams] = useState([]); // Filtered teams based on project
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [lazyState, setlazyState] = useState({
     first: 0,
@@ -73,9 +76,72 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
     fetchProjects();
   }, []);
 
+  // Fetch all teams for filter dropdown
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        console.log('Fetching teams...');
+        const response = await getAllTeams(); // Fetch all teams
+        console.log('Teams response:', response);
+        console.log('Teams data:', response.data);
+        console.log('Teams array:', response.data.data);
+
+        if (!response.data.data || response.data.data.length === 0) {
+          console.warn('No teams found in response');
+          setAllTeams([]);
+          setTeams([{ label: 'All Teams', value: 'All' }]);
+          return;
+        }
+
+        // Store all teams with their project information
+        const teamsData = response.data.data.map(team => ({
+          label: `${team.agile_board_name} (${team.project_team_name})`,
+          value: team.agile_board_name,
+          projectName: team.project_team_name
+        }));
+
+        console.log('All teams data:', teamsData);
+        setAllTeams(teamsData);
+
+        // Initially show all teams
+        setTeams([{ label: 'All Teams', value: 'All' }, ...teamsData]);
+      } catch (err) {
+        console.error('Error fetching teams:', err);
+        console.error('Error details:', err.response?.data || err.message);
+        // Set default option even on error
+        setAllTeams([]);
+        setTeams([{ label: 'All Teams', value: 'All' }]);
+      }
+    };
+    fetchTeams();
+  }, []);
+
+  // Filter teams based on selected project
+  useEffect(() => {
+    console.log('Project filter changed:', projectFilter);
+    console.log('All teams:', allTeams);
+
+    if (projectFilter === 'All') {
+      // Show all teams when "All Projects" is selected
+      setTeams([{ label: 'All Teams', value: 'All' }, ...allTeams]);
+      console.log('Showing all teams');
+    } else {
+      // Filter teams by selected project
+      const filteredTeams = allTeams.filter(team => team.projectName === projectFilter);
+      console.log('Filtered teams for project', projectFilter, ':', filteredTeams);
+      setTeams([{ label: 'All Teams', value: 'All' }, ...filteredTeams]);
+
+      // Reset team filter if current selection is not in filtered list
+      if (teamFilter !== 'All' && !filteredTeams.some(team => team.value === teamFilter)) {
+        console.log('Resetting team filter because current selection not in filtered list');
+        setTeamFilter('All');
+      }
+    }
+  }, [projectFilter, allTeams]);
+
   useEffect(() => {
     loadEmployees();
-  }, [lazyState, roleTypeFilter, projectFilter, globalFilter]);
+  }, [lazyState, roleTypeFilter, projectFilter, teamFilter, globalFilter]);
 
   const loadEmployees = async () => {
     try {
@@ -85,7 +151,7 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
       const sortField = lazyState.sortField || 'id';
       const sortOrder = lazyState.sortOrder === 1 ? 'ASC' : 'DESC';
 
-      const response = await getAllEmployees(page, limit, roleTypeFilter, sortField, sortOrder, globalFilter, projectFilter);
+      const response = await getAllEmployees(page, limit, roleTypeFilter, sortField, sortOrder, globalFilter, projectFilter, teamFilter);
       setEmployees(response.data.data);
       setTotalRecords(response.data.pagination.total);
     } catch (err) {
@@ -415,6 +481,20 @@ const EmployeeListPrime = ({ onEdit, onAdd, onViewAssets }) => {
             options={projects}
             placeholder="Select Project"
             style={{ width: '200px' }}
+          />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label htmlFor="teamFilter">Agile Board Name:</label>
+          <Dropdown
+            id="teamFilter"
+            value={teamFilter}
+            onChange={(e) => {
+              setTeamFilter(e.value);
+              setlazyState({ ...lazyState, first: 0, page: 0 });
+            }}
+            options={teams}
+            placeholder="Select Agile Board"
+            style={{ width: '250px' }}
           />
         </div>
       </div>
