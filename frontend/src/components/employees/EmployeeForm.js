@@ -31,6 +31,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
     comments: '',
     attrition: 'No',
     notice_period_days: null,
+    work_location: 'Onsite',
     offshore_manager_id: null,
     onsite_manager_id: null,
     visa_type: 'None',
@@ -102,6 +103,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
         comments: employee.comments || '',
         attrition: employee.attrition || 'No',
         notice_period_days: employee.notice_period_days || null,
+        work_location: employee.work_location || 'Onsite',
         offshore_manager_id: employee.offshore_manager_id || null,
         onsite_manager_id: employee.onsite_manager_id || null,
         visa_type: employee.visa_type || 'None',
@@ -271,6 +273,11 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
     { label: 'At Risk', value: 'At Risk' }
   ];
 
+  const workLocationOptions = [
+    { label: 'Onsite', value: 'Onsite' },
+    { label: 'Offsite', value: 'Offsite' }
+  ];
+
   const visaTypeOptions = [
     { label: 'None', value: 'None' },
     { label: 'H1B', value: 'H1B' },
@@ -425,6 +432,16 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                   suffix=" days"
                   placeholder="e.g., 30, 60, 90"
                   useGrouping={false}
+                />
+              </div>
+
+              <div className="field col-12 md:col-3">
+                <label htmlFor="work_location">Work Location</label>
+                <Dropdown
+                  id="work_location"
+                  value={formData.work_location}
+                  options={workLocationOptions}
+                  onChange={(e) => handleChange('work_location', e.value)}
                 />
               </div>
 
