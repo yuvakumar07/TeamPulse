@@ -17,15 +17,15 @@ const AddEmployeePage = () => {
   };
 
   return (
-    <div className="employee-form-page">
-      <div className="page-header">
+    <div className="employee-form-page p-0">
+      {/* <div className="page-header">
         <Button
           icon="pi pi-arrow-left"
           label="Back to Employees"
           className="p-button-text"
           onClick={handleCancel}
         />
-      </div>
+      </div> */}
 
       <Card className="form-card">
         <div className="card-header">

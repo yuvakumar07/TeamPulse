@@ -286,7 +286,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
           {/* Tab 1: Basic Information */}
           <TabPanel header="Basic Information" leftIcon="pi pi-user mr-2">
             <div className="formgrid grid">
-              <div className="field col-12 md:col-6">
+              <div className="field col-12 md:col-4">
                 <label htmlFor="sso">SSO</label>
                 <InputText
                   id="sso"
@@ -295,7 +295,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
               </div>
 
-              <div className="field col-12 md:col-6">
+              <div className="field col-12 md:col-4">
                 <label htmlFor="name">Name *</label>
                 <InputText
                   id="name"
@@ -306,7 +306,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 {errors.name && <small className="p-error">{errors.name}</small>}
               </div>
 
-              <div className="field col-12 md:col-6">
+              <div className="field col-12 md:col-4">
                 <label htmlFor="role">Role</label>
                 <InputText
                   id="role"
@@ -315,7 +315,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
               </div>
 
-              <div className="field col-12 md:col-6">
+              <div className="field col-12 md:col-4">
                 <label htmlFor="role_type">Role Type</label>
                 <Dropdown
                   id="role_type"
@@ -325,7 +325,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
               </div>
 
-              <div className="field col-12 md:col-6">
+              <div className="field col-12 md:col-4">
                 <label htmlFor="phone">Phone</label>
                 <InputText
                   id="phone"
@@ -334,7 +334,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
               </div>
 
-              <div className="field col-12 md:col-6">
+              <div className="field col-12 md:col-4">
                 <label htmlFor="location">Location</label>
                 <InputText
                   id="location"
@@ -359,7 +359,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
           {/* Tab 2: Employment Details */}
           <TabPanel header="Employment Details" leftIcon="pi pi-briefcase mr-2">
             <div className="formgrid grid">
-              <div className="field col-12 md:col-6">
+              <div className="field col-12 md:col-3">
                 <label htmlFor="joining_date">Joining Date</label>
                 <Calendar
                   id="joining_date"
@@ -371,7 +371,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
               </div>
 
-              <div className="field col-12 md:col-6">
+              <div className="field col-12 md:col-3">
                 <label htmlFor="last_working_day">Last Working Day</label>
                 <Calendar
                   id="last_working_day"
@@ -382,7 +382,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
               </div>
 
-              <div className="field col-12 md:col-6">
+              <div className="field col-12 md:col-3">
                 <label htmlFor="status">Status</label>
                 <Dropdown
                   id="status"
@@ -392,7 +392,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
               </div>
 
-              <div className="field col-12 md:col-6">
+              <div className="field col-12 md:col-3">
                 <label htmlFor="criticality">Criticality</label>
                 <Dropdown
                   id="criticality"
@@ -402,7 +402,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
               </div>
 
-              <div className="field col-12 md:col-6">
+              <div className="field col-12 md:col-3">
                 <label htmlFor="attrition">Attrition</label>
                 <Dropdown
                   id="attrition"
@@ -412,7 +412,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
               </div>
 
-              <div className="field col-12 md:col-6">
+              <div className="field col-12 md:col-3">
                 <label htmlFor="possible_candidate">Possible Candidate</label>
                 <InputText
                   id="possible_candidate"
@@ -422,7 +422,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
               </div>
 
-              <div className="field col-12 md:col-6">
+              <div className="field col-12 md:col-3">
                 <label htmlFor="offshore_manager_id">Offshore Manager ID</label>
                 <InputNumber
                   id="offshore_manager_id"
@@ -432,7 +432,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
               </div>
 
-              <div className="field col-12 md:col-6">
+              <div className="field col-12 md:col-3">
                 <label htmlFor="onsite_manager_id">Onsite Manager ID</label>
                 <InputNumber
                   id="onsite_manager_id"
@@ -442,7 +442,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
               </div>
 
-              <div className="field col-12 md:col-6">
+              <div className="field col-12 md:col-3">
                 <label htmlFor="asset_id">Asset ID</label>
                 <InputText
                   id="asset_id"
@@ -451,7 +451,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
               </div>
 
-              <div className="field col-12 md:col-6">
+              <div className="field col-12 md:col-3">
                 <label htmlFor="asset_return_id">Asset Return ID</label>
                 <InputText
                   id="asset_return_id"
