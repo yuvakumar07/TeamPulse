@@ -83,6 +83,59 @@
   height: auto;
 }
 
+/* TabView Styling */
+.employee-form-container .p-tabview {
+  border: none;
+}
+
+.employee-form-container .p-tabview-nav {
+  background: linear-gradient(135deg, #323232 0%, #4a4a4a 100%);
+  border: none;
+  border-radius: 6px 6px 0 0;
+  padding: 0;
+}
+
+.employee-form-container .p-tabview-nav li {
+  margin: 0;
+}
+
+.employee-form-container .p-tabview-nav li .p-tabview-nav-link {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  padding: 1rem 1.5rem;
+  transition: all 0.3s ease;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.employee-form-container .p-tabview-nav li:last-child .p-tabview-nav-link {
+  border-right: none;
+}
+
+.employee-form-container .p-tabview-nav li .p-tabview-nav-link:not(.p-disabled):focus {
+  box-shadow: none;
+}
+
+.employee-form-container .p-tabview-nav li:not(.p-highlight):not(.p-disabled):hover .p-tabview-nav-link {
+  background: rgba(255, 197, 0, 0.1);
+  color: #FFC500;
+}
+
+.employee-form-container .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+  background: #FFC500;
+  color: #323232;
+  font-weight: 600;
+  border-bottom: 3px solid #323232;
+}
+
+.employee-form-container .p-tabview-panels {
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  border-top: none;
+  padding: 2rem;
+  border-radius: 0 0 6px 6px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .employee-form-page {

@@ -233,7 +233,7 @@ const AssetListPrime = ({ onEdit, onAdd }) => {
   return (
     <div className="card">
       <ConfirmDialog />
-      <Toolbar className="mb-4" left={leftToolbarTemplate} right={rightToolbarTemplate} />
+      <Toolbar className="" left={leftToolbarTemplate} right={rightToolbarTemplate} />
 
       <DataTable
         ref={dt}

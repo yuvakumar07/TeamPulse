@@ -52,12 +52,12 @@
 }
 
 .p-datatable .p-datatable-thead > tr > th {
-  background-color: #f8f9fa;
-  color: #495057;
-  font-weight: 600;
-  border-bottom: 2px solid #dee2e6;
-  padding: 0.75rem;
-  font-size: 0.9rem;
+     background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    border-bottom: 1px solid #dee2e6;
+    padding: 9px 10px;
+    font-size: 14px;
 }
 
 .p-datatable .p-datatable-tbody > tr {
@@ -81,10 +81,14 @@
   background: white;
   border: none;
   border-top: 1px solid #e9ecef;
-  padding: 0.75rem 1rem;
+  padding: 0;
   border-radius: 0 0 6px 6px;
 }
 
+.p-paginator .p-dropdown{
+  height: 24px;
+  line-height: 6px;
+}
 .p-paginator .p-paginator-pages .p-paginator-page {
   min-width: 2rem;
   height: 2rem;
@@ -325,11 +329,11 @@ button[aria-label="Cancel"]:hover {
 
 /* Tag styling */
 .p-tag {
-  padding: 0.3rem 0.8rem;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-transform: capitalize;
+     padding: 3px 10px;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: capitalize;
 }
 
 .p-tag.p-tag-success {
@@ -595,4 +599,10 @@ button[aria-label="Cancel"]:hover {
   width: auto;
   height: auto;
   border: none !important;
+}
+
+.p-datatable .p-datatable-header i.pi.pi-search {
+    position: absolute;
+    right: 7px;
+    top: 11px;
 }

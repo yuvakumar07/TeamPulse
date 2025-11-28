@@ -1,9 +1,13 @@
+body{
+  overflow: hidden;
+}
 .App {
-  height: 100vh;
+
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
+
 
 /* Login page full viewport without scroll */
 .App.login-page {
@@ -11,11 +15,11 @@
 }
 
 .App.login-page .app-layout {
-  height: 100vh;
+
 }
 
 .App.login-page .app-main {
-  height: 100vh;
+ 
 }
 
 .app-layout {

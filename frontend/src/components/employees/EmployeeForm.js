@@ -6,7 +6,7 @@ import { Calendar } from 'primereact/calendar';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { InputNumber } from 'primereact/inputnumber';
 import { Button } from 'primereact/button';
-import { Divider } from 'primereact/divider';
+import { TabView, TabPanel } from 'primereact/tabview';
 import { MultiSelect } from 'primereact/multiselect';
 import { classNames } from 'primereact/utils';
 import { createEmployee, updateEmployee, getAllProjects, getAllTeams } from '../../services/api';
@@ -282,393 +282,393 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
   return (
     <div className="employee-form-container p-fluid">
       <form onSubmit={handleSubmit}>
-        <div className="formgrid grid">
-          {/* Basic Information */}
-          <div className="field col-12 md:col-6">
-            <label htmlFor="sso">SSO</label>
-            <InputText
-              id="sso"
-              value={formData.sso}
-              onChange={(e) => handleChange('sso', e.target.value)}
-            />
-          </div>
-
-          <div className="field col-12 md:col-6">
-            <label htmlFor="name">Name *</label>
-            <InputText
-              id="name"
-              value={formData.name}
-              onChange={(e) => handleChange('name', e.target.value)}
-              className={classNames({ 'p-invalid': errors.name })}
-            />
-            {errors.name && <small className="p-error">{errors.name}</small>}
-          </div>
-
-          <div className="field col-12 md:col-6">
-            <label htmlFor="role">Role</label>
-            <InputText
-              id="role"
-              value={formData.role}
-              onChange={(e) => handleChange('role', e.target.value)}
-            />
-          </div>
-
-          <div className="field col-12 md:col-6">
-            <label htmlFor="role_type">Role Type</label>
-            <Dropdown
-              id="role_type"
-              value={formData.role_type}
-              options={roleTypeOptions}
-              onChange={(e) => handleChange('role_type', e.value)}
-            />
-          </div>
-
-          <div className="field col-12 md:col-6">
-            <label htmlFor="phone">Phone</label>
-            <InputText
-              id="phone"
-              value={formData.phone}
-              onChange={(e) => handleChange('phone', e.target.value)}
-            />
-          </div>
-
-          <div className="field col-12 md:col-6">
-            <label htmlFor="location">Location</label>
-            <InputText
-              id="location"
-              value={formData.location}
-              onChange={(e) => handleChange('location', e.target.value)}
-            />
-          </div>
-
-          <div className="field col-12 md:col-6">
-            <label htmlFor="criticality">Criticality</label>
-            <Dropdown
-              id="criticality"
-              value={formData.criticality}
-              options={criticalityOptions}
-              onChange={(e) => handleChange('criticality', e.value)}
-            />
-          </div>
-
-          <div className="field col-12 md:col-6">
-            <label htmlFor="status">Status</label>
-            <Dropdown
-              id="status"
-              value={formData.status}
-              options={statusOptions}
-              onChange={(e) => handleChange('status', e.value)}
-            />
-          </div>
-
-          <div className="field col-12">
-            <label htmlFor="skills">Skills</label>
-            <InputTextarea
-              id="skills"
-              value={formData.skills}
-              onChange={(e) => handleChange('skills', e.target.value)}
-              rows={3}
-              placeholder="Enter skills separated by commas"
-            />
-          </div>
-
-          <div className="field col-12 md:col-6">
-            <label htmlFor="joining_date">Joining Date</label>
-            <Calendar
-              id="joining_date"
-              value={formData.joining_date}
-              onChange={(e) => handleChange('joining_date', e.value)}
-              dateFormat="yy-mm-dd"
-              showIcon
-              placeholder="Select joining date"
-            />
-          </div>
-
-          <div className="field col-12 md:col-6">
-            <label htmlFor="last_working_day">Last Working Day</label>
-            <Calendar
-              id="last_working_day"
-              value={formData.last_working_day}
-              onChange={(e) => handleChange('last_working_day', e.value)}
-              dateFormat="yy-mm-dd"
-              showIcon
-            />
-          </div>
-
-          <div className="field col-12 md:col-6">
-            <label htmlFor="possible_candidate">Possible Candidate</label>
-            <InputText
-              id="possible_candidate"
-              value={formData.possible_candidate}
-              onChange={(e) => handleChange('possible_candidate', e.target.value)}
-              placeholder="Replacement candidate name"
-            />
-          </div>
-
-          <div className="field col-12 md:col-6">
-            <label htmlFor="asset_id">Asset ID</label>
-            <InputText
-              id="asset_id"
-              value={formData.asset_id}
-              onChange={(e) => handleChange('asset_id', e.target.value)}
-            />
-          </div>
-
-          <div className="field col-12 md:col-6">
-            <label htmlFor="asset_return_id">Asset Return ID</label>
-            <InputText
-              id="asset_return_id"
-              value={formData.asset_return_id}
-              onChange={(e) => handleChange('asset_return_id', e.target.value)}
-            />
-          </div>
-
-          <div className="field col-12">
-            <label htmlFor="comments">Comments</label>
-            <InputTextarea
-              id="comments"
-              value={formData.comments}
-              onChange={(e) => handleChange('comments', e.target.value)}
-              rows={3}
-              placeholder="Additional comments or notes"
-            />
-          </div>
-
-          <div className="field col-12 md:col-4">
-            <label htmlFor="attrition">Attrition</label>
-            <Dropdown
-              id="attrition"
-              value={formData.attrition}
-              options={attritionOptions}
-              onChange={(e) => handleChange('attrition', e.value)}
-            />
-          </div>
-
-          <div className="field col-12 md:col-4">
-            <label htmlFor="offshore_manager_id">Offshore Manager ID</label>
-            <InputNumber
-              id="offshore_manager_id"
-              value={formData.offshore_manager_id}
-              onValueChange={(e) => handleChange('offshore_manager_id', e.value)}
-              useGrouping={false}
-            />
-          </div>
-
-          <div className="field col-12 md:col-4">
-            <label htmlFor="onsite_manager_id">Onsite Manager ID</label>
-            <InputNumber
-              id="onsite_manager_id"
-              value={formData.onsite_manager_id}
-              onValueChange={(e) => handleChange('onsite_manager_id', e.value)}
-              useGrouping={false}
-            />
-          </div>
-
-          {/* Project Assignment Section */}
-          <div className="col-12">
-            <Divider align="left">
-              <div className="inline-flex align-items-center">
-                <i className="pi pi-briefcase mr-2"></i>
-                <b>Project Assignments</b>
+        <TabView>
+          {/* Tab 1: Basic Information */}
+          <TabPanel header="Basic Information" leftIcon="pi pi-user mr-2">
+            <div className="formgrid grid">
+              <div className="field col-12 md:col-6">
+                <label htmlFor="sso">SSO</label>
+                <InputText
+                  id="sso"
+                  value={formData.sso}
+                  onChange={(e) => handleChange('sso', e.target.value)}
+                />
               </div>
-            </Divider>
-          </div>
 
-          <div className="field col-12">
-            <label htmlFor="projects">Assign Projects</label>
-            <MultiSelect
-              id="projects"
-              value={selectedProjects}
-              options={projects.map(p => ({ label: p.project_team_name, value: p.id }))}
-              onChange={(e) => handleProjectSelection(e.value)}
-              placeholder="Select projects to assign"
-              display="chip"
-              filter
-            />
-          </div>
+              <div className="field col-12 md:col-6">
+                <label htmlFor="name">Name *</label>
+                <InputText
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => handleChange('name', e.target.value)}
+                  className={classNames({ 'p-invalid': errors.name })}
+                />
+                {errors.name && <small className="p-error">{errors.name}</small>}
+              </div>
 
-          {selectedProjects.length > 0 && (
-            <div className="col-12">
-              <div className="p-3" style={{ background: '#f8f9fa', borderRadius: '6px' }}>
-                <h4 className="mt-0 mb-3">Project & Team Assignments</h4>
-                <div className="grid">
-                  {selectedProjects.map(projectId => {
-                    const project = projects.find(p => p.id === projectId);
-                    const projectTeams = allTeams.filter(team => team.project_id === projectId);
+              <div className="field col-12 md:col-6">
+                <label htmlFor="role">Role</label>
+                <InputText
+                  id="role"
+                  value={formData.role}
+                  onChange={(e) => handleChange('role', e.target.value)}
+                />
+              </div>
 
-                    return project ? (
-                      <div key={projectId} className="col-12 mb-3" style={{ borderBottom: '1px solid #dee2e6', paddingBottom: '1rem' }}>
-                        <h5 className="mb-2" style={{ color: '#495057' }}>
-                          <i className="pi pi-briefcase mr-2"></i>
-                          {project.project_team_name}
-                        </h5>
+              <div className="field col-12 md:col-6">
+                <label htmlFor="role_type">Role Type</label>
+                <Dropdown
+                  id="role_type"
+                  value={formData.role_type}
+                  options={roleTypeOptions}
+                  onChange={(e) => handleChange('role_type', e.value)}
+                />
+              </div>
 
-                        <div className="grid">
-                          <div className="col-12 md:col-6 mb-2">
-                            <label htmlFor={`team-${projectId}`} className="block mb-2">
-                              Agile Board Name
-                            </label>
-                            <Dropdown
-                              id={`team-${projectId}`}
-                              value={projectTeamSelections[projectId] || null}
-                              options={[
-                                { label: 'No Team (Allocated Only)', value: null },
-                                ...projectTeams.map(team => ({
-                                  label: team.agile_board_name,
-                                  value: team.id
-                                }))
-                              ]}
-                              onChange={(e) => handleTeamSelection(projectId, e.value)}
-                              placeholder="Select agile board"
-                              className="w-full"
-                            />
-                            {projectTeams.length === 0 && (
-                              <small className="text-muted">No teams available for this project</small>
-                            )}
-                          </div>
+              <div className="field col-12 md:col-6">
+                <label htmlFor="phone">Phone</label>
+                <InputText
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => handleChange('phone', e.target.value)}
+                />
+              </div>
 
-                          <div className="col-12 md:col-6 mb-2">
-                            <label htmlFor={`allocation-${projectId}`} className="block mb-2">
-                              Allocation Percentage
-                            </label>
-                            <InputNumber
-                              id={`allocation-${projectId}`}
-                              value={projectAllocations[projectId] || 0}
-                              onValueChange={(e) => handleAllocationChange(projectId, e.value)}
-                              suffix="%"
-                              min={0}
-                              max={100}
-                              showButtons
-                              buttonLayout="horizontal"
-                              step={5}
-                              incrementButtonIcon="pi pi-plus"
-                              decrementButtonIcon="pi pi-minus"
-                              className="w-full"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ) : null;
-                  })}
-                </div>
-                <div className="mt-3 p-2" style={{ background: '#fff', borderRadius: '4px', border: '1px solid #dee2e6' }}>
-                  <strong>Total Allocation: </strong>
-                  <span style={{
-                    color: Object.values(projectAllocations).reduce((sum, val) => sum + (val || 0), 0) > 100 ? '#dc3545' : '#28a745',
-                    fontWeight: 'bold'
-                  }}>
-                    {Object.values(projectAllocations).reduce((sum, val) => sum + (val || 0), 0)}%
-                  </span>
-                  {Object.values(projectAllocations).reduce((sum, val) => sum + (val || 0), 0) > 100 && (
-                    <span className="ml-2" style={{ color: '#dc3545' }}>
-                      <i className="pi pi-exclamation-triangle mr-1"></i>
-                      Over-allocated!
-                    </span>
-                  )}
-                </div>
+              <div className="field col-12 md:col-6">
+                <label htmlFor="location">Location</label>
+                <InputText
+                  id="location"
+                  value={formData.location}
+                  onChange={(e) => handleChange('location', e.target.value)}
+                />
+              </div>
+
+              <div className="field col-12">
+                <label htmlFor="skills">Skills</label>
+                <InputTextarea
+                  id="skills"
+                  value={formData.skills}
+                  onChange={(e) => handleChange('skills', e.target.value)}
+                  rows={3}
+                  placeholder="Enter skills separated by commas"
+                />
               </div>
             </div>
-          )}
+          </TabPanel>
 
-          {/* Visa Section */}
-          <div className="col-12">
-            <Divider align="left">
-              <div className="inline-flex align-items-center">
-                <i className="pi pi-id-card mr-2"></i>
-                <b>Visa & Immigration Details</b>
+          {/* Tab 2: Employment Details */}
+          <TabPanel header="Employment Details" leftIcon="pi pi-briefcase mr-2">
+            <div className="formgrid grid">
+              <div className="field col-12 md:col-6">
+                <label htmlFor="joining_date">Joining Date</label>
+                <Calendar
+                  id="joining_date"
+                  value={formData.joining_date}
+                  onChange={(e) => handleChange('joining_date', e.value)}
+                  dateFormat="yy-mm-dd"
+                  showIcon
+                  placeholder="Select joining date"
+                />
               </div>
-            </Divider>
-          </div>
 
-          <div className="field col-12 md:col-6">
-            <label htmlFor="visa_type">Visa Type *</label>
-            <Dropdown
-              id="visa_type"
-              value={formData.visa_type}
-              options={visaTypeOptions}
-              onChange={(e) => handleChange('visa_type', e.value)}
-              className={classNames({ 'p-invalid': errors.visa_type })}
-            />
-            {errors.visa_type && <small className="p-error">{errors.visa_type}</small>}
-          </div>
+              <div className="field col-12 md:col-6">
+                <label htmlFor="last_working_day">Last Working Day</label>
+                <Calendar
+                  id="last_working_day"
+                  value={formData.last_working_day}
+                  onChange={(e) => handleChange('last_working_day', e.value)}
+                  dateFormat="yy-mm-dd"
+                  showIcon
+                />
+              </div>
 
-          <div className="field col-12 md:col-6">
-            <label htmlFor="sponsor_company">Sponsor Company</label>
-            <InputText
-              id="sponsor_company"
-              value={formData.sponsor_company}
-              onChange={(e) => handleChange('sponsor_company', e.target.value)}
-            />
-          </div>
+              <div className="field col-12 md:col-6">
+                <label htmlFor="status">Status</label>
+                <Dropdown
+                  id="status"
+                  value={formData.status}
+                  options={statusOptions}
+                  onChange={(e) => handleChange('status', e.value)}
+                />
+              </div>
 
-          <div className="field col-12 md:col-6">
-            <label htmlFor="current_visa_start_date">Visa Start Date *</label>
-            <Calendar
-              id="current_visa_start_date"
-              value={formData.current_visa_start_date}
-              onChange={(e) => handleChange('current_visa_start_date', e.value)}
-              dateFormat="yy-mm-dd"
-              showIcon
-              className={classNames({ 'p-invalid': errors.current_visa_start_date })}
-            />
-            {errors.current_visa_start_date && <small className="p-error">{errors.current_visa_start_date}</small>}
-          </div>
+              <div className="field col-12 md:col-6">
+                <label htmlFor="criticality">Criticality</label>
+                <Dropdown
+                  id="criticality"
+                  value={formData.criticality}
+                  options={criticalityOptions}
+                  onChange={(e) => handleChange('criticality', e.value)}
+                />
+              </div>
 
-          <div className="field col-12 md:col-6">
-            <label htmlFor="current_visa_end_date">Visa End Date *</label>
-            <Calendar
-              id="current_visa_end_date"
-              value={formData.current_visa_end_date}
-              onChange={(e) => handleChange('current_visa_end_date', e.value)}
-              dateFormat="yy-mm-dd"
-              showIcon
-              className={classNames({ 'p-invalid': errors.current_visa_end_date })}
-            />
-            {errors.current_visa_end_date && <small className="p-error">{errors.current_visa_end_date}</small>}
-          </div>
+              <div className="field col-12 md:col-6">
+                <label htmlFor="attrition">Attrition</label>
+                <Dropdown
+                  id="attrition"
+                  value={formData.attrition}
+                  options={attritionOptions}
+                  onChange={(e) => handleChange('attrition', e.value)}
+                />
+              </div>
 
-          <div className="field col-12 md:col-6">
-            <label htmlFor="i94_expiry_date">I-94 Expiry Date</label>
-            <Calendar
-              id="i94_expiry_date"
-              value={formData.i94_expiry_date}
-              onChange={(e) => handleChange('i94_expiry_date', e.value)}
-              dateFormat="yy-mm-dd"
-              showIcon
-            />
-          </div>
+              <div className="field col-12 md:col-6">
+                <label htmlFor="possible_candidate">Possible Candidate</label>
+                <InputText
+                  id="possible_candidate"
+                  value={formData.possible_candidate}
+                  onChange={(e) => handleChange('possible_candidate', e.target.value)}
+                  placeholder="Replacement candidate name"
+                />
+              </div>
 
-          <div className="field col-12 md:col-6">
-            <label htmlFor="passport_number">Passport Number</label>
-            <InputText
-              id="passport_number"
-              value={formData.passport_number}
-              onChange={(e) => handleChange('passport_number', e.target.value)}
-            />
-          </div>
+              <div className="field col-12 md:col-6">
+                <label htmlFor="offshore_manager_id">Offshore Manager ID</label>
+                <InputNumber
+                  id="offshore_manager_id"
+                  value={formData.offshore_manager_id}
+                  onValueChange={(e) => handleChange('offshore_manager_id', e.value)}
+                  useGrouping={false}
+                />
+              </div>
 
-          <div className="field col-12 md:col-6">
-            <label htmlFor="passport_expiry_date">Passport Expiry Date</label>
-            <Calendar
-              id="passport_expiry_date"
-              value={formData.passport_expiry_date}
-              onChange={(e) => handleChange('passport_expiry_date', e.value)}
-              dateFormat="yy-mm-dd"
-              showIcon
-            />
-          </div>
+              <div className="field col-12 md:col-6">
+                <label htmlFor="onsite_manager_id">Onsite Manager ID</label>
+                <InputNumber
+                  id="onsite_manager_id"
+                  value={formData.onsite_manager_id}
+                  onValueChange={(e) => handleChange('onsite_manager_id', e.value)}
+                  useGrouping={false}
+                />
+              </div>
 
-          <div className="field col-12">
-            <label htmlFor="visa_notes">Visa Notes</label>
-            <InputTextarea
-              id="visa_notes"
-              value={formData.visa_notes}
-              onChange={(e) => handleChange('visa_notes', e.target.value)}
-              rows={3}
-              placeholder="Additional visa-related notes"
-            />
-          </div>
-        </div>
+              <div className="field col-12 md:col-6">
+                <label htmlFor="asset_id">Asset ID</label>
+                <InputText
+                  id="asset_id"
+                  value={formData.asset_id}
+                  onChange={(e) => handleChange('asset_id', e.target.value)}
+                />
+              </div>
+
+              <div className="field col-12 md:col-6">
+                <label htmlFor="asset_return_id">Asset Return ID</label>
+                <InputText
+                  id="asset_return_id"
+                  value={formData.asset_return_id}
+                  onChange={(e) => handleChange('asset_return_id', e.target.value)}
+                />
+              </div>
+
+              <div className="field col-12">
+                <label htmlFor="comments">Comments</label>
+                <InputTextarea
+                  id="comments"
+                  value={formData.comments}
+                  onChange={(e) => handleChange('comments', e.target.value)}
+                  rows={3}
+                  placeholder="Additional comments or notes"
+                />
+              </div>
+            </div>
+          </TabPanel>
+
+          {/* Tab 3: Project Assignments */}
+          <TabPanel header="Project Assignments" leftIcon="pi pi-building mr-2">
+            <div className="formgrid grid">
+
+              <div className="field col-12">
+                <label htmlFor="projects">Assign Projects</label>
+                <MultiSelect
+                  id="projects"
+                  value={selectedProjects}
+                  options={projects.map(p => ({ label: p.project_team_name, value: p.id }))}
+                  onChange={(e) => handleProjectSelection(e.value)}
+                  placeholder="Select projects to assign"
+                  display="chip"
+                  filter
+                />
+              </div>
+
+              {selectedProjects.length > 0 && (
+                <div className="col-12">
+                  <div className="p-3" style={{ background: '#f8f9fa', borderRadius: '6px' }}>
+                    <h4 className="mt-0 mb-3">Project & Team Assignments</h4>
+                    <div className="grid">
+                      {selectedProjects.map(projectId => {
+                        const project = projects.find(p => p.id === projectId);
+                        const projectTeams = allTeams.filter(team => team.project_id === projectId);
+
+                        return project ? (
+                          <div key={projectId} className="col-12 mb-3" style={{ borderBottom: '1px solid #dee2e6', paddingBottom: '1rem' }}>
+                            <h5 className="mb-2" style={{ color: '#495057' }}>
+                              <i className="pi pi-briefcase mr-2"></i>
+                              {project.project_team_name}
+                            </h5>
+
+                            <div className="grid">
+                              <div className="col-12 md:col-6 mb-2">
+                                <label htmlFor={`team-${projectId}`} className="block mb-2">
+                                  Agile Board Name
+                                </label>
+                                <Dropdown
+                                  id={`team-${projectId}`}
+                                  value={projectTeamSelections[projectId] || null}
+                                  options={[
+                                    { label: 'No Team (Allocated Only)', value: null },
+                                    ...projectTeams.map(team => ({
+                                      label: team.agile_board_name,
+                                      value: team.id
+                                    }))
+                                  ]}
+                                  onChange={(e) => handleTeamSelection(projectId, e.value)}
+                                  placeholder="Select agile board"
+                                  className="w-full"
+                                />
+                                {projectTeams.length === 0 && (
+                                  <small className="text-muted">No teams available for this project</small>
+                                )}
+                              </div>
+
+                              <div className="col-12 md:col-6 mb-2">
+                                <label htmlFor={`allocation-${projectId}`} className="block mb-2">
+                                  Allocation Percentage
+                                </label>
+                                <InputNumber
+                                  id={`allocation-${projectId}`}
+                                  value={projectAllocations[projectId] || 0}
+                                  onValueChange={(e) => handleAllocationChange(projectId, e.value)}
+                                  suffix="%"
+                                  min={0}
+                                  max={100}
+                                  showButtons
+                                  buttonLayout="horizontal"
+                                  step={5}
+                                  incrementButtonIcon="pi pi-plus"
+                                  decrementButtonIcon="pi pi-minus"
+                                  className="w-full"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                    <div className="mt-3 p-2" style={{ background: '#fff', borderRadius: '4px', border: '1px solid #dee2e6' }}>
+                      <strong>Total Allocation: </strong>
+                      <span style={{
+                        color: Object.values(projectAllocations).reduce((sum, val) => sum + (val || 0), 0) > 100 ? '#dc3545' : '#28a745',
+                        fontWeight: 'bold'
+                      }}>
+                        {Object.values(projectAllocations).reduce((sum, val) => sum + (val || 0), 0)}%
+                      </span>
+                      {Object.values(projectAllocations).reduce((sum, val) => sum + (val || 0), 0) > 100 && (
+                        <span className="ml-2" style={{ color: '#dc3545' }}>
+                          <i className="pi pi-exclamation-triangle mr-1"></i>
+                          Over-allocated!
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </TabPanel>
+
+          {/* Tab 4: Visa & Immigration */}
+          <TabPanel header="Visa & Immigration" leftIcon="pi pi-id-card mr-2">
+            <div className="formgrid grid">
+              <div className="field col-12 md:col-6">
+                <label htmlFor="visa_type">Visa Type *</label>
+                <Dropdown
+                  id="visa_type"
+                  value={formData.visa_type}
+                  options={visaTypeOptions}
+                  onChange={(e) => handleChange('visa_type', e.value)}
+                  className={classNames({ 'p-invalid': errors.visa_type })}
+                />
+                {errors.visa_type && <small className="p-error">{errors.visa_type}</small>}
+              </div>
+
+              <div className="field col-12 md:col-6">
+                <label htmlFor="sponsor_company">Sponsor Company</label>
+                <InputText
+                  id="sponsor_company"
+                  value={formData.sponsor_company}
+                  onChange={(e) => handleChange('sponsor_company', e.target.value)}
+                />
+              </div>
+
+              <div className="field col-12 md:col-6">
+                <label htmlFor="current_visa_start_date">Visa Start Date *</label>
+                <Calendar
+                  id="current_visa_start_date"
+                  value={formData.current_visa_start_date}
+                  onChange={(e) => handleChange('current_visa_start_date', e.value)}
+                  dateFormat="yy-mm-dd"
+                  showIcon
+                  className={classNames({ 'p-invalid': errors.current_visa_start_date })}
+                />
+                {errors.current_visa_start_date && <small className="p-error">{errors.current_visa_start_date}</small>}
+              </div>
+
+              <div className="field col-12 md:col-6">
+                <label htmlFor="current_visa_end_date">Visa End Date *</label>
+                <Calendar
+                  id="current_visa_end_date"
+                  value={formData.current_visa_end_date}
+                  onChange={(e) => handleChange('current_visa_end_date', e.value)}
+                  dateFormat="yy-mm-dd"
+                  showIcon
+                  className={classNames({ 'p-invalid': errors.current_visa_end_date })}
+                />
+                {errors.current_visa_end_date && <small className="p-error">{errors.current_visa_end_date}</small>}
+              </div>
+
+              <div className="field col-12 md:col-6">
+                <label htmlFor="i94_expiry_date">I-94 Expiry Date</label>
+                <Calendar
+                  id="i94_expiry_date"
+                  value={formData.i94_expiry_date}
+                  onChange={(e) => handleChange('i94_expiry_date', e.value)}
+                  dateFormat="yy-mm-dd"
+                  showIcon
+                />
+              </div>
+
+              <div className="field col-12 md:col-6">
+                <label htmlFor="passport_number">Passport Number</label>
+                <InputText
+                  id="passport_number"
+                  value={formData.passport_number}
+                  onChange={(e) => handleChange('passport_number', e.target.value)}
+                />
+              </div>
+
+              <div className="field col-12 md:col-6">
+                <label htmlFor="passport_expiry_date">Passport Expiry Date</label>
+                <Calendar
+                  id="passport_expiry_date"
+                  value={formData.passport_expiry_date}
+                  onChange={(e) => handleChange('passport_expiry_date', e.value)}
+                  dateFormat="yy-mm-dd"
+                  showIcon
+                />
+              </div>
+
+              <div className="field col-12">
+                <label htmlFor="visa_notes">Visa Notes</label>
+                <InputTextarea
+                  id="visa_notes"
+                  value={formData.visa_notes}
+                  onChange={(e) => handleChange('visa_notes', e.target.value)}
+                  rows={3}
+                  placeholder="Additional visa-related notes"
+                />
+              </div>
+            </div>
+          </TabPanel>
+        </TabView>
 
         {/* Form Actions */}
         <div className="form-actions mt-4" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid #dee2e6', paddingTop: '20px' }}>

@@ -506,7 +506,7 @@ const EmployeeListPrime = ({ onViewAssets }) => {
   return (
     <div className="card">
       <ConfirmDialog />
-      <Toolbar className="mb-4" left={leftToolbarTemplate} right={rightToolbarTemplate} />
+      <Toolbar className="" left={leftToolbarTemplate} right={rightToolbarTemplate} />
 
       <ImportEmployeesDialog
         visible={showImportDialog}
@@ -559,7 +559,7 @@ const EmployeeListPrime = ({ onViewAssets }) => {
           header="Criticality"
           body={criticalityBodyTemplate}
           sortable
-          style={{ minWidth: '130px' }}
+          style={{ minWidth: '60px' }}
         />
         <Column
           field="status"
@@ -573,7 +573,7 @@ const EmployeeListPrime = ({ onViewAssets }) => {
           header="Skills"
           body={skillsBodyTemplate}
           sortable
-          style={{ minWidth: '200px' }}
+          style={{ minWidth: '350px' }}
         />
         <Column
           field="attrition"
@@ -594,7 +594,7 @@ const EmployeeListPrime = ({ onViewAssets }) => {
           header="Visa Status"
           body={visaStatusBodyTemplate}
           sortable
-          style={{ minWidth: '130px' }}
+          style={{ minWidth: '200px' }}
         />
         <Column
           field="allocated_projects"
