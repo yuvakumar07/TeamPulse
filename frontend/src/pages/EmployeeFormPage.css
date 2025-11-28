@@ -2,6 +2,8 @@
   padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
+  height: auto;
+  overflow: visible;
 }
 
 .employee-form-page .page-header {
@@ -22,14 +24,20 @@
   background: #ffffff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: visible;
+  height: auto;
 }
 
 .employee-form-page .form-card .p-card-body {
   padding: 0;
+  overflow: visible;
+  height: auto;
 }
 
 .employee-form-page .form-card .p-card-content {
   padding: 0;
+  overflow: visible;
+  height: auto;
 }
 
 .employee-form-page .card-header {
@@ -71,6 +79,8 @@
 /* Form container styling */
 .employee-form-container {
   padding: 30px;
+  overflow: visible;
+  height: auto;
 }
 
 /* Responsive adjustments */
