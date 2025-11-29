@@ -171,9 +171,36 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
   };
 
   const handleAllocationChange = (projectId, value) => {
+    // Ensure value is not null/undefined
+    const inputValue = value || 0;
+
+    // First, clamp individual value to 0-100 range
+    const clampedValue = Math.min(100, Math.max(0, inputValue));
+
+    // Calculate total allocation excluding the current project
+    const otherProjectsTotal = Object.entries(projectAllocations)
+      .filter(([id]) => parseInt(id) !== projectId)
+      .reduce((sum, [, allocation]) => sum + (allocation || 0), 0);
+
+    // Calculate maximum allowed for this project (never exceeds 100)
+    const maxAllowed = Math.min(100, Math.max(0, 100 - otherProjectsTotal));
+
+    // Check if new value would exceed 100% total
+    const newTotal = otherProjectsTotal + clampedValue;
+    if (newTotal > 100) {
+      toast.warning(`Total allocation cannot exceed 100%. Maximum allowed for this project: ${maxAllowed}%`);
+      // Use the maximum allowed value
+      setProjectAllocations(prev => ({
+        ...prev,
+        [projectId]: maxAllowed
+      }));
+      return;
+    }
+
+    // Set the clamped value (0-100 range)
     setProjectAllocations(prev => ({
       ...prev,
-      [projectId]: value || 0
+      [projectId]: clampedValue
     }));
   };
 
@@ -189,15 +216,27 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
     }
-    if (!formData.visa_type || formData.visa_type === 'None') {
-      newErrors.visa_type = 'Visa Type is required';
+
+    // Only validate visa fields if Work Location is Onsite
+    if (formData.work_location === 'Onsite') {
+      if (!formData.visa_type || formData.visa_type === 'None') {
+        newErrors.visa_type = 'Visa Type is required';
+      }
+      if (!formData.current_visa_start_date) {
+        newErrors.current_visa_start_date = 'Visa Start Date is required';
+      }
+      if (!formData.current_visa_end_date) {
+        newErrors.current_visa_end_date = 'Visa End Date is required';
+      }
     }
-    if (!formData.current_visa_start_date) {
-      newErrors.current_visa_start_date = 'Visa Start Date is required';
+
+    // Validate total allocation doesn't exceed 100%
+    const totalAllocation = Object.values(projectAllocations).reduce((sum, val) => sum + (val || 0), 0);
+    if (totalAllocation > 100) {
+      newErrors.allocation = `Total allocation (${totalAllocation}%) cannot exceed 100%`;
+      toast.error(`Total allocation (${totalAllocation}%) cannot exceed 100%`);
     }
-    if (!formData.current_visa_end_date) {
-      newErrors.current_visa_end_date = 'Visa End Date is required';
-    }
+
     return newErrors;
   };
 
@@ -250,7 +289,8 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
 
   const roleTypeOptions = [
     { label: 'DEV', value: 'DEV' },
-    { label: 'QA', value: 'QA' }
+    { label: 'QA', value: 'QA' },
+    { label: 'Manager', value: 'Manager' }
   ];
 
   const criticalityOptions = [
@@ -273,9 +313,9 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
     { label: 'At Risk', value: 'At Risk' }
   ];
 
-  const workLocationOptions = [
-    { label: 'Onsite', value: 'Onsite' },
-    { label: 'Offsite', value: 'Offsite' }
+  const workLocationOptions = [   
+    { label: 'Offsite', value: 'Offsite' },
+     { label: 'Onsite', value: 'Onsite' }
   ];
 
   const visaTypeOptions = [
@@ -295,7 +335,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
           {/* Tab 1: Basic Information */}
           <TabPanel header="Basic Information" leftIcon="pi pi-user mr-2">
             <div className="formgrid grid">
-              <div className="field col-12 md:col-4">
+              <div className="field col-12 md:col-3">
                 <label htmlFor="sso">SSO</label>
                 <InputText
                   id="sso"
@@ -304,7 +344,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
               </div>
 
-              <div className="field col-12 md:col-4">
+              <div className="field col-12 md:col-3">
                 <label htmlFor="name">Name *</label>
                 <InputText
                   id="name"
@@ -314,8 +354,16 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
                 {errors.name && <small className="p-error">{errors.name}</small>}
               </div>
-
-              <div className="field col-12 md:col-4">
+                <div className="field col-12 md:col-3">
+                <label htmlFor="work_location">Work Location</label>
+                <Dropdown
+                  id="work_location"
+                  value={formData.work_location}
+                  options={workLocationOptions}
+                  onChange={(e) => handleChange('work_location', e.value)}
+                />
+              </div>
+              <div className="field col-12 md:col-3">
                 <label htmlFor="role">Role</label>
                 <InputText
                   id="role"
@@ -324,7 +372,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
               </div>
 
-              <div className="field col-12 md:col-4">
+              <div className="field col-12 md:col-3">
                 <label htmlFor="role_type">Role Type</label>
                 <Dropdown
                   id="role_type"
@@ -334,7 +382,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
               </div>
 
-              <div className="field col-12 md:col-4">
+              <div className="field col-12 md:col-3">
                 <label htmlFor="phone">Phone</label>
                 <InputText
                   id="phone"
@@ -343,7 +391,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
               </div>
 
-              <div className="field col-12 md:col-4">
+              <div className="field col-12 md:col-3">
                 <label htmlFor="location">Location</label>
                 <InputText
                   id="location"
@@ -435,15 +483,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
               </div>
 
-              <div className="field col-12 md:col-3">
-                <label htmlFor="work_location">Work Location</label>
-                <Dropdown
-                  id="work_location"
-                  value={formData.work_location}
-                  options={workLocationOptions}
-                  onChange={(e) => handleChange('work_location', e.value)}
-                />
-              </div>
+            
 
               <div className="field col-12 md:col-3">
                 <label htmlFor="possible_candidate">Possible Candidate</label>
@@ -455,25 +495,29 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
               </div>
 
-              <div className="field col-12 md:col-3">
-                <label htmlFor="offshore_manager_id">Offshore Manager ID</label>
-                <InputNumber
-                  id="offshore_manager_id"
-                  value={formData.offshore_manager_id}
-                  onValueChange={(e) => handleChange('offshore_manager_id', e.value)}
-                  useGrouping={false}
-                />
-              </div>
+              {(formData.role_type === 'QA' || formData.role_type === 'DEV') && (
+                <>
+                  <div className="field col-12 md:col-3">
+                    <label htmlFor="offshore_manager_id">Offshore Manager ID</label>
+                    <InputNumber
+                      id="offshore_manager_id"
+                      value={formData.offshore_manager_id}
+                      onValueChange={(e) => handleChange('offshore_manager_id', e.value)}
+                      useGrouping={false}
+                    />
+                  </div>
 
-              <div className="field col-12 md:col-3">
-                <label htmlFor="onsite_manager_id">Onsite Manager ID</label>
-                <InputNumber
-                  id="onsite_manager_id"
-                  value={formData.onsite_manager_id}
-                  onValueChange={(e) => handleChange('onsite_manager_id', e.value)}
-                  useGrouping={false}
-                />
-              </div>
+                  <div className="field col-12 md:col-3">
+                    <label htmlFor="onsite_manager_id">Onsite Manager ID</label>
+                    <InputNumber
+                      id="onsite_manager_id"
+                      value={formData.onsite_manager_id}
+                      onValueChange={(e) => handleChange('onsite_manager_id', e.value)}
+                      useGrouping={false}
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="field col-12 md:col-3">
                 <label htmlFor="asset_id">Asset ID</label>
@@ -532,6 +576,13 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                         const project = projects.find(p => p.id === projectId);
                         const projectTeams = allTeams.filter(team => team.project_id === projectId);
 
+                        // Calculate max allocation for this project
+                        const otherProjectsTotal = Object.entries(projectAllocations)
+                          .filter(([id]) => parseInt(id) !== projectId)
+                          .reduce((sum, [, allocation]) => sum + (allocation || 0), 0);
+                        // Ensure max never exceeds 100 and is at least 0
+                        const maxAllocation = Math.min(100, Math.max(0, 100 - otherProjectsTotal));
+
                         return project ? (
                           <div key={projectId} className="col-12 mb-3" style={{ borderBottom: '1px solid #dee2e6', paddingBottom: '1rem' }}>
                             <h5 className="mb-2" style={{ color: '#495057' }}>
@@ -573,14 +624,23 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                                   onValueChange={(e) => handleAllocationChange(projectId, e.value)}
                                   suffix="%"
                                   min={0}
-                                  max={100}
+                                  max={maxAllocation}
                                   showButtons
                                   buttonLayout="horizontal"
                                   step={5}
                                   incrementButtonIcon="pi pi-plus"
                                   decrementButtonIcon="pi pi-minus"
                                   className="w-full"
+                                  mode="decimal"
+                                  minFractionDigits={0}
+                                  maxFractionDigits={2}
+                                  useGrouping={false}
                                 />
+                                {maxAllocation < 100 && (
+                                  <small className="text-muted block mt-1">
+                                    Maximum available: {maxAllocation}%
+                                  </small>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -608,99 +668,101 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
             </div>
           </TabPanel>
 
-          {/* Tab 4: Visa & Immigration */}
-          <TabPanel header="Visa & Immigration" leftIcon="pi pi-id-card mr-2">
-            <div className="formgrid grid">
-              <div className="field col-12 md:col-6">
-                <label htmlFor="visa_type">Visa Type *</label>
-                <Dropdown
-                  id="visa_type"
-                  value={formData.visa_type}
-                  options={visaTypeOptions}
-                  onChange={(e) => handleChange('visa_type', e.value)}
-                  className={classNames({ 'p-invalid': errors.visa_type })}
-                />
-                {errors.visa_type && <small className="p-error">{errors.visa_type}</small>}
-              </div>
+          {/* Tab 4: Visa & Immigration - Only show if Work Location is Onsite */}
+          {formData.work_location === 'Onsite' && (
+            <TabPanel header="Visa & Immigration" leftIcon="pi pi-id-card mr-2">
+              <div className="formgrid grid">
+                <div className="field col-12 md:col-3">
+                  <label htmlFor="visa_type">Visa Type *</label>
+                  <Dropdown
+                    id="visa_type"
+                    value={formData.visa_type}
+                    options={visaTypeOptions}
+                    onChange={(e) => handleChange('visa_type', e.value)}
+                    className={classNames({ 'p-invalid': errors.visa_type })}
+                  />
+                  {errors.visa_type && <small className="p-error">{errors.visa_type}</small>}
+                </div>
 
-              <div className="field col-12 md:col-6">
-                <label htmlFor="sponsor_company">Sponsor Company</label>
-                <InputText
-                  id="sponsor_company"
-                  value={formData.sponsor_company}
-                  onChange={(e) => handleChange('sponsor_company', e.target.value)}
-                />
-              </div>
+                <div className="field col-12 md:col-3">
+                  <label htmlFor="sponsor_company">Sponsor Company</label>
+                  <InputText
+                    id="sponsor_company"
+                    value={formData.sponsor_company}
+                    onChange={(e) => handleChange('sponsor_company', e.target.value)}
+                  />
+                </div>
 
-              <div className="field col-12 md:col-6">
-                <label htmlFor="current_visa_start_date">Visa Start Date *</label>
-                <Calendar
-                  id="current_visa_start_date"
-                  value={formData.current_visa_start_date}
-                  onChange={(e) => handleChange('current_visa_start_date', e.value)}
-                  dateFormat="yy-mm-dd"
-                  showIcon
-                  className={classNames({ 'p-invalid': errors.current_visa_start_date })}
-                />
-                {errors.current_visa_start_date && <small className="p-error">{errors.current_visa_start_date}</small>}
-              </div>
+                <div className="field col-12 md:col-3">
+                  <label htmlFor="current_visa_start_date">Visa Start Date *</label>
+                  <Calendar
+                    id="current_visa_start_date"
+                    value={formData.current_visa_start_date}
+                    onChange={(e) => handleChange('current_visa_start_date', e.value)}
+                    dateFormat="yy-mm-dd"
+                    showIcon
+                    className={classNames({ 'p-invalid': errors.current_visa_start_date })}
+                  />
+                  {errors.current_visa_start_date && <small className="p-error">{errors.current_visa_start_date}</small>}
+                </div>
 
-              <div className="field col-12 md:col-6">
-                <label htmlFor="current_visa_end_date">Visa End Date *</label>
-                <Calendar
-                  id="current_visa_end_date"
-                  value={formData.current_visa_end_date}
-                  onChange={(e) => handleChange('current_visa_end_date', e.value)}
-                  dateFormat="yy-mm-dd"
-                  showIcon
-                  className={classNames({ 'p-invalid': errors.current_visa_end_date })}
-                />
-                {errors.current_visa_end_date && <small className="p-error">{errors.current_visa_end_date}</small>}
-              </div>
+                <div className="field col-12 md:col-3">
+                  <label htmlFor="current_visa_end_date">Visa End Date *</label>
+                  <Calendar
+                    id="current_visa_end_date"
+                    value={formData.current_visa_end_date}
+                    onChange={(e) => handleChange('current_visa_end_date', e.value)}
+                    dateFormat="yy-mm-dd"
+                    showIcon
+                    className={classNames({ 'p-invalid': errors.current_visa_end_date })}
+                  />
+                  {errors.current_visa_end_date && <small className="p-error">{errors.current_visa_end_date}</small>}
+                </div>
 
-              <div className="field col-12 md:col-6">
-                <label htmlFor="i94_expiry_date">I-94 Expiry Date</label>
-                <Calendar
-                  id="i94_expiry_date"
-                  value={formData.i94_expiry_date}
-                  onChange={(e) => handleChange('i94_expiry_date', e.value)}
-                  dateFormat="yy-mm-dd"
-                  showIcon
-                />
-              </div>
+                <div className="field col-12 md:col-3">
+                  <label htmlFor="i94_expiry_date">I-94 Expiry Date</label>
+                  <Calendar
+                    id="i94_expiry_date"
+                    value={formData.i94_expiry_date}
+                    onChange={(e) => handleChange('i94_expiry_date', e.value)}
+                    dateFormat="yy-mm-dd"
+                    showIcon
+                  />
+                </div>
 
-              <div className="field col-12 md:col-6">
-                <label htmlFor="passport_number">Passport Number</label>
-                <InputText
-                  id="passport_number"
-                  value={formData.passport_number}
-                  onChange={(e) => handleChange('passport_number', e.target.value)}
-                />
-              </div>
+                <div className="field col-12 md:col-3">
+                  <label htmlFor="passport_number">Passport Number</label>
+                  <InputText
+                    id="passport_number"
+                    value={formData.passport_number}
+                    onChange={(e) => handleChange('passport_number', e.target.value)}
+                  />
+                </div>
 
-              <div className="field col-12 md:col-6">
-                <label htmlFor="passport_expiry_date">Passport Expiry Date</label>
-                <Calendar
-                  id="passport_expiry_date"
-                  value={formData.passport_expiry_date}
-                  onChange={(e) => handleChange('passport_expiry_date', e.value)}
-                  dateFormat="yy-mm-dd"
-                  showIcon
-                />
-              </div>
+                <div className="field col-12 md:col-3">
+                  <label htmlFor="passport_expiry_date">Passport Expiry Date</label>
+                  <Calendar
+                    id="passport_expiry_date"
+                    value={formData.passport_expiry_date}
+                    onChange={(e) => handleChange('passport_expiry_date', e.value)}
+                    dateFormat="yy-mm-dd"
+                    showIcon
+                  />
+                </div>
 
-              <div className="field col-12">
-                <label htmlFor="visa_notes">Visa Notes</label>
-                <InputTextarea
-                  id="visa_notes"
-                  value={formData.visa_notes}
-                  onChange={(e) => handleChange('visa_notes', e.target.value)}
-                  rows={3}
-                  placeholder="Additional visa-related notes"
-                />
+                <div className="field col-12">
+                  <label htmlFor="visa_notes">Visa Notes</label>
+                  <InputTextarea
+                    id="visa_notes"
+                    value={formData.visa_notes}
+                    onChange={(e) => handleChange('visa_notes', e.target.value)}
+                    rows={3}
+                    placeholder="Additional visa-related notes"
+                  />
+                </div>
               </div>
-            </div>
-          </TabPanel>
+            </TabPanel>
+          )}
         </TabView>
 
         {/* Form Actions */}

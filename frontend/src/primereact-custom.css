@@ -596,9 +596,9 @@ button[aria-label="Cancel"]:hover {
 }
 
 .p-button.p-button-rounded {
-  width: auto;
   height: auto;
   border: none !important;
+  box-shadow: none !important;
 }
 
 .p-datatable .p-datatable-header i.pi.pi-search {

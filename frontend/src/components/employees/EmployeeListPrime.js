@@ -556,6 +556,7 @@ const EmployeeListPrime = ({ onViewAssets }) => {
         <Column field="id" header="ID" sortable style={{ minWidth: '80px' }} />
         <Column field="sso" header="SSO" sortable style={{ minWidth: '120px' }} />
         <Column field="name" header="Name" sortable style={{ minWidth: '150px' }} />
+        <Column field="work_location" header="Work Location" sortable style={{ minWidth: '160px' }} />
         <Column
           field="joining_date"
           header="Joining Date"
