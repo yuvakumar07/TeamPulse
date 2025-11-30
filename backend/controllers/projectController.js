@@ -91,9 +91,17 @@ const getProjectById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Get project details
+    // Get project details with manager information
     const [projects] = await db.query(
-      'SELECT * FROM projects WHERE id = ?',
+      `SELECT p.*,
+              om.id as offshore_manager_emp_id, om.sso as offshore_manager_sso,
+              om.name as offshore_manager_name, om.role as offshore_manager_role,
+              osm.id as onsite_manager_emp_id, osm.sso as onsite_manager_sso,
+              osm.name as onsite_manager_name, osm.role as onsite_manager_role
+       FROM projects p
+       LEFT JOIN employees om ON p.offshore_manager_id = om.id
+       LEFT JOIN employees osm ON p.onsite_manager_id = osm.id
+       WHERE p.id = ?`,
       [id]
     );
 
@@ -104,21 +112,33 @@ const getProjectById = async (req, res) => {
       });
     }
 
-    // Get project teams
+    // Get project teams with team lead information
     const [teams] = await db.query(
-      'SELECT * FROM project_teams WHERE project_id = ? ORDER BY created_at',
+      `SELECT pt.*,
+              otl.id as offshore_tl_emp_id, otl.sso as offshore_tl_sso,
+              otl.name as offshore_tl_name, otl.role as offshore_tl_role,
+              ostl.id as onsite_tl_emp_id, ostl.sso as onsite_tl_sso,
+              ostl.name as onsite_tl_name, ostl.role as onsite_tl_role
+       FROM project_teams pt
+       LEFT JOIN employees otl ON pt.offshore_team_lead_id = otl.id
+       LEFT JOIN employees ostl ON pt.onsite_team_lead_id = ostl.id
+       WHERE pt.project_id = ?
+       ORDER BY pt.created_at`,
       [id]
     );
 
     // Get employees grouped by teams
     const teamsWithEmployees = [];
     for (const team of teams) {
+      // Get regular team employees
       const [employees] = await db.query(
         `SELECT pe.id as assignment_id, pe.allocation_percentage, pe.team_id,
                 e.id, e.sso, e.name, e.role, e.role_type, e.location,
                 (SELECT COALESCE(SUM(pe2.allocation_percentage), 0)
                  FROM project_employees pe2
-                 WHERE pe2.employee_id = e.id) as total_allocation
+                 WHERE pe2.employee_id = e.id) as total_allocation,
+                FALSE as is_team_lead,
+                NULL as team_lead_type
          FROM project_employees pe
          JOIN employees e ON pe.employee_id = e.id
          WHERE pe.team_id = ?
@@ -126,8 +146,93 @@ const getProjectById = async (req, res) => {
         [team.id]
       );
 
+      // Add offshore team lead to employees list if exists and not already in list
+      if (team.offshore_tl_emp_id) {
+        const isAlreadyInList = employees.some(emp => emp.id === team.offshore_tl_emp_id);
+        if (!isAlreadyInList) {
+          employees.push({
+            assignment_id: null,
+            allocation_percentage: team.offshore_team_lead_allocation,
+            team_id: team.id,
+            id: team.offshore_tl_emp_id,
+            sso: team.offshore_tl_sso,
+            name: team.offshore_tl_name,
+            role: team.offshore_tl_role,
+            role_type: 'Team Lead',
+            location: null,
+            total_allocation: team.offshore_team_lead_allocation,
+            is_team_lead: true,
+            team_lead_type: 'Offshore Team Lead'
+          });
+        } else {
+          // Mark existing employee as team lead
+          const empIndex = employees.findIndex(emp => emp.id === team.offshore_tl_emp_id);
+          employees[empIndex].is_team_lead = true;
+          employees[empIndex].team_lead_type = 'Offshore Team Lead';
+        }
+      }
+
+      // Add onsite team lead to employees list if exists and not already in list
+      if (team.onsite_tl_emp_id) {
+        const isAlreadyInList = employees.some(emp => emp.id === team.onsite_tl_emp_id);
+        if (!isAlreadyInList) {
+          employees.push({
+            assignment_id: null,
+            allocation_percentage: team.onsite_team_lead_allocation,
+            team_id: team.id,
+            id: team.onsite_tl_emp_id,
+            sso: team.onsite_tl_sso,
+            name: team.onsite_tl_name,
+            role: team.onsite_tl_role,
+            role_type: 'Team Lead',
+            location: null,
+            total_allocation: team.onsite_team_lead_allocation,
+            is_team_lead: true,
+            team_lead_type: 'Onsite Team Lead'
+          });
+        } else {
+          // Mark existing employee as team lead
+          const empIndex = employees.findIndex(emp => emp.id === team.onsite_tl_emp_id);
+          employees[empIndex].is_team_lead = true;
+          employees[empIndex].team_lead_type = 'Onsite Team Lead';
+        }
+      }
+
+      // Sort employees by team lead status (team leads first) then by name
+      employees.sort((a, b) => {
+        if (a.is_team_lead && !b.is_team_lead) return -1;
+        if (!a.is_team_lead && b.is_team_lead) return 1;
+        return a.name.localeCompare(b.name);
+      });
+
+      // Extract team lead info from team data
+      const {
+        offshore_tl_emp_id, offshore_tl_sso, offshore_tl_name, offshore_tl_role,
+        onsite_tl_emp_id, onsite_tl_sso, onsite_tl_name, onsite_tl_role,
+        ...baseTeamData
+      } = team;
+
+      // Structure team lead information
+      const teamLeads = {
+        offshore_team_lead: offshore_tl_emp_id ? {
+          id: offshore_tl_emp_id,
+          sso: offshore_tl_sso,
+          name: offshore_tl_name,
+          role: offshore_tl_role,
+          allocation: team.offshore_team_lead_allocation
+        } : null,
+        onsite_team_lead: onsite_tl_emp_id ? {
+          id: onsite_tl_emp_id,
+          sso: onsite_tl_sso,
+          name: onsite_tl_name,
+          role: onsite_tl_role,
+          allocation: team.onsite_team_lead_allocation
+        } : null
+      };
+
       teamsWithEmployees.push({
-        ...team,
+        ...baseTeamData,
+        team_leads: teamLeads,
         employees: employees
       });
     }
@@ -154,10 +259,37 @@ const getProjectById = async (req, res) => {
       [id]
     );
 
+    // Extract base project data (excluding manager employee details from spread)
+    const projectData = projects[0];
+    const {
+      offshore_manager_emp_id, offshore_manager_sso, offshore_manager_name, offshore_manager_role,
+      onsite_manager_emp_id, onsite_manager_sso, onsite_manager_name, onsite_manager_role,
+      ...baseProjectData
+    } = projectData;
+
+    // Structure manager information
+    const managers = {
+      offshore_manager: offshore_manager_emp_id ? {
+        id: offshore_manager_emp_id,
+        sso: offshore_manager_sso,
+        name: offshore_manager_name,
+        role: offshore_manager_role,
+        allocation: baseProjectData.offshore_manager_allocation
+      } : null,
+      onsite_manager: onsite_manager_emp_id ? {
+        id: onsite_manager_emp_id,
+        sso: onsite_manager_sso,
+        name: onsite_manager_name,
+        role: onsite_manager_role,
+        allocation: baseProjectData.onsite_manager_allocation
+      } : null
+    };
+
     res.json({
       success: true,
       data: {
-        ...projects[0],
+        ...baseProjectData,
+        managers,
         teams: teamsWithEmployees,
         allocated_employees: allocatedEmployees,
         total_employees: countResult[0].total_employees
@@ -183,6 +315,10 @@ const createProject = async (req, res) => {
     const {
       project_team_name,
       project_status,
+      offshore_manager_id,
+      onsite_manager_id,
+      offshore_manager_allocation,
+      onsite_manager_allocation,
       employees // Array of {employee_id, allocation_percentage}
     } = req.body;
 
@@ -195,12 +331,37 @@ const createProject = async (req, res) => {
       });
     }
 
+    // Validate allocation percentages
+    if (offshore_manager_allocation && (offshore_manager_allocation < 0 || offshore_manager_allocation > 100)) {
+      await connection.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Offshore manager allocation must be between 0 and 100'
+      });
+    }
+
+    if (onsite_manager_allocation && (onsite_manager_allocation < 0 || onsite_manager_allocation > 100)) {
+      await connection.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Onsite manager allocation must be between 0 and 100'
+      });
+    }
+
     // Insert project
     const [result] = await connection.query(
       `INSERT INTO projects
-      (project_team_name, project_status)
-      VALUES (?, ?)`,
-      [project_team_name, project_status || 'Planning']
+      (project_team_name, project_status, offshore_manager_id, onsite_manager_id,
+       offshore_manager_allocation, onsite_manager_allocation)
+      VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        project_team_name,
+        project_status || 'Planning',
+        offshore_manager_id || null,
+        onsite_manager_id || null,
+        offshore_manager_allocation || 0,
+        onsite_manager_allocation || 0
+      ]
     );
 
     const projectId = result.insertId;
@@ -278,6 +439,10 @@ const updateProject = async (req, res) => {
     const {
       project_team_name,
       project_status,
+      offshore_manager_id,
+      onsite_manager_id,
+      offshore_manager_allocation,
+      onsite_manager_allocation,
       employees // Array of {employee_id, allocation_percentage}
     } = req.body;
 
@@ -295,12 +460,38 @@ const updateProject = async (req, res) => {
       });
     }
 
+    // Validate allocation percentages
+    if (offshore_manager_allocation && (offshore_manager_allocation < 0 || offshore_manager_allocation > 100)) {
+      await connection.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Offshore manager allocation must be between 0 and 100'
+      });
+    }
+
+    if (onsite_manager_allocation && (onsite_manager_allocation < 0 || onsite_manager_allocation > 100)) {
+      await connection.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Onsite manager allocation must be between 0 and 100'
+      });
+    }
+
     // Update project
     await connection.query(
       `UPDATE projects
-      SET project_team_name = ?, project_status = ?
+      SET project_team_name = ?, project_status = ?, offshore_manager_id = ?, onsite_manager_id = ?,
+          offshore_manager_allocation = ?, onsite_manager_allocation = ?
       WHERE id = ?`,
-      [project_team_name, project_status, id]
+      [
+        project_team_name,
+        project_status,
+        offshore_manager_id || null,
+        onsite_manager_id || null,
+        offshore_manager_allocation || 0,
+        onsite_manager_allocation || 0,
+        id
+      ]
     );
 
     // Update employee assignments

@@ -5,7 +5,13 @@
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nImplement Synchrony branding and UI enhancements\n\nApply complete Synchrony color scheme and branding updates:\n- Update entire application to use Synchrony colors (#323232, #FFFFFF, #FFC500)\n- Replace TeamPulse branding with Synchrony logo in header\n- Add professional user profile avatar with initials in header\n- Update all PrimeReact components and custom CSS with new color palette\n\nColor scheme changes:\n- Primary color: #FFC500 (golden yellow) for buttons and accents\n- Background: #323232 (dark gray) for headers and navigation\n- Text: #FFFFFF (white) for dark backgrounds\n- Success buttons: #4a4a4a with white text\n- Update 20+ CSS files for consistency\n\nHeader enhancements:\n- Create custom Synchrony SVG logo component\n- Add user avatar circle with initials (first + last name)\n- Golden gradient background for avatar\n- Responsive design for mobile devices\n\nSidebar improvements:\n- Replace Unicode arrows with PrimeReact icons (pi-angle-left/right)\n- Update toggle button styling\n- Maintain responsive behavior\n\nDashboard additions:\n- Add \"Projects Overview\" section with project cards\n- Display project name and employee count per project\n- Show project status with color-coded badges\n- Backend query for project statistics from project_employees table\n\nEmployee management:\n- Implement dynamic table height based on window size\n- Auto-adjust height on window resize\n- Include pagination in viewport calculations\n- Minimum height of 400px for usability\n\nComponent updates:\n- PrimeReact buttons: consistent yellow/dark gray theme\n- All modals: dark gradient headers with yellow accents\n- Forms: yellow focus states and borders\n- Navigation: dark gradient backgrounds\n- Pagination: yellow highlights\n\nFiles updated:\n- 20 CSS files with new color scheme\n- Header, Sidebar, Dashboard components\n- All PrimeReact custom styles\n- Admin controller for project statistics\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git push:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(node run_fix_constraint.js:*)",
+      "Bash(node run_add_managers.js:*)",
+      "Bash(node -e:*)",
+      "Bash(node run_add_manager_allocations.js:*)",
+      "Bash(node run_add_team_leads.js:*)",
+      "Bash(git restore:*)"
     ],
     "deny": [],
     "ask": []

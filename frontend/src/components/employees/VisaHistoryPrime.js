@@ -44,7 +44,6 @@ const VisaHistoryPrime = ({ employeeId, employeeName, visible, onHide }) => {
 
   useEffect(() => {
     if (visible && employeeId) {
-      console.log('Fetching visa history for employee:', employeeId);
       setShowForm(false); // Always show list view when dialog opens
       setEditingRecord(null); // Clear any editing record
       fetchHistory();
@@ -60,9 +59,7 @@ const VisaHistoryPrime = ({ employeeId, employeeName, visible, onHide }) => {
 
     try {
       setLoading(true);
-      console.log('Calling getVisaHistory API for employee:', employeeId);
       const response = await getVisaHistory(employeeId);
-      console.log('Visa history response:', response.data);
       setHistory(response.data.data);
     } catch (err) {
       toast.error('Failed to fetch visa history');

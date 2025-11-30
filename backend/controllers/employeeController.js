@@ -132,8 +132,6 @@ const getAllEmployees = async (req, res) => {
     dataQuery += ` ORDER BY e.${validSortField} ${validSortOrder} LIMIT ? OFFSET ?`;
     queryParams.push(limit, offset);
 
-    console.log('dataQuery', dataQuery);
-
     // Get paginated employees
     const [employees] = await db.query(dataQuery, queryParams);
 
@@ -181,6 +179,21 @@ const getEmployeeById = async (req, res) => {
 
     const employee = employees[0];
     employee.visa_status = calculateVisaStatus(employee.visa_type, employee.current_visa_start_date, employee.current_visa_end_date);
+
+    // Fetch employee's project and team assignments
+    const [projectAssignments] = await db.query(
+      `SELECT pe.project_id, pe.team_id, pe.allocation_percentage,
+              p.project_team_name,
+              pt.agile_board_name
+       FROM project_employees pe
+       JOIN projects p ON pe.project_id = p.id
+       LEFT JOIN project_teams pt ON pe.team_id = pt.id
+       WHERE pe.employee_id = ?
+       ORDER BY p.project_team_name, pt.agile_board_name`,
+      [id]
+    );
+
+    employee.project_assignments = projectAssignments;
 
     res.json({
       success: true,
@@ -242,6 +255,22 @@ const createEmployee = async (req, res) => {
         success: false,
         message: 'Name is required'
       });
+    }
+
+    // Check if SSO already exists (only if SSO is provided and not empty)
+    if (sso && sso.trim() !== '') {
+      const [ssoCheck] = await connection.query(
+        'SELECT id FROM employees WHERE sso = ? AND sso IS NOT NULL AND sso != ""',
+        [sso]
+      );
+
+      if (ssoCheck.length > 0) {
+        await connection.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'SSO already exists'
+        });
+      }
     }
 
     // Calculate visa status based on dates
@@ -386,6 +415,23 @@ const updateEmployee = async (req, res) => {
         success: false,
         message: 'Employee not found'
       });
+    }
+
+    // Check if SSO is being changed and if the new SSO already exists for another employee
+    // Only check for duplicates if SSO is provided and not empty
+    if (sso && sso.trim() !== '' && sso !== existing[0].sso) {
+      const [ssoCheck] = await connection.query(
+        'SELECT id FROM employees WHERE sso = ? AND sso IS NOT NULL AND sso != "" AND id != ?',
+        [sso, id]
+      );
+
+      if (ssoCheck.length > 0) {
+        await connection.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'SSO already exists'
+        });
+      }
     }
 
     // Calculate visa status based on dates

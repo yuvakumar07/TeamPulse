@@ -19,8 +19,6 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
   }, []);
 
   useEffect(() => {
-    console.log('useEffect triggered - selectedTeam changed:', selectedTeam?.agile_board_name, 'ID:', selectedTeam?.id);
-
     if (selectedTeam) {
       loadTeamEmployees();
     } else {
@@ -48,15 +46,7 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
       const response = await getProjectById(project.id);
       const projectData = response.data.data;
 
-      console.log('Project data received:', projectData);
       const projectTeams = projectData.teams || [];
-      console.log('Project teams:', projectTeams);
-      console.log('Teams count:', projectTeams.length);
-
-      // Log each team's employee count
-      projectTeams.forEach(team => {
-        console.log(`Team "${team.agile_board_name}" has ${team.employees?.length || 0} employees`);
-      });
 
       setTeams(projectTeams);
 
@@ -88,18 +78,12 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
   };
 
   const loadTeamEmployees = (team = selectedTeam) => {
-    console.log('loadTeamEmployees called for team:', team?.agile_board_name);
-    console.log('Team employees:', team?.employees);
-    console.log('Team object:', team);
-
     if (!team) {
-      console.log('No team selected');
       setSelectedEmployees([]);
       return;
     }
 
     if (!team.employees || team.employees.length === 0) {
-      console.log('Team has no employees array or empty array');
       setSelectedEmployees([]);
       return;
     }
@@ -120,7 +104,6 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
       };
     });
 
-    console.log('Loaded assignments:', assignments);
     setSelectedEmployees(assignments);
   };
 
@@ -266,6 +249,11 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
       return false;
     }
 
+    // Exclude Team Leads and Managers
+    if (emp.role_type === 'Team Lead' || emp.role_type === 'Manager') {
+      return false;
+    }
+
     // Apply search filter
     if (searchTerm === '') return true;
 
@@ -306,8 +294,6 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
                     key={team.id}
                     type="button"
                     onClick={() => {
-                      console.log('Team tab clicked:', team.agile_board_name, 'ID:', team.id);
-                      console.log('Team has employees:', team.employees?.length);
                       setSelectedTeam(team);
                       // Immediately load employees for the clicked team
                       loadTeamEmployees(team);

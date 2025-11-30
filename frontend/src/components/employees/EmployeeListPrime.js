@@ -82,14 +82,9 @@ const EmployeeListPrime = ({ onViewAssets }) => {
   useEffect(() => {
     const fetchTeams = async () => {
       try {
-        console.log('Fetching teams...');
         const response = await getAllTeams(); // Fetch all teams
-        console.log('Teams response:', response);
-        console.log('Teams data:', response.data);
-        console.log('Teams array:', response.data.data);
 
         if (!response.data.data || response.data.data.length === 0) {
-          console.warn('No teams found in response');
           setAllTeams([]);
           setTeams([{ label: 'All Teams', value: 'All' }]);
           return;
@@ -102,7 +97,6 @@ const EmployeeListPrime = ({ onViewAssets }) => {
           projectName: team.project_team_name
         }));
 
-        console.log('All teams data:', teamsData);
         setAllTeams(teamsData);
 
         // Initially show all teams
@@ -120,22 +114,16 @@ const EmployeeListPrime = ({ onViewAssets }) => {
 
   // Filter teams based on selected project
   useEffect(() => {
-    console.log('Project filter changed:', projectFilter);
-    console.log('All teams:', allTeams);
-
     if (projectFilter === 'All') {
       // Show all teams when "All Projects" is selected
       setTeams([{ label: 'All Teams', value: 'All' }, ...allTeams]);
-      console.log('Showing all teams');
     } else {
       // Filter teams by selected project
       const filteredTeams = allTeams.filter(team => team.projectName === projectFilter);
-      console.log('Filtered teams for project', projectFilter, ':', filteredTeams);
       setTeams([{ label: 'All Teams', value: 'All' }, ...filteredTeams]);
 
       // Reset team filter if current selection is not in filtered list
       if (teamFilter !== 'All' && !filteredTeams.some(team => team.value === teamFilter)) {
-        console.log('Resetting team filter because current selection not in filtered list');
         setTeamFilter('All');
       }
     }

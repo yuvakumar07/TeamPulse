@@ -1,22 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { createProject, updateProject, getProjectById, createProjectTeam, updateProjectTeam, deleteProjectTeam } from '../../services/api';
+import { createProject, updateProject, getProjectById, createProjectTeam, updateProjectTeam, deleteProjectTeam, getAllEmployees } from '../../services/api';
 import './ProjectForm.css';
 
 const ProjectForm = ({ project, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     project_team_name: '',
-    project_status: 'Planning'
+    project_status: 'Planning',
+    offshore_manager_id: '',
+    onsite_manager_id: '',
+    offshore_manager_allocation: 0,
+    onsite_manager_allocation: 0
   });
   const [teams, setTeams] = useState([]);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [employees, setEmployees] = useState([]);
 
   useEffect(() => {
+    fetchEmployees();
     if (project) {
       loadProjectData();
     }
   }, [project]);
+
+  const fetchEmployees = async () => {
+    try {
+      const response = await getAllEmployees(1, 1000, 'All');
+      setEmployees(response.data.data || []);
+    } catch (err) {
+      console.error('Error fetching employees:', err);
+      toast.error('Failed to load employees list');
+    }
+  };
 
   const loadProjectData = async () => {
     try {
@@ -25,7 +41,11 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
 
       setFormData({
         project_team_name: projectData.project_team_name || '',
-        project_status: projectData.project_status || 'Planning'
+        project_status: projectData.project_status || 'Planning',
+        offshore_manager_id: projectData.offshore_manager_id || '',
+        onsite_manager_id: projectData.onsite_manager_id || '',
+        offshore_manager_allocation: projectData.offshore_manager_allocation || 0,
+        onsite_manager_allocation: projectData.onsite_manager_allocation || 0
       });
 
       setTeams(projectData.teams || []);
@@ -60,7 +80,15 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
   };
 
   const addTeam = () => {
-    setTeams([...teams, { agile_board_name: '', agile_team_jira_key: '', isNew: true }]);
+    setTeams([...teams, {
+      agile_board_name: '',
+      agile_team_jira_key: '',
+      offshore_team_lead_id: '',
+      onsite_team_lead_id: '',
+      offshore_team_lead_allocation: 0,
+      onsite_team_lead_allocation: 0,
+      isNew: true
+    }]);
   };
 
   const removeTeam = async (index) => {
@@ -82,6 +110,27 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
   };
 
   const updateTeam = (index, field, value) => {
+    // Check if trying to assign a team lead that's already assigned to another team
+    if ((field === 'offshore_team_lead_id' || field === 'onsite_team_lead_id') && value) {
+      const isAlreadyAssigned = teams.some((team, idx) => {
+        if (idx === index) return false; // Skip current team
+
+        if (field === 'offshore_team_lead_id') {
+          return team.offshore_team_lead_id === value;
+        } else if (field === 'onsite_team_lead_id') {
+          return team.onsite_team_lead_id === value;
+        }
+        return false;
+      });
+
+      if (isAlreadyAssigned) {
+        const employeeName = employees.find(emp => emp.id === parseInt(value))?.name || 'This employee';
+        const leadType = field === 'offshore_team_lead_id' ? 'Offshore Team Lead' : 'Onsite Team Lead';
+        toast.error(`${employeeName} is already assigned as ${leadType} to another team. Each team lead can only be assigned to one team.`);
+        return; // Don't update
+      }
+    }
+
     const newTeams = [...teams];
     newTeams[index][field] = value;
     setTeams(newTeams);
@@ -112,16 +161,19 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
       for (const team of teams) {
         if (!team.agile_board_name.trim()) continue;
 
+        const teamData = {
+          agile_board_name: team.agile_board_name,
+          agile_team_jira_key: team.agile_team_jira_key,
+          offshore_team_lead_id: team.offshore_team_lead_id || null,
+          onsite_team_lead_id: team.onsite_team_lead_id || null,
+          offshore_team_lead_allocation: team.offshore_team_lead_allocation || 0,
+          onsite_team_lead_allocation: team.onsite_team_lead_allocation || 0
+        };
+
         if (team.isNew) {
-          await createProjectTeam(projectId, {
-            agile_board_name: team.agile_board_name,
-            agile_team_jira_key: team.agile_team_jira_key
-          });
+          await createProjectTeam(projectId, teamData);
         } else if (team.id) {
-          await updateProjectTeam(team.id, {
-            agile_board_name: team.agile_board_name,
-            agile_team_jira_key: team.agile_team_jira_key
-          });
+          await updateProjectTeam(team.id, teamData);
         }
       }
 
@@ -178,6 +230,82 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                 <option value="Cancelled">Cancelled</option>
               </select>
             </div>
+
+            <div className="form-group">
+              <label htmlFor="offshore_manager_id">Offshore Manager</label>
+              <select
+                id="offshore_manager_id"
+                name="offshore_manager_id"
+                value={formData.offshore_manager_id}
+                onChange={handleChange}
+              >
+                <option value="">Select Offshore Manager</option>
+                {employees
+                  .filter(emp => emp.work_location === 'Offsite' && emp.role_type === 'Manager')
+                  .map(emp => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.name} ({emp.sso || 'N/A'})
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="offshore_manager_allocation">Offshore Manager Allocation %</label>
+              <input
+                type="number"
+                id="offshore_manager_allocation"
+                name="offshore_manager_allocation"
+                value={formData.offshore_manager_allocation}
+                onChange={handleChange}
+                min="0"
+                max="100"
+                step="5"
+                placeholder="0"
+                disabled={!formData.offshore_manager_id}
+              />
+              <small style={{ color: '#6c757d', fontSize: '0.85rem', display: 'block', marginTop: '0.25rem' }}>
+                Percentage of time allocated to this project
+              </small>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="onsite_manager_id">Onsite Manager</label>
+              <select
+                id="onsite_manager_id"
+                name="onsite_manager_id"
+                value={formData.onsite_manager_id}
+                onChange={handleChange}
+              >
+                <option value="">Select Onsite Manager</option>
+                {employees
+                  .filter(emp => emp.work_location === 'Onsite' && emp.role_type === 'Manager')
+                  .map(emp => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.name} ({emp.sso || 'N/A'})
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="onsite_manager_allocation">Onsite Manager Allocation %</label>
+              <input
+                type="number"
+                id="onsite_manager_allocation"
+                name="onsite_manager_allocation"
+                value={formData.onsite_manager_allocation}
+                onChange={handleChange}
+                min="0"
+                max="100"
+                step="5"
+                placeholder="0"
+                disabled={!formData.onsite_manager_id}
+              />
+              <small style={{ color: '#6c757d', fontSize: '0.85rem', display: 'block', marginTop: '0.25rem' }}>
+                Percentage of time allocated to this project
+              </small>
+            </div>
           </div>
 
           <div className="teams-section">
@@ -195,8 +323,19 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
             ) : (
               <div className="teams-list">
                 {teams.map((team, index) => (
-                  <div key={index} className="team-item">
-                    <div className="form-grid" style={{ flex: 1 }}>
+                  <div key={index} className="team-item" style={{ marginBottom: '1.5rem', padding: '1rem', border: '1px solid #dee2e6', borderRadius: '6px', backgroundColor: '#f8f9fa' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                      <h4 style={{ margin: 0, color: '#495057' }}>Team #{index + 1}</h4>
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm"
+                        onClick={() => removeTeam(index)}
+                      >
+                        Remove Team
+                      </button>
+                    </div>
+
+                    <div className="form-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
                       <div className="form-group">
                         <label>Agile Board Name</label>
                         <input
@@ -215,15 +354,89 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                           placeholder="e.g., PROJ-123"
                         />
                       </div>
+
+                      <div className="form-group">
+                        <label>Offshore Team Lead</label>
+                        <select
+                          value={team.offshore_team_lead_id || ''}
+                          onChange={(e) => updateTeam(index, 'offshore_team_lead_id', e.target.value)}
+                        >
+                          <option value="">Select Offshore Team Lead</option>
+                          {employees
+                            .filter(emp => emp.work_location === 'Offsite' && emp.role_type === 'Team Lead')
+                            .map(emp => {
+                              // Check if already assigned to another team
+                              const isAssigned = teams.some((t, idx) =>
+                                idx !== index && t.offshore_team_lead_id === emp.id.toString()
+                              );
+                              return (
+                                <option
+                                  key={emp.id}
+                                  value={emp.id}
+                                  disabled={isAssigned}
+                                >
+                                  {emp.name} ({emp.sso || 'N/A'}) {isAssigned ? '(Already Assigned)' : ''}
+                                </option>
+                              );
+                            })}
+                        </select>
+                      </div>
+
+                      <div className="form-group">
+                        <label>Offshore Team Lead Allocation %</label>
+                        <input
+                          type="number"
+                          value={team.offshore_team_lead_allocation || 0}
+                          onChange={(e) => updateTeam(index, 'offshore_team_lead_allocation', parseFloat(e.target.value) || 0)}
+                          min="0"
+                          max="100"
+                          step="5"
+                          placeholder="0"
+                          disabled={!team.offshore_team_lead_id}
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label>Onsite Team Lead</label>
+                        <select
+                          value={team.onsite_team_lead_id || ''}
+                          onChange={(e) => updateTeam(index, 'onsite_team_lead_id', e.target.value)}
+                        >
+                          <option value="">Select Onsite Team Lead</option>
+                          {employees
+                            .filter(emp => emp.work_location === 'Onsite' && emp.role_type === 'Team Lead')
+                            .map(emp => {
+                              // Check if already assigned to another team
+                              const isAssigned = teams.some((t, idx) =>
+                                idx !== index && t.onsite_team_lead_id === emp.id.toString()
+                              );
+                              return (
+                                <option
+                                  key={emp.id}
+                                  value={emp.id}
+                                  disabled={isAssigned}
+                                >
+                                  {emp.name} ({emp.sso || 'N/A'}) {isAssigned ? '(Already Assigned)' : ''}
+                                </option>
+                              );
+                            })}
+                        </select>
+                      </div>
+
+                      <div className="form-group">
+                        <label>Onsite Team Lead Allocation %</label>
+                        <input
+                          type="number"
+                          value={team.onsite_team_lead_allocation || 0}
+                          onChange={(e) => updateTeam(index, 'onsite_team_lead_allocation', parseFloat(e.target.value) || 0)}
+                          min="0"
+                          max="100"
+                          step="5"
+                          placeholder="0"
+                          disabled={!team.onsite_team_lead_id}
+                        />
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      className="btn btn-danger btn-sm"
-                      onClick={() => removeTeam(index)}
-                      style={{ marginLeft: '1rem', height: 'fit-content' }}
-                    >
-                      Remove
-                    </button>
                   </div>
                 ))}
               </div>
