@@ -116,16 +116,31 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
       return;
     }
 
-    // Check if employee is already in another team in this project
-    const employeeInOtherTeam = teams.find(team =>
+    // Calculate the employee's allocation in other teams of this project
+    let otherTeamsAllocation = 0;
+    teams.forEach(team => {
+      if (team.id !== selectedTeam?.id && team.employees) {
+        const empInTeam = team.employees.find(emp => emp.id === employee.id);
+        if (empInTeam) {
+          otherTeamsAllocation += parseFloat(empInTeam.allocation_percentage) || 0;
+        }
+      }
+    });
+
+    // Calculate total allocation including other projects
+    const totalAllocation = parseFloat(employee.total_allocation) || 0;
+    const remainingAllocation = 100 - totalAllocation;
+
+    // Show info message if employee is in other teams
+    const employeeInOtherTeams = teams.filter(team =>
       team.id !== selectedTeam?.id &&
       team.employees &&
       team.employees.some(emp => emp.id === employee.id)
     );
 
-    if (employeeInOtherTeam) {
-      toast.warning(`This employee is already assigned to "${employeeInOtherTeam.agile_board_name}" team`);
-      return;
+    if (employeeInOtherTeams.length > 0) {
+      const teamNames = employeeInOtherTeams.map(t => t.agile_board_name).join(', ');
+      toast.info(`${employee.name} is also assigned to: ${teamNames}. Remaining allocation: ${remainingAllocation.toFixed(1)}%`);
     }
 
     setSelectedEmployees(prev => [...prev, {
@@ -226,26 +241,9 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
     }
   };
 
-  // Get all employee IDs that are already assigned to OTHER teams in this project
-  // (Current team's employees are handled separately in selectedEmployees)
-  const assignedEmployeeIds = new Set();
-  teams.forEach(team => {
-    // Exclude the currently selected team since its employees are in selectedEmployees
-    if (team.id !== selectedTeam?.id && team.employees) {
-      team.employees.forEach(emp => {
-        assignedEmployeeIds.add(emp.id);
-      });
-    }
-  });
-
   const filteredEmployees = availableEmployees.filter(emp => {
     // Exclude if already in selected employees for current team
     if (selectedEmployees.some(selected => selected.employee_id === emp.id)) {
-      return false;
-    }
-
-    // Exclude if already assigned to any team in the project
-    if (assignedEmployeeIds.has(emp.id)) {
       return false;
     }
 
@@ -351,6 +349,12 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
                       const isOverAllocated = totalAllocation >= 100;
                       const availableAllocation = Math.max(0, 100 - totalAllocation);
 
+                      // Find which teams in this project the employee is already assigned to
+                      const assignedTeams = teams.filter(team =>
+                        team.employees && team.employees.some(e => e.id === emp.id)
+                      );
+                      const isInOtherTeams = assignedTeams.length > 0;
+
                       return (
                         <div
                           key={emp.id}
@@ -370,6 +374,11 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
                               <span className="warning-text"> Over-allocated!</span>
                             ) : (
                               <span> Available: {availableAllocation.toFixed(0)}%</span>
+                            )}
+                            {isInOtherTeams && (
+                              <span style={{ color: '#0066cc', fontWeight: '500' }}>
+                                {' '}• In: {assignedTeams.map(t => t.agile_board_name).join(', ')}
+                              </span>
                             )}
                           </div>
                         </div>

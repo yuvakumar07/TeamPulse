@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { createProject, updateProject, getProjectById, createProjectTeam, updateProjectTeam, deleteProjectTeam, getAllEmployees } from '../../services/api';
+import { createProject, updateProject, getProjectById, createProjectTeam, updateProjectTeam, deleteProjectTeam, getAllEmployees, getAllTeams } from '../../services/api';
 import './ProjectForm.css';
 
 const ProjectForm = ({ project, onClose, onSuccess }) => {
@@ -16,9 +16,11 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [employees, setEmployees] = useState([]);
+  const [allTeamsGlobal, setAllTeamsGlobal] = useState([]);
 
   useEffect(() => {
     fetchEmployees();
+    fetchAllTeamsGlobal();
     if (project) {
       loadProjectData();
     }
@@ -31,6 +33,16 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
     } catch (err) {
       console.error('Error fetching employees:', err);
       toast.error('Failed to load employees list');
+    }
+  };
+
+  const fetchAllTeamsGlobal = async () => {
+    try {
+      const response = await getAllTeams();
+      setAllTeamsGlobal(response.data.data || []);
+    } catch (err) {
+      console.error('Error fetching all teams:', err);
+      toast.error('Failed to load teams list');
     }
   };
 
@@ -98,6 +110,9 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
       try {
         await deleteProjectTeam(team.id);
         toast.success('Team deleted successfully!');
+
+        // Refresh global teams list after deletion
+        await fetchAllTeamsGlobal();
       } catch (err) {
         console.error('Error deleting team:', err);
         toast.error('Failed to delete team');
@@ -110,23 +125,57 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
   };
 
   const updateTeam = (index, field, value) => {
-    // Check if trying to assign a team lead that's already assigned to another team
-    if ((field === 'offshore_team_lead_id' || field === 'onsite_team_lead_id') && value) {
-      const isAlreadyAssigned = teams.some((team, idx) => {
-        if (idx === index) return false; // Skip current team
 
-        if (field === 'offshore_team_lead_id') {
-          return team.offshore_team_lead_id === value;
-        } else if (field === 'onsite_team_lead_id') {
-          return team.onsite_team_lead_id === value;
+    // Check if trying to assign a team lead that's already assigned to another team globally
+    if ((field == 'offshore_team_lead_id' || field == 'onsite_team_lead_id') && value) {
+      const currentTeam = teams[index];
+      const currentTeamId = currentTeam.id; // Will be undefined for new teams
+
+      // Check against all teams in the database (excluding the current team being edited)
+      const isAlreadyAssignedGlobally = allTeamsGlobal.some((team) => {
+        // Skip the current team being edited (if it exists in the database)
+        if (currentTeamId && team.id == currentTeamId) return false;
+
+        if (field == 'offshore_team_lead_id') {
+          return team.offshore_team_lead_id == value;
+        } else if (field == 'onsite_team_lead_id') {
+          return team.onsite_team_lead_id == value;
         }
         return false;
       });
 
-      if (isAlreadyAssigned) {
+      // Also check against other teams in the current form (for newly added teams not yet saved)
+      const isAlreadyAssignedLocally = teams.some((team, idx) => {
+        if (idx == index) return false; // Skip current team
+
+        if (field == 'offshore_team_lead_id') {
+          return team.offshore_team_lead_id == value;
+        } else if (field == 'onsite_team_lead_id') {
+          return team.onsite_team_lead_id == value;
+        }
+        return false;
+      });
+
+      if (isAlreadyAssignedGlobally || isAlreadyAssignedLocally) {
         const employeeName = employees.find(emp => emp.id === parseInt(value))?.name || 'This employee';
         const leadType = field === 'offshore_team_lead_id' ? 'Offshore Team Lead' : 'Onsite Team Lead';
-        toast.error(`${employeeName} is already assigned as ${leadType} to another team. Each team lead can only be assigned to one team.`);
+
+        // Find which project the employee is assigned to
+        let assignedProject = '';
+        if (isAlreadyAssignedGlobally) {
+          const assignedTeam = allTeamsGlobal.find(team => {
+            if (field == 'offshore_team_lead_id') {
+              return team.offshore_team_lead_id == value;
+            } else {
+              return team.onsite_team_lead_id == value;
+            }
+          });
+          assignedProject = assignedTeam ? ` in project "${assignedTeam.project_team_name}"` : '';
+        } else {
+          assignedProject = ' in this project';
+        }
+
+        toast.error(`${employeeName} is already assigned as ${leadType}${assignedProject}. Each team lead can only be assigned to one team across all projects.`);
         return; // Don't update
       }
     }
@@ -178,6 +227,10 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
       }
 
       toast.success(project ? 'Project updated successfully!' : 'Project created successfully!');
+
+      // Refresh global teams list to ensure validation data is up-to-date
+      await fetchAllTeamsGlobal();
+
       onSuccess();
       onClose();
     } catch (err) {
@@ -365,10 +418,20 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                           {employees
                             .filter(emp => emp.work_location === 'Offsite' && emp.role_type === 'Team Lead')
                             .map(emp => {
-                              // Check if already assigned to another team
-                              const isAssigned = teams.some((t, idx) =>
+                              const currentTeamId = team.id; // Will be undefined for new teams
+
+                              // Check if already assigned globally (excluding current team)
+                              const isAssignedGlobally = allTeamsGlobal.some((t) =>
+                                (!currentTeamId || t.id !== currentTeamId) && t.offshore_team_lead_id === emp.id
+                              );
+
+                              // Check if already assigned locally in the form (for new teams not yet saved)
+                              const isAssignedLocally = teams.some((t, idx) =>
                                 idx !== index && t.offshore_team_lead_id === emp.id.toString()
                               );
+
+                              const isAssigned = isAssignedGlobally || isAssignedLocally;
+
                               return (
                                 <option
                                   key={emp.id}
@@ -406,10 +469,20 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                           {employees
                             .filter(emp => emp.work_location === 'Onsite' && emp.role_type === 'Team Lead')
                             .map(emp => {
-                              // Check if already assigned to another team
-                              const isAssigned = teams.some((t, idx) =>
+                              const currentTeamId = team.id; // Will be undefined for new teams
+
+                              // Check if already assigned globally (excluding current team)
+                              const isAssignedGlobally = allTeamsGlobal.some((t) =>
+                                (!currentTeamId || t.id !== currentTeamId) && t.onsite_team_lead_id === emp.id
+                              );
+
+                              // Check if already assigned locally in the form (for new teams not yet saved)
+                              const isAssignedLocally = teams.some((t, idx) =>
                                 idx !== index && t.onsite_team_lead_id === emp.id.toString()
                               );
+
+                              const isAssigned = isAssignedGlobally || isAssignedLocally;
+
                               return (
                                 <option
                                   key={emp.id}
