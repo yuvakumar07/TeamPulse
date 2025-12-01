@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const PDFDocument = require('pdfkit');
 
 // Generate invoice number
 const generateInvoiceNumber = (projectId, month, year) => {
@@ -460,9 +461,364 @@ const getInvoiceById = async (req, res) => {
   }
 };
 
+// Update invoice
+const updateInvoice = async (req, res) => {
+  const connection = await db.getConnection();
+
+  try {
+    const { id } = req.params;
+    const { status, items } = req.body;
+
+    await connection.beginTransaction();
+
+    // Check if invoice exists
+    const [invoices] = await connection.query(
+      'SELECT * FROM invoices WHERE id = ?',
+      [id]
+    );
+
+    if (invoices.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({
+        success: false,
+        message: 'Invoice not found'
+      });
+    }
+
+    // Update invoice status if provided
+    if (status) {
+      await connection.query(
+        'UPDATE invoices SET status = ?, updated_at = NOW() WHERE id = ?',
+        [status, id]
+      );
+    }
+
+    // Update invoice items if provided
+    if (items && Array.isArray(items)) {
+      // Recalculate totals
+      let totalBillingHours = 0;
+      let totalLeaveHours = 0;
+      let totalAmount = 0;
+
+      for (const item of items) {
+        const billingHours = parseFloat(item.billing_hours) || 0;
+        const leaveHours = parseFloat(item.leave_hours) || 0;
+        const costPerHour = parseFloat(item.cost_per_hour) || 0;
+        const itemTotal = billingHours * costPerHour;
+
+        totalBillingHours += billingHours;
+        totalLeaveHours += leaveHours;
+        totalAmount += itemTotal;
+
+        // Update individual item
+        await connection.query(
+          `UPDATE invoice_items
+           SET billing_hours = ?, leave_hours = ?, cost_per_hour = ?, total_amount = ?
+           WHERE invoice_id = ? AND employee_id = ?`,
+          [billingHours, leaveHours, costPerHour, itemTotal, id, item.employee_id]
+        );
+      }
+
+      // Update invoice totals
+      await connection.query(
+        `UPDATE invoices
+         SET total_billing_hours = ?, total_leave_hours = ?, total_amount = ?, updated_at = NOW()
+         WHERE id = ?`,
+        [totalBillingHours, totalLeaveHours, totalAmount, id]
+      );
+    }
+
+    await connection.commit();
+
+    // Fetch updated invoice
+    const [updatedInvoices] = await connection.query(
+      `SELECT i.*,
+              p.project_team_name,
+              pt.agile_board_name as team_name
+       FROM invoices i
+       JOIN projects p ON i.project_id = p.id
+       LEFT JOIN project_teams pt ON i.team_id = pt.id
+       WHERE i.id = ?`,
+      [id]
+    );
+
+    const [updatedItems] = await connection.query(
+      'SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY employee_name',
+      [id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Invoice updated successfully',
+      data: {
+        ...updatedInvoices[0],
+        items: updatedItems
+      }
+    });
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error updating invoice:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating invoice',
+      error: error.message
+    });
+  } finally {
+    connection.release();
+  }
+};
+
+// Delete invoice
+const deleteInvoice = async (req, res) => {
+  const connection = await db.getConnection();
+
+  try {
+    const { id } = req.params;
+
+    await connection.beginTransaction();
+
+    // Check if invoice exists
+    const [invoices] = await connection.query(
+      'SELECT * FROM invoices WHERE id = ?',
+      [id]
+    );
+
+    if (invoices.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({
+        success: false,
+        message: 'Invoice not found'
+      });
+    }
+
+    // Delete invoice items first (due to foreign key constraint)
+    await connection.query('DELETE FROM invoice_items WHERE invoice_id = ?', [id]);
+
+    // Delete invoice
+    await connection.query('DELETE FROM invoices WHERE id = ?', [id]);
+
+    await connection.commit();
+
+    res.json({
+      success: true,
+      message: 'Invoice deleted successfully'
+    });
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error deleting invoice:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting invoice',
+      error: error.message
+    });
+  } finally {
+    connection.release();
+  }
+};
+
+// Generate PDF for invoice
+const generateInvoicePDF = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Get invoice with items
+    const [invoices] = await db.query(
+      `SELECT i.*,
+              p.project_team_name,
+              pt.agile_board_name as team_name
+       FROM invoices i
+       JOIN projects p ON i.project_id = p.id
+       LEFT JOIN project_teams pt ON i.team_id = pt.id
+       WHERE i.id = ?`,
+      [id]
+    );
+
+    if (invoices.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Invoice not found'
+      });
+    }
+
+    const invoice = invoices[0];
+
+    // Get invoice items
+    const [items] = await db.query(
+      'SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY employee_name',
+      [id]
+    );
+
+    // Create PDF document
+    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+
+    // Set response headers
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=invoice-${invoice.invoice_number}.pdf`);
+
+    // Pipe PDF to response
+    doc.pipe(res);
+
+    // Helper function to format currency
+    const formatCurrency = (amount) => {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+      }).format(amount);
+    };
+
+    // Helper function to get month name
+    const getMonthName = (month) => {
+      const months = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      return months[month - 1] || '';
+    };
+
+    // Add company header
+    doc.fontSize(24).fillColor('#323232').text('SYNCHRONY', 50, 50);
+    doc.fontSize(10).fillColor('#6c757d').text('Invoice Document', 50, 78);
+
+    // Add invoice title
+    doc.fontSize(20).fillColor('#FFC500').text('INVOICE', 400, 50, { align: 'right' });
+
+    // Add horizontal line
+    doc.moveTo(50, 100).lineTo(545, 100).strokeColor('#FFC500').lineWidth(2).stroke();
+
+    // Invoice details section
+    let yPosition = 130;
+    doc.fontSize(10).fillColor('#323232');
+
+    doc.font('Helvetica-Bold').text('Invoice Number:', 50, yPosition);
+    doc.font('Helvetica').text(invoice.invoice_number, 200, yPosition);
+
+    yPosition += 20;
+    doc.font('Helvetica-Bold').text('Invoice Date:', 50, yPosition);
+    doc.font('Helvetica').text(new Date(invoice.created_at).toLocaleDateString(), 200, yPosition);
+
+    yPosition += 20;
+    doc.font('Helvetica-Bold').text('Status:', 50, yPosition);
+    doc.font('Helvetica').text(invoice.status, 200, yPosition);
+
+    yPosition += 20;
+    doc.font('Helvetica-Bold').text('Period:', 50, yPosition);
+    doc.font('Helvetica').text(`${getMonthName(invoice.invoice_month)} ${invoice.invoice_year}`, 200, yPosition);
+
+    yPosition += 20;
+    doc.font('Helvetica-Bold').text('Project:', 50, yPosition);
+    doc.font('Helvetica').text(invoice.project_team_name, 200, yPosition);
+
+    yPosition += 20;
+    doc.font('Helvetica-Bold').text('Team:', 50, yPosition);
+    doc.font('Helvetica').text(invoice.team_name || 'All Teams', 200, yPosition);
+
+    // Add some space before table
+    yPosition += 40;
+
+    // Invoice items table header
+    doc.fontSize(12).fillColor('#ffffff');
+    doc.rect(50, yPosition, 495, 25).fillAndStroke('#323232', '#323232');
+
+    doc.font('Helvetica-Bold');
+    doc.text('Employee', 60, yPosition + 8, { width: 120, continued: false });
+    doc.text('Role', 180, yPosition + 8, { width: 80, continued: false });
+    doc.text('Bill Hrs', 260, yPosition + 8, { width: 50, align: 'center', continued: false });
+    doc.text('Leave Hrs', 310, yPosition + 8, { width: 55, align: 'center', continued: false });
+    doc.text('Cost/Hr', 365, yPosition + 8, { width: 70, align: 'right', continued: false });
+    doc.text('Total', 435, yPosition + 8, { width: 100, align: 'right', continued: false });
+
+    yPosition += 25;
+
+    // Table rows
+    doc.fontSize(9).fillColor('#323232').font('Helvetica');
+
+    items.forEach((item, index) => {
+      // Check if we need a new page
+      if (yPosition > 700) {
+        doc.addPage();
+        yPosition = 50;
+
+        // Redraw table header on new page
+        doc.fontSize(12).fillColor('#ffffff');
+        doc.rect(50, yPosition, 495, 25).fillAndStroke('#323232', '#323232');
+
+        doc.font('Helvetica-Bold');
+        doc.text('Employee', 60, yPosition + 8, { width: 120, continued: false });
+        doc.text('Role', 180, yPosition + 8, { width: 80, continued: false });
+        doc.text('Bill Hrs', 260, yPosition + 8, { width: 50, align: 'center', continued: false });
+        doc.text('Leave Hrs', 310, yPosition + 8, { width: 55, align: 'center', continued: false });
+        doc.text('Cost/Hr', 365, yPosition + 8, { width: 70, align: 'right', continued: false });
+        doc.text('Total', 435, yPosition + 8, { width: 100, align: 'right', continued: false });
+
+        yPosition += 25;
+        doc.fontSize(9).fillColor('#323232').font('Helvetica');
+      }
+
+      // Alternate row colors
+      if (index % 2 === 0) {
+        doc.rect(50, yPosition, 495, 20).fillAndStroke('#f8f9fa', '#dee2e6');
+      } else {
+        doc.rect(50, yPosition, 495, 20).fillAndStroke('#ffffff', '#dee2e6');
+      }
+
+      doc.fillColor('#323232');
+      doc.text(item.employee_name, 60, yPosition + 5, { width: 120, continued: false });
+      doc.text(item.employee_role, 180, yPosition + 5, { width: 80, continued: false });
+      doc.text(parseFloat(item.billing_hours).toFixed(1), 260, yPosition + 5, { width: 50, align: 'center', continued: false });
+      doc.text(parseFloat(item.leave_hours).toFixed(1), 310, yPosition + 5, { width: 55, align: 'center', continued: false });
+      doc.text(formatCurrency(item.cost_per_hour), 365, yPosition + 5, { width: 70, align: 'right', continued: false });
+      doc.text(formatCurrency(item.total_amount), 435, yPosition + 5, { width: 100, align: 'right', continued: false });
+
+      yPosition += 20;
+    });
+
+    // Add totals section
+    yPosition += 10;
+    doc.rect(50, yPosition, 495, 30).fillAndStroke('#323232', '#323232');
+
+    doc.fontSize(11).fillColor('#FFC500').font('Helvetica-Bold');
+    doc.text('Total Billing Hours:', 60, yPosition + 10, { width: 200, continued: false });
+    doc.text(parseFloat(invoice.total_billing_hours).toFixed(1), 260, yPosition + 10, { width: 50, align: 'center', continued: false });
+
+    doc.text('Total Leave Hours:', 60, yPosition + 10, { width: 200, continued: false });
+    doc.text(parseFloat(invoice.total_leave_hours).toFixed(1), 310, yPosition + 10, { width: 55, align: 'center', continued: false });
+
+    doc.fontSize(14).text('TOTAL AMOUNT:', 365, yPosition + 8, { width: 70, align: 'right', continued: false });
+    doc.text(formatCurrency(invoice.total_amount), 435, yPosition + 8, { width: 100, align: 'right', continued: false });
+
+    // Add footer
+    const pageHeight = doc.page.height;
+    doc.fontSize(8).fillColor('#6c757d').font('Helvetica');
+    doc.text(
+      'This is a computer-generated invoice. No signature required.',
+      50,
+      pageHeight - 50,
+      { align: 'center', width: 495 }
+    );
+
+    // Finalize PDF
+    doc.end();
+
+  } catch (error) {
+    console.error('Error generating invoice PDF:', error);
+
+    // If headers not sent yet, send error response
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        message: 'Error generating invoice PDF',
+        error: error.message
+      });
+    }
+  }
+};
+
 module.exports = {
   getEmployeesForInvoice,
   createInvoice,
   getAllInvoices,
-  getInvoiceById
+  getInvoiceById,
+  updateInvoice,
+  deleteInvoice,
+  generateInvoicePDF
 };

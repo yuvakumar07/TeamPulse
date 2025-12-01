@@ -13,12 +13,21 @@ router.use(attachPermissions);
 router.get('/employees', invoiceController.getEmployeesForInvoice);
 
 // Create new invoice
-router.post('/', requirePermission('create_invoice'), invoiceController.createInvoice);
+router.post('/', requirePermission('invoices.create'), invoiceController.createInvoice);
 
 // Get all invoices with pagination
-router.get('/', requirePermission('view_invoices'), invoiceController.getAllInvoices);
+router.get('/', requirePermission('invoices.view'), invoiceController.getAllInvoices);
+
+// Download invoice PDF (must come before /:id to avoid route conflict)
+router.get('/:id/pdf', requirePermission('invoices.view'), invoiceController.generateInvoicePDF);
 
 // Get invoice by ID
-router.get('/:id', requirePermission('view_invoices'), invoiceController.getInvoiceById);
+router.get('/:id', requirePermission('invoices.view'), invoiceController.getInvoiceById);
+
+// Update invoice
+router.put('/:id', requirePermission('invoices.edit'), invoiceController.updateInvoice);
+
+// Delete invoice
+router.delete('/:id', requirePermission('invoices.delete'), invoiceController.deleteInvoice);
 
 module.exports = router;
