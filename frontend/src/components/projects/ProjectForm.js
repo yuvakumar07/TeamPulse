@@ -317,9 +317,9 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                 placeholder="0"
                 disabled={!formData.offshore_manager_id}
               />
-              <small style={{ color: '#6c757d', fontSize: '0.85rem', display: 'block', marginTop: '0.25rem' }}>
+              {/* <small style={{ color: '#6c757d', fontSize: '0.85rem', display: 'block', marginTop: '0.25rem' }}>
                 Percentage of time allocated to this project
-              </small>
+              </small> */}
             </div>
 
             <div className="form-group">
@@ -355,19 +355,20 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                 placeholder="0"
                 disabled={!formData.onsite_manager_id}
               />
-              <small style={{ color: '#6c757d', fontSize: '0.85rem', display: 'block', marginTop: '0.25rem' }}>
+              {/* <small style={{ color: '#6c757d', fontSize: '0.85rem', display: 'block', marginTop: '0.25rem' }}>
                 Percentage of time allocated to this project
-              </small>
+              </small> */}
             </div>
           </div>
 
-          <div className="teams-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+             <div className='teamheader'>
               <h3>Teams</h3>
               <button type="button" className="btn btn-secondary" onClick={addTeam}>
                 + Add Team
               </button>
             </div>
+          <>
+           
 
             {teams.length === 0 ? (
               <p style={{ textAlign: 'center', color: '#666', padding: '1rem' }}>
@@ -376,8 +377,8 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
             ) : (
               <div className="teams-list">
                 {teams.map((team, index) => (
-                  <div key={index} className="team-item" style={{ marginBottom: '1.5rem', padding: '1rem', border: '1px solid #dee2e6', borderRadius: '6px', backgroundColor: '#f8f9fa' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <div key={index}  style={{ marginBottom: '15px', padding: '15px', border: '1px solid #dee2e6', borderRadius: '6px', backgroundColor: '#f8f9fa' }}>
+                    <div className='teamheader'>
                       <h4 style={{ margin: 0, color: '#495057' }}>Team #{index + 1}</h4>
                       <button
                         type="button"
@@ -388,7 +389,7 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                       </button>
                     </div>
 
-                    <div className="form-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                    <div className="form-grid m-0" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '0 15px' }}>
                       <div className="form-group">
                         <label>Agile Board Name</label>
                         <input
@@ -514,7 +515,7 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                 ))}
               </div>
             )}
-          </div>
+          </>
 
           <div className="form-actions">
             <button type="button" className="btn btn-cancel" onClick={onClose}>

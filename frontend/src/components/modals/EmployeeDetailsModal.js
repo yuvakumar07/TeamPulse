@@ -242,18 +242,7 @@ const EmployeeDetailsModal = ({ projectId, projectName, isOpen, onClose }) => {
             </div>
           )}
 
-          <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '6px' }}>
-            <strong>Summary:</strong>{' '}
-            <span style={{ marginLeft: '0.5rem' }}>
-              Unique Employees: <strong>{totalUniqueEmployees}</strong>
-            </span>
-            <span style={{ marginLeft: '1.5rem' }}>
-              Assigned to Teams: <Tag value={totalAssigned} severity="success" />
-            </span>
-            <span style={{ marginLeft: '1rem' }}>
-              Allocated Only: <Tag value={totalAllocatedOnly} severity="warning" />
-            </span>
-          </div>
+       
 
           <TabView activeIndex={activeTab} onTabChange={(e) => setActiveTab(e.index)}>
             <TabPanel header={`All Employees (${totalAssignments})`}>
@@ -388,27 +377,7 @@ const EmployeeDetailsModal = ({ projectId, projectName, isOpen, onClose }) => {
               )}
             </TabPanel>
 
-            <TabPanel header={`Assigned to Teams (${totalAssigned})`}>
-              {assignedEmployees.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: '#6c757d' }}>
-                  <i className="pi pi-info-circle" style={{ fontSize: '2rem' }}></i>
-                  <p>No employees assigned to teams yet</p>
-                </div>
-              ) : (
-                renderDataTable(assignedEmployees, assignedHeader)
-              )}
-            </TabPanel>
-
-            <TabPanel header={`Allocated Only (${totalAllocatedOnly})`}>
-              {allocatedOnly.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: '#6c757d' }}>
-                  <i className="pi pi-info-circle" style={{ fontSize: '2rem' }}></i>
-                  <p>All employees are assigned to teams</p>
-                </div>
-              ) : (
-                renderDataTable(allocatedOnly, allocatedHeader)
-              )}
-            </TabPanel>
+         
           </TabView>
         </>
       )}

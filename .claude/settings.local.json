@@ -11,7 +11,8 @@
       "Bash(node -e:*)",
       "Bash(node run_add_manager_allocations.js:*)",
       "Bash(node run_add_team_leads.js:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(git pull:*)"
     ],
     "deny": [],
     "ask": []

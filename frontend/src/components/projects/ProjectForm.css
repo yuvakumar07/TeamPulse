@@ -16,7 +16,7 @@
   background: white;
   border-radius: 8px;
   width: 100%;
-  max-width: 900px;
+  max-width: 1100px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
@@ -33,7 +33,11 @@
   background: white;
   z-index: 1;
 }
-
+.teamheader{
+   display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 .modal-header h2 {
   margin: 0;
   color: #333;
@@ -66,7 +70,7 @@
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
@@ -95,6 +99,7 @@
   border-radius: 4px;
   font-size: 0.9rem;
   transition: border-color 0.3s, box-shadow 0.3s;
+  width: 100%;
 }
 
 .form-group input:focus,
@@ -129,11 +134,7 @@
   font-size: 1.05rem;
 }
 
-.teams-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
+
 
 .team-item {
   display: flex;
@@ -453,4 +454,8 @@
   .form-actions {
     gap: 0.5rem;
   }
+}
+
+.form-group{
+  margin-bottom: 5px;
 }
