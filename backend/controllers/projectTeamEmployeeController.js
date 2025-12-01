@@ -23,11 +23,9 @@ const getTeamEmployees = async (req, res) => {
 
     // Get assigned employees with their details
     const [employees] = await db.query(
-      `SELECT pe.id as assignment_id, pe.allocation_percentage, pe.team_id,
+      `SELECT pe.id as assignment_id, pe.team_id,
               e.id, e.sso, e.name, e.role, e.role_type, e.location,
-              (SELECT COALESCE(SUM(pe2.allocation_percentage), 0)
-               FROM project_employees pe2
-               WHERE pe2.employee_id = e.id) as total_allocation
+              0 as total_allocation
        FROM project_employees pe
        JOIN employees e ON pe.employee_id = e.id
        WHERE pe.team_id = ?
@@ -95,16 +93,7 @@ const assignEmployeesToTeam = async (req, res) => {
 
     // Insert new assignments
     for (const emp of employees) {
-      if (emp.employee_id && emp.allocation_percentage !== undefined) {
-        // Validate allocation percentage
-        if (emp.allocation_percentage < 0 || emp.allocation_percentage > 100) {
-          await connection.rollback();
-          return res.status(400).json({
-            success: false,
-            message: 'Allocation percentage must be between 0 and 100'
-          });
-        }
-
+      if (emp.employee_id) {
         // Delete any "allocated only" record (team_id = NULL) for this employee in this project
         // This prevents duplicate allocations when moving from "allocated only" to "assigned to team"
         await connection.query(
@@ -115,9 +104,9 @@ const assignEmployeesToTeam = async (req, res) => {
 
         // Insert the new team assignment
         await connection.query(
-          `INSERT INTO project_employees (project_id, team_id, employee_id, allocation_percentage)
-           VALUES (?, ?, ?, ?)`,
-          [team.project_id, teamId, emp.employee_id, emp.allocation_percentage]
+          `INSERT INTO project_employees (project_id, team_id, employee_id)
+           VALUES (?, ?, ?)`,
+          [team.project_id, teamId, emp.employee_id]
         );
       }
     }

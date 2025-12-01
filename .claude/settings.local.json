@@ -11,7 +11,9 @@
       "Bash(node -e:*)",
       "Bash(node run_add_manager_allocations.js:*)",
       "Bash(node run_add_team_leads.js:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(node scripts/createInvoiceTables.js:*)",
+      "Bash(node scripts/addInvoicePermissions.js:*)"
     ],
     "deny": [],
     "ask": []

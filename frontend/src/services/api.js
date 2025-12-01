@@ -136,4 +136,25 @@ export const assignAsset = (id, data) => api.put(`/assets/${id}/assign`, data);
 export const unassignAsset = (id) => api.put(`/assets/${id}/unassign`);
 export const getAssetsByEmployee = (employeeId) => api.get(`/assets/employee/${employeeId}`);
 
+// Invoice Management API calls
+export const getEmployeesForInvoice = (projectId, teamId = null) => {
+  const params = { projectId };
+  if (teamId) {
+    params.teamId = teamId;
+  }
+  return api.get('/invoices/employees', { params });
+};
+export const getAllInvoices = (page = 1, limit = 10, status = null, projectId = null) => {
+  const params = { page, limit };
+  if (status && status !== 'All') {
+    params.status = status;
+  }
+  if (projectId) {
+    params.projectId = projectId;
+  }
+  return api.get('/invoices', { params });
+};
+export const getInvoiceById = (id) => api.get(`/invoices/${id}`);
+export const createInvoice = (data) => api.post('/invoices', data);
+
 export default api;
