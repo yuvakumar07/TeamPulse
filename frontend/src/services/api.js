@@ -156,5 +156,27 @@ export const getAllInvoices = (page = 1, limit = 10, status = null, projectId = 
 };
 export const getInvoiceById = (id) => api.get(`/invoices/${id}`);
 export const createInvoice = (data) => api.post('/invoices', data);
+export const updateInvoice = (id, data) => api.put(`/invoices/${id}`, data);
+export const deleteInvoice = (id) => api.delete(`/invoices/${id}`);
+export const downloadInvoicePDF = async (id, invoiceNumber) => {
+  const response = await api.get(`/invoices/${id}/pdf`, {
+    responseType: 'blob'
+  });
+
+  // Create a blob from the PDF data
+  const blob = new Blob([response.data], { type: 'application/pdf' });
+
+  // Create a link element and trigger download
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `invoice-${invoiceNumber}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+
+  return response;
+};
 
 export default api;
