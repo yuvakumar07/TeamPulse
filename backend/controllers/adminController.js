@@ -455,8 +455,7 @@ const getDashboardStats = async (req, res) => {
         p.id,
         p.project_team_name as project_name,
         p.project_status as status,
-        COUNT(DISTINCT pe.employee_id) as employee_count,
-        SUM(pe.allocation_percentage) as total_allocation
+        COUNT(DISTINCT pe.employee_id) as employee_count
       FROM projects p
       LEFT JOIN project_employees pe ON p.id = pe.project_id
       GROUP BY p.id, p.project_team_name, p.project_status

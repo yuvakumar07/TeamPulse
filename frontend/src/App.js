@@ -19,6 +19,7 @@ import AddEmployeePage from './pages/AddEmployeePage';
 import EditEmployeePage from './pages/EditEmployeePage';
 import ProjectsPage from './pages/ProjectsPage';
 import AssetsPage from './pages/AssetsPage';
+import InvoicesPage from './pages/InvoicesPage';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsersManagement from './pages/AdminUsersManagement';
@@ -93,6 +94,14 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <AssetsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/invoices"
+              element={
+                <ProtectedRoute>
+                  <InvoicesPage />
                 </ProtectedRoute>
               }
             />

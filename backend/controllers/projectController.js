@@ -21,7 +21,7 @@ const getAllProjects = async (req, res) => {
     let dataQuery = `
       SELECT p.*,
              COUNT(DISTINCT pe.employee_id) as employee_count,
-             SUM(pe.allocation_percentage) as total_allocation,
+             0 as total_allocation,
              (SELECT COUNT(*) FROM project_teams pt WHERE pt.project_id = p.id) as team_count
       FROM projects p
       LEFT JOIN project_employees pe ON p.id = pe.project_id
@@ -132,11 +132,9 @@ const getProjectById = async (req, res) => {
     for (const team of teams) {
       // Get regular team employees
       const [employees] = await db.query(
-        `SELECT pe.id as assignment_id, pe.allocation_percentage, pe.team_id,
+        `SELECT pe.id as assignment_id, pe.team_id,
                 e.id, e.sso, e.name, e.role, e.role_type, e.location,
-                (SELECT COALESCE(SUM(pe2.allocation_percentage), 0)
-                 FROM project_employees pe2
-                 WHERE pe2.employee_id = e.id) as total_allocation,
+                0 as total_allocation,
                 FALSE as is_team_lead,
                 NULL as team_lead_type
          FROM project_employees pe
@@ -152,7 +150,7 @@ const getProjectById = async (req, res) => {
         if (!isAlreadyInList) {
           employees.push({
             assignment_id: null,
-            allocation_percentage: team.offshore_team_lead_allocation,
+            allocation_percentage: 0,
             team_id: team.id,
             id: team.offshore_tl_emp_id,
             sso: team.offshore_tl_sso,
@@ -160,7 +158,7 @@ const getProjectById = async (req, res) => {
             role: team.offshore_tl_role,
             role_type: 'Team Lead',
             location: null,
-            total_allocation: team.offshore_team_lead_allocation,
+            total_allocation: 0,
             is_team_lead: true,
             team_lead_type: 'Offshore Team Lead'
           });
@@ -178,7 +176,7 @@ const getProjectById = async (req, res) => {
         if (!isAlreadyInList) {
           employees.push({
             assignment_id: null,
-            allocation_percentage: team.onsite_team_lead_allocation,
+            allocation_percentage: 0,
             team_id: team.id,
             id: team.onsite_tl_emp_id,
             sso: team.onsite_tl_sso,
@@ -186,7 +184,7 @@ const getProjectById = async (req, res) => {
             role: team.onsite_tl_role,
             role_type: 'Team Lead',
             location: null,
-            total_allocation: team.onsite_team_lead_allocation,
+            total_allocation: 0,
             is_team_lead: true,
             team_lead_type: 'Onsite Team Lead'
           });
@@ -218,15 +216,13 @@ const getProjectById = async (req, res) => {
           id: offshore_tl_emp_id,
           sso: offshore_tl_sso,
           name: offshore_tl_name,
-          role: offshore_tl_role,
-          allocation: team.offshore_team_lead_allocation
+          role: offshore_tl_role
         } : null,
         onsite_team_lead: onsite_tl_emp_id ? {
           id: onsite_tl_emp_id,
           sso: onsite_tl_sso,
           name: onsite_tl_name,
-          role: onsite_tl_role,
-          allocation: team.onsite_team_lead_allocation
+          role: onsite_tl_role
         } : null
       };
 
@@ -247,11 +243,9 @@ const getProjectById = async (req, res) => {
 
     // Get allocated employees (not assigned to any specific team yet)
     const [allocatedEmployees] = await db.query(
-      `SELECT pe.id as assignment_id, pe.allocation_percentage,
+      `SELECT pe.id as assignment_id,
               e.id, e.sso, e.name, e.role, e.role_type, e.location,
-              (SELECT COALESCE(SUM(pe2.allocation_percentage), 0)
-               FROM project_employees pe2
-               WHERE pe2.employee_id = e.id) as total_allocation
+              0 as total_allocation
        FROM project_employees pe
        JOIN employees e ON pe.employee_id = e.id
        WHERE pe.project_id = ? AND pe.team_id IS NULL
@@ -273,15 +267,13 @@ const getProjectById = async (req, res) => {
         id: offshore_manager_emp_id,
         sso: offshore_manager_sso,
         name: offshore_manager_name,
-        role: offshore_manager_role,
-        allocation: baseProjectData.offshore_manager_allocation
+        role: offshore_manager_role
       } : null,
       onsite_manager: onsite_manager_emp_id ? {
         id: onsite_manager_emp_id,
         sso: onsite_manager_sso,
         name: onsite_manager_name,
-        role: onsite_manager_role,
-        allocation: baseProjectData.onsite_manager_allocation
+        role: onsite_manager_role
       } : null
     };
 
@@ -317,9 +309,7 @@ const createProject = async (req, res) => {
       project_status,
       offshore_manager_id,
       onsite_manager_id,
-      offshore_manager_allocation,
-      onsite_manager_allocation,
-      employees // Array of {employee_id, allocation_percentage}
+      employees // Array of {employee_id}
     } = req.body;
 
     // Validation
@@ -331,36 +321,16 @@ const createProject = async (req, res) => {
       });
     }
 
-    // Validate allocation percentages
-    if (offshore_manager_allocation && (offshore_manager_allocation < 0 || offshore_manager_allocation > 100)) {
-      await connection.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Offshore manager allocation must be between 0 and 100'
-      });
-    }
-
-    if (onsite_manager_allocation && (onsite_manager_allocation < 0 || onsite_manager_allocation > 100)) {
-      await connection.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Onsite manager allocation must be between 0 and 100'
-      });
-    }
-
     // Insert project
     const [result] = await connection.query(
       `INSERT INTO projects
-      (project_team_name, project_status, offshore_manager_id, onsite_manager_id,
-       offshore_manager_allocation, onsite_manager_allocation)
-      VALUES (?, ?, ?, ?, ?, ?)`,
+      (project_team_name, project_status, offshore_manager_id, onsite_manager_id)
+      VALUES (?, ?, ?, ?)`,
       [
         project_team_name,
         project_status || 'Planning',
         offshore_manager_id || null,
-        onsite_manager_id || null,
-        offshore_manager_allocation || 0,
-        onsite_manager_allocation || 0
+        onsite_manager_id || null
       ]
     );
 
@@ -369,20 +339,11 @@ const createProject = async (req, res) => {
     // Insert employee assignments if provided
     if (employees && Array.isArray(employees) && employees.length > 0) {
       for (const emp of employees) {
-        if (emp.employee_id && emp.allocation_percentage !== undefined) {
-          // Validate allocation percentage
-          if (emp.allocation_percentage < 0 || emp.allocation_percentage > 100) {
-            await connection.rollback();
-            return res.status(400).json({
-              success: false,
-              message: 'Allocation percentage must be between 0 and 100'
-            });
-          }
-
+        if (emp.employee_id) {
           await connection.query(
-            `INSERT INTO project_employees (project_id, employee_id, allocation_percentage)
-             VALUES (?, ?, ?)`,
-            [projectId, emp.employee_id, emp.allocation_percentage]
+            `INSERT INTO project_employees (project_id, employee_id)
+             VALUES (?, ?)`,
+            [projectId, emp.employee_id]
           );
         }
       }
@@ -441,9 +402,7 @@ const updateProject = async (req, res) => {
       project_status,
       offshore_manager_id,
       onsite_manager_id,
-      offshore_manager_allocation,
-      onsite_manager_allocation,
-      employees // Array of {employee_id, allocation_percentage}
+      employees // Array of {employee_id}
     } = req.body;
 
     // Check if project exists
@@ -460,36 +419,16 @@ const updateProject = async (req, res) => {
       });
     }
 
-    // Validate allocation percentages
-    if (offshore_manager_allocation && (offshore_manager_allocation < 0 || offshore_manager_allocation > 100)) {
-      await connection.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Offshore manager allocation must be between 0 and 100'
-      });
-    }
-
-    if (onsite_manager_allocation && (onsite_manager_allocation < 0 || onsite_manager_allocation > 100)) {
-      await connection.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Onsite manager allocation must be between 0 and 100'
-      });
-    }
-
     // Update project
     await connection.query(
       `UPDATE projects
-      SET project_team_name = ?, project_status = ?, offshore_manager_id = ?, onsite_manager_id = ?,
-          offshore_manager_allocation = ?, onsite_manager_allocation = ?
+      SET project_team_name = ?, project_status = ?, offshore_manager_id = ?, onsite_manager_id = ?
       WHERE id = ?`,
       [
         project_team_name,
         project_status,
         offshore_manager_id || null,
         onsite_manager_id || null,
-        offshore_manager_allocation || 0,
-        onsite_manager_allocation || 0,
         id
       ]
     );
@@ -501,20 +440,11 @@ const updateProject = async (req, res) => {
 
       // Insert new assignments
       for (const emp of employees) {
-        if (emp.employee_id && emp.allocation_percentage !== undefined) {
-          // Validate allocation percentage
-          if (emp.allocation_percentage < 0 || emp.allocation_percentage > 100) {
-            await connection.rollback();
-            return res.status(400).json({
-              success: false,
-              message: 'Allocation percentage must be between 0 and 100'
-            });
-          }
-
+        if (emp.employee_id) {
           await connection.query(
-            `INSERT INTO project_employees (project_id, employee_id, allocation_percentage)
-             VALUES (?, ?, ?)`,
-            [id, emp.employee_id, emp.allocation_percentage]
+            `INSERT INTO project_employees (project_id, employee_id)
+             VALUES (?, ?)`,
+            [id, emp.employee_id]
           );
         }
       }
@@ -600,20 +530,11 @@ const assignEmployeesToProject = async (req, res) => {
 
     // Insert new assignments
     for (const emp of employees) {
-      if (emp.employee_id && emp.allocation_percentage !== undefined) {
-        // Validate allocation percentage
-        if (emp.allocation_percentage < 0 || emp.allocation_percentage > 100) {
-          await connection.rollback();
-          return res.status(400).json({
-            success: false,
-            message: 'Allocation percentage must be between 0 and 100'
-          });
-        }
-
+      if (emp.employee_id) {
         await connection.query(
-          `INSERT INTO project_employees (project_id, employee_id, allocation_percentage)
-           VALUES (?, ?, ?)`,
-          [id, emp.employee_id, emp.allocation_percentage]
+          `INSERT INTO project_employees (project_id, employee_id)
+           VALUES (?, ?)`,
+          [id, emp.employee_id]
         );
       }
     }

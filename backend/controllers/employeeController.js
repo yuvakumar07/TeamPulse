@@ -63,9 +63,9 @@ const getAllEmployees = async (req, res) => {
     `;
     let dataQuery = `
       SELECT e.*,
-             COALESCE(SUM(pe.allocation_percentage), 0) as total_allocation,
+             0 as total_allocation,
              GROUP_CONCAT(
-               DISTINCT CONCAT(p.project_team_name, ':', IFNULL(pt.agile_board_name, 'Not Assigned'), ':', pe.allocation_percentage)
+               DISTINCT CONCAT(p.project_team_name, ':', IFNULL(pt.agile_board_name, 'Not Assigned'))
                ORDER BY p.project_team_name
                SEPARATOR '||'
              ) as allocated_projects,
@@ -74,12 +74,14 @@ const getAllEmployees = async (req, res) => {
                DISTINCT CONCAT(a.asset_tag, ':', a.asset_type, ':', a.status)
                ORDER BY a.asset_tag
                SEPARATOR '||'
-             ) as assigned_assets
+             ) as assigned_assets,
+             COALESCE(SUM(ii.total_amount), 0) as invoice_total_amount
       FROM employees e
       LEFT JOIN project_employees pe ON e.id = pe.employee_id
       LEFT JOIN projects p ON pe.project_id = p.id
       LEFT JOIN project_teams pt ON pe.team_id = pt.id
       LEFT JOIN assets a ON e.id = a.assigned_to
+      LEFT JOIN invoice_items ii ON e.id = ii.employee_id
     `;
     const queryParams = [];
     const countParams = [];
@@ -182,7 +184,7 @@ const getEmployeeById = async (req, res) => {
 
     // Fetch employee's project and team assignments
     const [projectAssignments] = await db.query(
-      `SELECT pe.project_id, pe.team_id, pe.allocation_percentage,
+      `SELECT pe.project_id, pe.team_id,
               p.project_team_name,
               pt.agile_board_name
        FROM project_employees pe
@@ -245,7 +247,7 @@ const createEmployee = async (req, res) => {
       passport_expiry_date,
       sponsor_company,
       visa_notes,
-      projects // Array of {project_id, allocation_percentage}
+      projects // Array of {project_id, team_id}
     } = req.body;
 
     // Validation
@@ -295,20 +297,11 @@ const createEmployee = async (req, res) => {
     // Insert project assignments if provided
     if (projects && Array.isArray(projects) && projects.length > 0) {
       for (const proj of projects) {
-        if (proj.project_id && proj.allocation_percentage !== undefined) {
-          // Validate allocation percentage
-          if (proj.allocation_percentage < 0 || proj.allocation_percentage > 100) {
-            await connection.rollback();
-            return res.status(400).json({
-              success: false,
-              message: 'Allocation percentage must be between 0 and 100'
-            });
-          }
-
+        if (proj.project_id) {
           await connection.query(
-            `INSERT INTO project_employees (project_id, team_id, employee_id, allocation_percentage)
-             VALUES (?, ?, ?, ?)`,
-            [proj.project_id, proj.team_id || null, employeeId, proj.allocation_percentage]
+            `INSERT INTO project_employees (project_id, team_id, employee_id)
+             VALUES (?, ?, ?)`,
+            [proj.project_id, proj.team_id || null, employeeId]
           );
         }
       }
@@ -400,7 +393,7 @@ const updateEmployee = async (req, res) => {
       passport_expiry_date,
       sponsor_company,
       visa_notes,
-      projects // Array of {project_id, allocation_percentage}
+      projects // Array of {project_id, team_id}
     } = req.body;
 
     // Check if employee exists
@@ -460,20 +453,11 @@ const updateEmployee = async (req, res) => {
 
       // Insert new assignments
       for (const proj of projects) {
-        if (proj.project_id && proj.allocation_percentage !== undefined) {
-          // Validate allocation percentage
-          if (proj.allocation_percentage < 0 || proj.allocation_percentage > 100) {
-            await connection.rollback();
-            return res.status(400).json({
-              success: false,
-              message: 'Allocation percentage must be between 0 and 100'
-            });
-          }
-
+        if (proj.project_id) {
           await connection.query(
-            `INSERT INTO project_employees (project_id, team_id, employee_id, allocation_percentage)
-             VALUES (?, ?, ?, ?)`,
-            [proj.project_id, proj.team_id || null, id, proj.allocation_percentage]
+            `INSERT INTO project_employees (project_id, team_id, employee_id)
+             VALUES (?, ?, ?)`,
+            [proj.project_id, proj.team_id || null, id]
           );
         }
       }

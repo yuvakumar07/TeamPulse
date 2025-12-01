@@ -89,20 +89,12 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
     }
 
     // Load existing employee assignments for the selected team
-    const assignments = team.employees.map(emp => {
-      const totalAllocation = parseFloat(emp.total_allocation) || 0;
-      const thisTeamAllocation = parseFloat(emp.allocation_percentage) || 0;
-      const otherProjectsAllocation = totalAllocation - thisTeamAllocation;
-
-      return {
-        employee_id: emp.id,
-        employee_name: emp.name,
-        employee_sso: emp.sso,
-        employee_role: emp.role,
-        other_projects_allocation: otherProjectsAllocation,
-        allocation_percentage: thisTeamAllocation
-      };
-    });
+    const assignments = team.employees.map(emp => ({
+      employee_id: emp.id,
+      employee_name: emp.name,
+      employee_sso: emp.sso,
+      employee_role: emp.role
+    }));
 
     setSelectedEmployees(assignments);
   };
@@ -116,21 +108,6 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
       return;
     }
 
-    // Calculate the employee's allocation in other teams of this project
-    let otherTeamsAllocation = 0;
-    teams.forEach(team => {
-      if (team.id !== selectedTeam?.id && team.employees) {
-        const empInTeam = team.employees.find(emp => emp.id === employee.id);
-        if (empInTeam) {
-          otherTeamsAllocation += parseFloat(empInTeam.allocation_percentage) || 0;
-        }
-      }
-    });
-
-    // Calculate total allocation including other projects
-    const totalAllocation = parseFloat(employee.total_allocation) || 0;
-    const remainingAllocation = 100 - totalAllocation;
-
     // Show info message if employee is in other teams
     const employeeInOtherTeams = teams.filter(team =>
       team.id !== selectedTeam?.id &&
@@ -140,16 +117,14 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
 
     if (employeeInOtherTeams.length > 0) {
       const teamNames = employeeInOtherTeams.map(t => t.agile_board_name).join(', ');
-      toast.info(`${employee.name} is also assigned to: ${teamNames}. Remaining allocation: ${remainingAllocation.toFixed(1)}%`);
+      toast.info(`${employee.name} is also assigned to: ${teamNames}`);
     }
 
     setSelectedEmployees(prev => [...prev, {
       employee_id: employee.id,
       employee_name: employee.name,
       employee_sso: employee.sso,
-      employee_role: employee.role,
-      other_projects_allocation: employee.total_allocation || 0,
-      allocation_percentage: 0
+      employee_role: employee.role
     }]);
 
     // Reset search and close dropdown
@@ -164,35 +139,6 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
     setShowDropdown(true);
-  };
-
-  const handleAllocationChange = (employeeId, value) => {
-    // Allow empty string to clear the field
-    if (value === '') {
-      setSelectedEmployees(prev =>
-        prev.map(emp =>
-          emp.employee_id === employeeId
-            ? { ...emp, allocation_percentage: '' }
-            : emp
-        )
-      );
-      return;
-    }
-
-    const percentage = parseFloat(value);
-
-    if (isNaN(percentage) || percentage < 0 || percentage > 100) {
-      toast.warning('Allocation percentage must be between 0 and 100');
-      return;
-    }
-
-    setSelectedEmployees(prev =>
-      prev.map(emp =>
-        emp.employee_id === employeeId
-          ? { ...emp, allocation_percentage: percentage }
-          : emp
-      )
-    );
   };
 
   const handleRemoveEmployee = (employeeId) => {
@@ -214,8 +160,7 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
     try {
       const dataToSubmit = {
         employees: selectedEmployees.map(emp => ({
-          employee_id: emp.employee_id,
-          allocation_percentage: emp.allocation_percentage === '' ? 0 : emp.allocation_percentage
+          employee_id: emp.employee_id
         }))
       };
 
@@ -345,10 +290,6 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
                 {showDropdown && filteredEmployees.length > 0 && (
                   <div className="dropdown-list">
                     {filteredEmployees.slice(0, 50).map(emp => {
-                      const totalAllocation = parseFloat(emp.total_allocation) || 0;
-                      const isOverAllocated = totalAllocation >= 100;
-                      const availableAllocation = Math.max(0, 100 - totalAllocation);
-
                       // Find which teams in this project the employee is already assigned to
                       const assignedTeams = teams.filter(team =>
                         team.employees && team.employees.some(e => e.id === emp.id)
@@ -364,17 +305,9 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
                           <div className="dropdown-item-main">
                             <span className="employee-name-dropdown">{emp.name}</span>
                             <span className="employee-sso-dropdown">({emp.sso || 'N/A'})</span>
-                            <span className={`allocation-badge ${isOverAllocated ? 'over-allocated' : ''}`}>
-                              {totalAllocation.toFixed(0)}%
-                            </span>
                           </div>
                           <div className="dropdown-item-sub">
-                            {emp.role || 'N/A'} • {emp.location || 'N/A'} •
-                            {isOverAllocated ? (
-                              <span className="warning-text"> Over-allocated!</span>
-                            ) : (
-                              <span> Available: {availableAllocation.toFixed(0)}%</span>
-                            )}
+                            {emp.role || 'N/A'} • {emp.location || 'N/A'}
                             {isInOtherTeams && (
                               <span style={{ color: '#0066cc', fontWeight: '500' }}>
                                 {' '}• In: {assignedTeams.map(t => t.agile_board_name).join(', ')}
@@ -407,53 +340,26 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
                       <th>Employee</th>
                       <th>SSO</th>
                       <th>Role</th>
-                      <th>Current Total</th>
-                      <th>This Team %</th>
                       <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedEmployees.map((emp) => {
-                      const otherProjects = parseFloat(emp.other_projects_allocation) || 0;
-                      const thisProject = parseFloat(emp.allocation_percentage) || 0;
-                      const currentTotal = otherProjects + thisProject;
-                      const isOverAllocated = currentTotal > 100;
-
-                      return (
-                        <tr key={emp.employee_id} className={isOverAllocated ? 'over-allocated-row' : ''}>
-                          <td>{emp.employee_name}</td>
-                          <td>{emp.employee_sso || 'N/A'}</td>
-                          <td>{emp.employee_role || 'N/A'}</td>
-                          <td>
-                            <span className={`allocation-display ${isOverAllocated ? 'over-allocated-text' : 'available-text'}`}>
-                              {currentTotal.toFixed(1)}%
-                              {isOverAllocated && ' ⚠️'}
-                            </span>
-                          </td>
-                          <td>
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="0.1"
-                              value={emp.allocation_percentage === 0 ? '' : emp.allocation_percentage}
-                              onChange={(e) => handleAllocationChange(emp.employee_id, e.target.value)}
-                              className="allocation-input"
-                              placeholder="0"
-                            />
-                          </td>
-                          <td>
-                            <button
-                              type="button"
-                              className="btn-remove"
-                              onClick={() => handleRemoveEmployee(emp.employee_id)}
-                            >
-                              Remove
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {selectedEmployees.map((emp) => (
+                      <tr key={emp.employee_id}>
+                        <td>{emp.employee_name}</td>
+                        <td>{emp.employee_sso || 'N/A'}</td>
+                        <td>{emp.employee_role || 'N/A'}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className="btn-remove"
+                            onClick={() => handleRemoveEmployee(emp.employee_id)}
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>

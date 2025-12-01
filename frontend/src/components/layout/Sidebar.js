@@ -69,6 +69,15 @@ const Sidebar = () => {
             </li>
           </PermissionGuard>
 
+          <PermissionGuard permissions={['view_invoices', 'create_invoice']} requireAll={false}>
+            <li className="sidebar-item">
+              <Link to="/admin/invoices" className={`sidebar-link ${isActive('/admin/invoices')}`} title="Invoices">
+                <i className="pi pi-file-edit sidebar-icon"></i>
+                <span className="sidebar-text">Invoices</span>
+              </Link>
+            </li>
+          </PermissionGuard>
+
           <PermissionGuard permission="admin_users.view">
             <li className="sidebar-item">
               <Link to="/admin/users" className={`sidebar-link ${isActive('/admin/users')}`} title="Admin Users">

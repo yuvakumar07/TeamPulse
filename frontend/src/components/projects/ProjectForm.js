@@ -8,9 +8,7 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
     project_team_name: '',
     project_status: 'Planning',
     offshore_manager_id: '',
-    onsite_manager_id: '',
-    offshore_manager_allocation: 0,
-    onsite_manager_allocation: 0
+    onsite_manager_id: ''
   });
   const [teams, setTeams] = useState([]);
   const [errors, setErrors] = useState({});
@@ -55,9 +53,7 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
         project_team_name: projectData.project_team_name || '',
         project_status: projectData.project_status || 'Planning',
         offshore_manager_id: projectData.offshore_manager_id || '',
-        onsite_manager_id: projectData.onsite_manager_id || '',
-        offshore_manager_allocation: projectData.offshore_manager_allocation || 0,
-        onsite_manager_allocation: projectData.onsite_manager_allocation || 0
+        onsite_manager_id: projectData.onsite_manager_id || ''
       });
 
       setTeams(projectData.teams || []);
@@ -97,8 +93,6 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
       agile_team_jira_key: '',
       offshore_team_lead_id: '',
       onsite_team_lead_id: '',
-      offshore_team_lead_allocation: 0,
-      onsite_team_lead_allocation: 0,
       isNew: true
     }]);
   };
@@ -214,9 +208,7 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
           agile_board_name: team.agile_board_name,
           agile_team_jira_key: team.agile_team_jira_key,
           offshore_team_lead_id: team.offshore_team_lead_id || null,
-          onsite_team_lead_id: team.onsite_team_lead_id || null,
-          offshore_team_lead_allocation: team.offshore_team_lead_allocation || 0,
-          onsite_team_lead_allocation: team.onsite_team_lead_allocation || 0
+          onsite_team_lead_id: team.onsite_team_lead_id || null
         };
 
         if (team.isNew) {
@@ -304,25 +296,6 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="offshore_manager_allocation">Offshore Manager Allocation %</label>
-              <input
-                type="number"
-                id="offshore_manager_allocation"
-                name="offshore_manager_allocation"
-                value={formData.offshore_manager_allocation}
-                onChange={handleChange}
-                min="0"
-                max="100"
-                step="5"
-                placeholder="0"
-                disabled={!formData.offshore_manager_id}
-              />
-              {/* <small style={{ color: '#6c757d', fontSize: '0.85rem', display: 'block', marginTop: '0.25rem' }}>
-                Percentage of time allocated to this project
-              </small> */}
-            </div>
-
-            <div className="form-group">
               <label htmlFor="onsite_manager_id">Onsite Manager</label>
               <select
                 id="onsite_manager_id"
@@ -339,25 +312,6 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                     </option>
                   ))}
               </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="onsite_manager_allocation">Onsite Manager Allocation %</label>
-              <input
-                type="number"
-                id="onsite_manager_allocation"
-                name="onsite_manager_allocation"
-                value={formData.onsite_manager_allocation}
-                onChange={handleChange}
-                min="0"
-                max="100"
-                step="5"
-                placeholder="0"
-                disabled={!formData.onsite_manager_id}
-              />
-              {/* <small style={{ color: '#6c757d', fontSize: '0.85rem', display: 'block', marginTop: '0.25rem' }}>
-                Percentage of time allocated to this project
-              </small> */}
             </div>
           </div>
 
@@ -447,20 +401,6 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                       </div>
 
                       <div className="form-group">
-                        <label>Offshore Team Lead Allocation %</label>
-                        <input
-                          type="number"
-                          value={team.offshore_team_lead_allocation || 0}
-                          onChange={(e) => updateTeam(index, 'offshore_team_lead_allocation', parseFloat(e.target.value) || 0)}
-                          min="0"
-                          max="100"
-                          step="5"
-                          placeholder="0"
-                          disabled={!team.offshore_team_lead_id}
-                        />
-                      </div>
-
-                      <div className="form-group">
                         <label>Onsite Team Lead</label>
                         <select
                           value={team.onsite_team_lead_id || ''}
@@ -495,20 +435,6 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                               );
                             })}
                         </select>
-                      </div>
-
-                      <div className="form-group">
-                        <label>Onsite Team Lead Allocation %</label>
-                        <input
-                          type="number"
-                          value={team.onsite_team_lead_allocation || 0}
-                          onChange={(e) => updateTeam(index, 'onsite_team_lead_allocation', parseFloat(e.target.value) || 0)}
-                          min="0"
-                          max="100"
-                          step="5"
-                          placeholder="0"
-                          disabled={!team.onsite_team_lead_id}
-                        />
                       </div>
                     </div>
                   </div>

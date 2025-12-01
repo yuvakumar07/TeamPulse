@@ -60,9 +60,7 @@ const createProjectTeam = async (req, res) => {
       agile_board_name,
       agile_team_jira_key,
       offshore_team_lead_id,
-      onsite_team_lead_id,
-      offshore_team_lead_allocation,
-      onsite_team_lead_allocation
+      onsite_team_lead_id
     } = req.body;
 
     // Validation
@@ -71,23 +69,6 @@ const createProjectTeam = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Agile Board Name is required'
-      });
-    }
-
-    // Validate allocation percentages
-    if (offshore_team_lead_allocation && (offshore_team_lead_allocation < 0 || offshore_team_lead_allocation > 100)) {
-      await connection.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Offshore team lead allocation must be between 0 and 100'
-      });
-    }
-
-    if (onsite_team_lead_allocation && (onsite_team_lead_allocation < 0 || onsite_team_lead_allocation > 100)) {
-      await connection.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Onsite team lead allocation must be between 0 and 100'
       });
     }
 
@@ -109,17 +90,14 @@ const createProjectTeam = async (req, res) => {
     const [result] = await connection.query(
       `INSERT INTO project_teams
        (project_id, agile_board_name, agile_team_jira_key,
-        offshore_team_lead_id, onsite_team_lead_id,
-        offshore_team_lead_allocation, onsite_team_lead_allocation)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        offshore_team_lead_id, onsite_team_lead_id)
+       VALUES (?, ?, ?, ?, ?)`,
       [
         projectId,
         agile_board_name.trim(),
         agile_team_jira_key?.trim() || null,
         offshore_team_lead_id || null,
-        onsite_team_lead_id || null,
-        offshore_team_lead_allocation || 0,
-        onsite_team_lead_allocation || 0
+        onsite_team_lead_id || null
       ]
     );
 
@@ -179,9 +157,7 @@ const updateProjectTeam = async (req, res) => {
       agile_board_name,
       agile_team_jira_key,
       offshore_team_lead_id,
-      onsite_team_lead_id,
-      offshore_team_lead_allocation,
-      onsite_team_lead_allocation
+      onsite_team_lead_id
     } = req.body;
 
     // Validation
@@ -190,23 +166,6 @@ const updateProjectTeam = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Agile Board Name is required'
-      });
-    }
-
-    // Validate allocation percentages
-    if (offshore_team_lead_allocation && (offshore_team_lead_allocation < 0 || offshore_team_lead_allocation > 100)) {
-      await connection.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Offshore team lead allocation must be between 0 and 100'
-      });
-    }
-
-    if (onsite_team_lead_allocation && (onsite_team_lead_allocation < 0 || onsite_team_lead_allocation > 100)) {
-      await connection.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Onsite team lead allocation must be between 0 and 100'
       });
     }
 
@@ -233,16 +192,13 @@ const updateProjectTeam = async (req, res) => {
     await connection.query(
       `UPDATE project_teams
        SET agile_board_name = ?, agile_team_jira_key = ?,
-           offshore_team_lead_id = ?, onsite_team_lead_id = ?,
-           offshore_team_lead_allocation = ?, onsite_team_lead_allocation = ?
+           offshore_team_lead_id = ?, onsite_team_lead_id = ?
        WHERE id = ?`,
       [
         agile_board_name.trim(),
         agile_team_jira_key?.trim() || null,
         offshore_team_lead_id || null,
         onsite_team_lead_id || null,
-        offshore_team_lead_allocation || 0,
-        onsite_team_lead_allocation || 0,
         teamId
       ]
     );

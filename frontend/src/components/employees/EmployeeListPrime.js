@@ -297,11 +297,7 @@ const EmployeeListPrime = ({ onViewAssets }) => {
                 style={{ fontSize: '0.7rem', marginRight: '4px' }}
               />
             )}
-            <Tag
-              value={`${project.allocation}%`}
-              severity="warning"
-              style={{ fontSize: '0.7rem' }}
-            />
+          
           </div>
         ))}
       </div>
@@ -359,6 +355,18 @@ const EmployeeListPrime = ({ onViewAssets }) => {
             ))}
           </div>
         )}
+      </div>
+    );
+  };
+
+  const invoiceTotalBodyTemplate = (rowData) => {
+    const invoiceTotal = parseFloat(rowData.invoice_total_amount) || 0;
+
+    return (
+      <div className="flex align-items-center gap-2">
+        <span style={{ fontWeight: '600', color: invoiceTotal > 0 ? '#0066cc' : '#6c757d' }}>
+          ${invoiceTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </span>
       </div>
     );
   };
@@ -609,6 +617,13 @@ const EmployeeListPrime = ({ onViewAssets }) => {
           header="Assets"
           body={assetsBodyTemplate}
           style={{ minWidth: '200px' }}
+        />
+        <Column
+          field="invoice_total_amount"
+          header="Invoice Total"
+          body={invoiceTotalBodyTemplate}
+          sortable
+          style={{ minWidth: '150px' }}
         />
         <Column
           header="Actions"
