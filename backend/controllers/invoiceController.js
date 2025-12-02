@@ -58,14 +58,19 @@ const getEmployeesForInvoice = async (req, res) => {
         });
       }
 
-      // Get team employees
+      // Get team employees, excluding managers
       const [teamEmployees] = await db.query(
         `SELECT DISTINCT e.id, e.name, e.sso, e.role, e.role_type
          FROM project_employees pe
          JOIN employees e ON pe.employee_id = e.id
          WHERE pe.team_id = ?
+         AND e.id NOT IN (
+           SELECT offshore_manager_id FROM projects WHERE id = ? AND offshore_manager_id IS NOT NULL
+           UNION
+           SELECT onsite_manager_id FROM projects WHERE id = ? AND onsite_manager_id IS NOT NULL
+         )
          ORDER BY e.name`,
-        [teamId]
+        [teamId, projectId, projectId]
       );
 
       employees = [...teamEmployees];
@@ -105,38 +110,25 @@ const getEmployeesForInvoice = async (req, res) => {
         [projectId]
       );
 
-      // Get all employees assigned to the project
+      // Get all employees assigned to the project, excluding managers
       const [projectEmployees] = await db.query(
         `SELECT DISTINCT e.id, e.name, e.sso, e.role, e.role_type
          FROM project_employees pe
          JOIN employees e ON pe.employee_id = e.id
          WHERE pe.project_id = ?
+         AND e.id NOT IN (
+           SELECT offshore_manager_id FROM projects WHERE id = ? AND offshore_manager_id IS NOT NULL
+           UNION
+           SELECT onsite_manager_id FROM projects WHERE id = ? AND onsite_manager_id IS NOT NULL
+         )
          ORDER BY e.name`,
-        [projectId]
+        [projectId, projectId, projectId]
       );
 
       employees = [...projectEmployees];
 
-      // Add managers if not already in list
-      if (project[0].offshore_mgr_id && !employees.some(emp => emp.id === project[0].offshore_mgr_id)) {
-        employees.push({
-          id: project[0].offshore_mgr_id,
-          name: project[0].offshore_mgr_name,
-          sso: null,
-          role: project[0].offshore_mgr_role,
-          role_type: project[0].offshore_mgr_role_type
-        });
-      }
-
-      if (project[0].onsite_mgr_id && !employees.some(emp => emp.id === project[0].onsite_mgr_id)) {
-        employees.push({
-          id: project[0].onsite_mgr_id,
-          name: project[0].onsite_mgr_name,
-          sso: null,
-          role: project[0].onsite_mgr_role,
-          role_type: project[0].onsite_mgr_role_type
-        });
-      }
+      // Managers are excluded from the employee list and will be handled separately
+      // They are returned in the managers object in the response
 
       // Get all team leads for the project
       const [teamLeads] = await db.query(
@@ -171,11 +163,13 @@ const getEmployeesForInvoice = async (req, res) => {
     // Sort employees by name
     employees.sort((a, b) => a.name.localeCompare(b.name));
 
-    // Get project managers to include in response
+    // Get project managers with full details
     const [projectManagers] = await db.query(
       `SELECT p.id,
-              om.name as offshore_manager_name,
-              osm.name as onsite_manager_name
+              om.id as offshore_manager_id, om.name as offshore_manager_name,
+              om.role as offshore_manager_role, om.role_type as offshore_manager_role_type,
+              osm.id as onsite_manager_id, osm.name as onsite_manager_name,
+              osm.role as onsite_manager_role, osm.role_type as onsite_manager_role_type
        FROM projects p
        LEFT JOIN employees om ON p.offshore_manager_id = om.id
        LEFT JOIN employees osm ON p.onsite_manager_id = osm.id
@@ -183,15 +177,37 @@ const getEmployeesForInvoice = async (req, res) => {
       [projectId]
     );
 
-    const managers = projectManagers[0] || {};
+    const managersData = projectManagers[0] || {};
+
+    // Build managers array with full details
+    const managersArray = [];
+    if (managersData.offshore_manager_id) {
+      managersArray.push({
+        id: managersData.offshore_manager_id,
+        name: managersData.offshore_manager_name,
+        role: managersData.offshore_manager_role,
+        role_type: managersData.offshore_manager_role_type,
+        manager_type: 'offshore'
+      });
+    }
+    if (managersData.onsite_manager_id) {
+      managersArray.push({
+        id: managersData.onsite_manager_id,
+        name: managersData.onsite_manager_name,
+        role: managersData.onsite_manager_role,
+        role_type: managersData.onsite_manager_role_type,
+        manager_type: 'onsite'
+      });
+    }
 
     res.json({
       success: true,
       data: employees,
       managers: {
-        offshore_manager: managers.offshore_manager_name || 'N/A',
-        onsite_manager: managers.onsite_manager_name || 'N/A'
-      }
+        offshore_manager: managersData.offshore_manager_name || 'N/A',
+        onsite_manager: managersData.onsite_manager_name || 'N/A'
+      },
+      managerDetails: managersArray
     });
   } catch (error) {
     console.error('Error fetching employees for invoice:', error);

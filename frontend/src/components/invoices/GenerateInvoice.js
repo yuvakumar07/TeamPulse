@@ -22,6 +22,7 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
   const [teams, setTeams] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [employeeBilling, setEmployeeBilling] = useState([]);
+  const [managerBilling, setManagerBilling] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [managers, setManagers] = useState({
@@ -109,9 +110,10 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
         offshore_manager: 'N/A',
         onsite_manager: 'N/A'
       };
+      const managerDetails = response.data.managerDetails || [];
 
-      if (employeeList.length === 0) {
-        toast.warning('No employees found for the selected project/team');
+      if (employeeList.length === 0 && managerDetails.length === 0) {
+        toast.warning('No employees or managers found for the selected project/team');
         setLoading(false);
         return;
       }
@@ -119,7 +121,7 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
       setEmployees(employeeList);
       setManagers(managersData);
 
-      // Initialize billing data for each employee
+      // Initialize billing data for regular employees (managers are already excluded by backend)
       const initialBilling = employeeList.map(emp => ({
         employee_id: emp.id,
         employee_name: emp.name,
@@ -131,7 +133,21 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
         notes: ''
       }));
 
+      // Initialize billing data for managers from managerDetails array
+      const initialManagerBilling = managerDetails.map(mgr => ({
+        employee_id: mgr.id,
+        employee_name: mgr.name,
+        employee_role: mgr.role,
+        role_type: mgr.role_type,
+        manager_type: mgr.manager_type === 'offshore' ? 'Offshore' : 'Onsite',
+        billing_hours: 0,
+        leave_hours: 0,
+        cost_per_hour: 0,
+        notes: ''
+      }));
+
       setEmployeeBilling(initialBilling);
+      setManagerBilling(initialManagerBilling);
       setStep(2);
     } catch (err) {
       console.error('Error fetching employees:', err);
@@ -151,6 +167,16 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
     );
   };
 
+  const handleManagerBillingChange = (employeeId, field, value) => {
+    setManagerBilling(prev =>
+      prev.map(mgr =>
+        mgr.employee_id === employeeId
+          ? { ...mgr, [field]: value }
+          : mgr
+      )
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -159,8 +185,16 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
       emp => parseFloat(emp.billing_hours) > 0 || parseFloat(emp.leave_hours) > 0
     );
 
-    if (employeesWithBilling.length === 0) {
-      toast.warning('Please enter billing hours for at least one employee');
+    // Filter managers with billing hours
+    const managersWithBilling = managerBilling.filter(
+      mgr => parseFloat(mgr.billing_hours) > 0 || parseFloat(mgr.leave_hours) > 0
+    );
+
+    // Combine employees and managers
+    const allBillingItems = [...employeesWithBilling, ...managersWithBilling];
+
+    if (allBillingItems.length === 0) {
+      toast.warning('Please enter billing hours for at least one employee or manager');
       return;
     }
 
@@ -172,7 +206,7 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
         team_id: formData.team_id || null,
         invoice_month: parseInt(formData.invoice_month),
         invoice_year: parseInt(formData.invoice_year),
-        employees: employeesWithBilling,
+        employees: allBillingItems,
         notes: '',
         offshore_manager: managers.offshore_manager,
         onsite_manager: managers.onsite_manager
@@ -199,38 +233,28 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
     return (balanceHours * rate).toFixed(2);
   };
 
-  const calculateGrandTotal = () => {
+  const calculateEmployeeTotal = () => {
     return employeeBilling.reduce((sum, emp) => {
       const billingHours = parseFloat(emp.billing_hours) || 0;
       const leaveHours = parseFloat(emp.leave_hours) || 0;
       const balanceHours = billingHours - leaveHours;
       const rate = parseFloat(emp.cost_per_hour) || 0;
       return sum + (balanceHours * rate);
-    }, 0).toFixed(2);
+    }, 0);
   };
 
-  const isManager = (employeeName) => {
-    return employeeName === managers.offshore_manager || employeeName === managers.onsite_manager;
+  const calculateManagerTotal = () => {
+    return managerBilling.reduce((sum, mgr) => {
+      const billingHours = parseFloat(mgr.billing_hours) || 0;
+      const leaveHours = parseFloat(mgr.leave_hours) || 0;
+      const balanceHours = billingHours - leaveHours;
+      const rate = parseFloat(mgr.cost_per_hour) || 0;
+      return sum + (balanceHours * rate);
+    }, 0);
   };
 
-  const getManagerType = (employeeName) => {
-    if (employeeName === managers.offshore_manager) return 'Offshore';
-    if (employeeName === managers.onsite_manager) return 'Onsite';
-    return null;
-  };
-
-  const employeeNameTemplate = (rowData) => {
-    const managerType = getManagerType(rowData.employee_name);
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <span>{rowData.employee_name}</span>
-        {managerType && (
-          <span className="manager-badge" title={`${managerType} Manager`}>
-            <i className="pi pi-star-fill"></i> {managerType} Manager
-          </span>
-        )}
-      </div>
-    );
+  const calculateGrandTotal = () => {
+    return (calculateEmployeeTotal() + calculateManagerTotal()).toFixed(2);
   };
 
   const months = [
@@ -385,11 +409,6 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
               </div>
             </div>
 
-            <div className="manager-note-banner">
-              <i className="pi pi-info-circle"></i>
-              <span>Managers are included in the employee list below and can be billed as resources. They are highlighted with a badge.</span>
-            </div>
-
             <div className="employee-billing-section">
               <h3>Employee Billing Details</h3>
               <DataTable
@@ -399,15 +418,14 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
                 responsiveLayout="scroll"
                 footer={
                   <div style={{ textAlign: 'right', paddingRight: '1rem' }}>
-                    <strong>Grand Total: ${calculateGrandTotal()}</strong>
+                    <strong>Employee Subtotal: ${calculateEmployeeTotal().toFixed(2)}</strong>
                   </div>
                 }
               >
                 <Column
                   field="employee_name"
                   header="Employee Name"
-                  body={employeeNameTemplate}
-                  style={{ minWidth: '200px' }}
+                  style={{ minWidth: '150px' }}
                 />
                 <Column
                   field="employee_role"
@@ -487,6 +505,123 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
                   style={{ minWidth: '120px', textAlign: 'right' }}
                 />
               </DataTable>
+            </div>
+
+            {/* Manager Billing Section */}
+            {managerBilling.length > 0 && (
+              <div className="manager-billing-section">
+                <h3>
+                  <i className="pi pi-star-fill"></i> Manager Billing
+                </h3>
+                <DataTable
+                  value={managerBilling}
+                  className="p-datatable-gridlines manager-billing-table"
+                  stripedRows
+                  responsiveLayout="scroll"
+                  footer={
+                    <div style={{ textAlign: 'right', paddingRight: '1rem' }}>
+                      <strong>Manager Subtotal: ${calculateManagerTotal().toFixed(2)}</strong>
+                    </div>
+                  }
+                >
+                  <Column
+                    field="employee_name"
+                    header="Manager Name"
+                    body={(rowData) => (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontWeight: '600' }}>{rowData.employee_name}</span>
+                        <span className="manager-type-badge">
+                          {rowData.manager_type} Manager
+                        </span>
+                      </div>
+                    )}
+                    style={{ minWidth: '200px' }}
+                  />
+                  <Column
+                    field="employee_role"
+                    header="Role"
+                    body={(rowData) => rowData.employee_role || 'N/A'}
+                    style={{ minWidth: '120px' }}
+                  />
+                  <Column
+                    field="role_type"
+                    header="Role Type"
+                    body={(rowData) => rowData.role_type || 'N/A'}
+                    style={{ minWidth: '120px' }}
+                  />
+                  <Column
+                    header="Billing Hours"
+                    body={(rowData) => (
+                      <InputNumber
+                        value={rowData.billing_hours}
+                        onValueChange={(e) => handleManagerBillingChange(rowData.employee_id, 'billing_hours', e.value)}
+                        min={0}
+                        max={744}
+                        minFractionDigits={1}
+                        maxFractionDigits={1}
+                        placeholder="0"
+                        className="w-full"
+                      />
+                    )}
+                    style={{ minWidth: '140px' }}
+                  />
+                  <Column
+                    header="Leave Hours"
+                    body={(rowData) => (
+                      <InputNumber
+                        value={rowData.leave_hours}
+                        onValueChange={(e) => handleManagerBillingChange(rowData.employee_id, 'leave_hours', e.value)}
+                        min={0}
+                        max={744}
+                        minFractionDigits={1}
+                        maxFractionDigits={1}
+                        placeholder="0"
+                        className="w-full"
+                      />
+                    )}
+                    style={{ minWidth: '140px' }}
+                  />
+                  <Column
+                    header="Balance Hours"
+                    body={(rowData) => (
+                      <strong style={{ color: '#0066cc' }}>
+                        {(parseFloat(rowData.billing_hours || 0) - parseFloat(rowData.leave_hours || 0)).toFixed(1)}
+                      </strong>
+                    )}
+                    style={{ minWidth: '120px', textAlign: 'center' }}
+                  />
+                  <Column
+                    header="Cost/Hour ($)"
+                    body={(rowData) => (
+                      <InputNumber
+                        value={rowData.cost_per_hour}
+                        onValueChange={(e) => handleManagerBillingChange(rowData.employee_id, 'cost_per_hour', e.value)}
+                        min={0}
+                        minFractionDigits={2}
+                        maxFractionDigits={2}
+                        placeholder="0.00"
+                        className="w-full"
+                      />
+                    )}
+                    style={{ minWidth: '140px' }}
+                  />
+                  <Column
+                    header="Total ($)"
+                    body={(rowData) => (
+                      <strong style={{ color: '#28a745' }}>
+                        ${calculateTotal(rowData)}
+                      </strong>
+                    )}
+                    style={{ minWidth: '120px', textAlign: 'right' }}
+                  />
+                </DataTable>
+              </div>
+            )}
+
+            {/* Grand Total Banner */}
+            <div className="grand-total-banner">
+              <span className="grand-total-label">Grand Total (Employees + Managers):</span>
+              <span className="grand-total-amount">${calculateGrandTotal()}</span>
             </div>
 
             <div className="form-actions">
