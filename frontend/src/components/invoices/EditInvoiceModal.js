@@ -37,9 +37,11 @@ const EditInvoiceModal = ({ invoiceId, onClose, onSuccess }) => {
   };
 
   const calculateTotal = (item) => {
-    const hours = parseFloat(item.billing_hours) || 0;
+    const billingHours = parseFloat(item.billing_hours) || 0;
+    const leaveHours = parseFloat(item.leave_hours) || 0;
+    const balanceHours = billingHours - leaveHours;
     const rate = parseFloat(item.cost_per_hour) || 0;
-    return (hours * rate).toFixed(2);
+    return (balanceHours * rate).toFixed(2);
   };
 
   const calculateGrandTotals = () => {
@@ -163,6 +165,14 @@ const EditInvoiceModal = ({ invoiceId, onClose, onSuccess }) => {
                   <label>Period:</label>
                   <span>{getMonthName(invoice.invoice_month)} {invoice.invoice_year}</span>
                 </div>
+                <div className="info-item">
+                  <label>Offshore Manager:</label>
+                  <span>{invoice.offshore_manager || 'N/A'}</span>
+                </div>
+                <div className="info-item">
+                  <label>Onsite Manager:</label>
+                  <span>{invoice.onsite_manager || 'N/A'}</span>
+                </div>
               </div>
 
               <div className="status-select-group">
@@ -193,6 +203,7 @@ const EditInvoiceModal = ({ invoiceId, onClose, onSuccess }) => {
                       <th>Role</th>
                       <th>Billing Hours</th>
                       <th>Leave Hours</th>
+                      <th>Balance Hours</th>
                       <th>Cost/Hour ($)</th>
                       <th>Total</th>
                     </tr>
@@ -222,6 +233,9 @@ const EditInvoiceModal = ({ invoiceId, onClose, onSuccess }) => {
                             required
                           />
                         </td>
+                        <td className="balance-hours-cell">
+                          <strong>{(parseFloat(item.billing_hours || 0) - parseFloat(item.leave_hours || 0)).toFixed(1)}</strong>
+                        </td>
                         <td>
                           <input
                             type="number"
@@ -241,6 +255,7 @@ const EditInvoiceModal = ({ invoiceId, onClose, onSuccess }) => {
                       <td colSpan="2"><strong>Totals:</strong></td>
                       <td><strong>{totals.billing}</strong></td>
                       <td><strong>{totals.leave}</strong></td>
+                      <td className="balance-hours-cell"><strong>{(parseFloat(totals.billing) - parseFloat(totals.leave)).toFixed(1)}</strong></td>
                       <td></td>
                       <td className="total-cell"><strong>{formatCurrency(totals.amount)}</strong></td>
                     </tr>

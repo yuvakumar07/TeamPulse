@@ -144,7 +144,7 @@ export const getEmployeesForInvoice = (projectId, teamId = null) => {
   }
   return api.get('/invoices/employees', { params });
 };
-export const getAllInvoices = (page = 1, limit = 10, status = null, projectId = null) => {
+export const getAllInvoices = (page = 1, limit = 10, status = null, projectId = null, teamId = null) => {
   const params = { page, limit };
   if (status && status !== 'All') {
     params.status = status;
@@ -152,9 +152,23 @@ export const getAllInvoices = (page = 1, limit = 10, status = null, projectId = 
   if (projectId) {
     params.projectId = projectId;
   }
+  if (teamId) {
+    params.teamId = teamId;
+  }
   return api.get('/invoices', { params });
 };
 export const getInvoiceById = (id) => api.get(`/invoices/${id}`);
+export const checkInvoiceExists = (projectId, teamId, month, year) => {
+  const params = new URLSearchParams({
+    project_id: projectId,
+    invoice_month: month,
+    invoice_year: year
+  });
+  if (teamId) {
+    params.append('team_id', teamId);
+  }
+  return api.get(`/invoices/check-exists?${params.toString()}`);
+};
 export const createInvoice = (data) => api.post('/invoices', data);
 export const updateInvoice = (id, data) => api.put(`/invoices/${id}`, data);
 export const deleteInvoice = (id) => api.delete(`/invoices/${id}`);

@@ -176,7 +176,7 @@ const createAdmin = async (req, res) => {
 const updateAdmin = async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, email, full_name, status, password } = req.body;
+    const { username, email, full_name, status, role_id, password } = req.body;
 
     // Check if admin exists
     const [existingAdmins] = await db.query(
@@ -218,6 +218,20 @@ const updateAdmin = async (req, res) => {
     if (status) {
       updates.push('status = ?');
       params.push(status);
+    }
+    if (role_id !== undefined) {
+      // Validate role_id if provided
+      if (role_id !== null) {
+        const [roles] = await db.query('SELECT id FROM roles WHERE id = ?', [role_id]);
+        if (roles.length === 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid role ID.'
+          });
+        }
+      }
+      updates.push('role_id = ?');
+      params.push(role_id);
     }
     if (password) {
       if (password.length < 6) {

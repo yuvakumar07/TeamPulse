@@ -104,6 +104,14 @@ const ViewInvoiceModal = ({ invoiceId, onClose }) => {
                 <span>{getMonthName(invoice.invoice_month)} {invoice.invoice_year}</span>
               </div>
               <div className="info-item">
+                <label>Offshore Manager:</label>
+                <span>{invoice.offshore_manager || 'N/A'}</span>
+              </div>
+              <div className="info-item">
+                <label>Onsite Manager:</label>
+                <span>{invoice.onsite_manager || 'N/A'}</span>
+              </div>
+              <div className="info-item">
                 <label>Created:</label>
                 <span>{new Date(invoice.created_at).toLocaleString()}</span>
               </div>
@@ -121,6 +129,7 @@ const ViewInvoiceModal = ({ invoiceId, onClose }) => {
                     <th>Role</th>
                     <th>Billing Hours</th>
                     <th>Leave Hours</th>
+                    <th>Balance Hours</th>
                     <th>Cost/Hour</th>
                     <th>Total</th>
                   </tr>
@@ -133,13 +142,16 @@ const ViewInvoiceModal = ({ invoiceId, onClose }) => {
                         <td>{item.employee_role}</td>
                         <td className="hours-cell">{parseFloat(item.billing_hours).toFixed(1)}</td>
                         <td className="hours-cell">{parseFloat(item.leave_hours).toFixed(1)}</td>
+                        <td className="balance-hours-cell">
+                          <strong>{(parseFloat(item.billing_hours) - parseFloat(item.leave_hours)).toFixed(1)}</strong>
+                        </td>
                         <td className="amount-cell">{formatCurrency(item.cost_per_hour)}</td>
                         <td className="amount-cell"><strong>{formatCurrency(item.total_amount)}</strong></td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="6" className="no-items">No items found</td>
+                      <td colSpan="7" className="no-items">No items found</td>
                     </tr>
                   )}
                 </tbody>
@@ -157,6 +169,12 @@ const ViewInvoiceModal = ({ invoiceId, onClose }) => {
               <div className="total-item">
                 <label>Total Leave Hours:</label>
                 <span className="total-value">{parseFloat(invoice.total_leave_hours).toFixed(1)}</span>
+              </div>
+              <div className="total-item">
+                <label>Total Balance Hours:</label>
+                <span className="total-value balance-hours">
+                  <strong>{(parseFloat(invoice.total_billing_hours) - parseFloat(invoice.total_leave_hours)).toFixed(1)}</strong>
+                </span>
               </div>
               <div className="total-item total-amount-item">
                 <label>Total Amount:</label>

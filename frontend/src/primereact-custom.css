@@ -254,8 +254,8 @@ button[aria-label="Cancel"]:hover {
 }
 
 .p-button.p-button-warning {
-  background-color: #ffc107;
-  border-color: #ffc107;
+  background-color: none;
+  border-color: none;
   color: #212529;
 }
 

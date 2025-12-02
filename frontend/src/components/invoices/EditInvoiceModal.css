@@ -180,6 +180,13 @@
   font-weight: 600;
 }
 
+.balance-hours-cell {
+  text-align: center;
+  color: #0066cc;
+  background-color: #e7f3ff;
+  font-weight: 600;
+}
+
 .edit-items-table tfoot {
   background: linear-gradient(135deg, #323232 0%, #4a4a4a 100%);
   color: #ffffff;

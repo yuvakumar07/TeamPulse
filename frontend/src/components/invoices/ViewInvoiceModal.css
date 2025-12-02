@@ -134,6 +134,13 @@
   color: #495057;
 }
 
+.balance-hours-cell {
+  text-align: center;
+  color: #0066cc;
+  background-color: #e7f3ff;
+  font-weight: 600;
+}
+
 .amount-cell {
   text-align: right;
   color: #323232;
@@ -175,6 +182,10 @@
   color: #FFC500;
   font-size: 1.2rem;
   font-weight: 600;
+}
+
+.total-value.balance-hours {
+  color: #66b3ff;
 }
 
 .total-amount-item {

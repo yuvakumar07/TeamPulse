@@ -4,12 +4,12 @@ USE employee_management;
 
 -- Insert Permissions for Invoice Management Module
 INSERT INTO permissions (module, action, name, description) VALUES
-('invoices', 'view', 'view_invoices', 'View invoice list and details'),
-('invoices', 'create', 'create_invoice', 'Create and generate invoices'),
-('invoices', 'update', 'update_invoice', 'Update invoice information'),
-('invoices', 'delete', 'delete_invoice', 'Delete invoices'),
-('invoices', 'approve', 'approve_invoice', 'Approve invoices for payment'),
-('invoices', 'export', 'export_invoice', 'Export invoice data');
+('invoices', 'view', 'invoices.view', 'View invoice list and details'),
+('invoices', 'create', 'invoices.create', 'Create and generate invoices'),
+('invoices', 'update', 'invoices.update', 'Update invoice information'),
+('invoices', 'delete', 'invoices.delete', 'Delete invoices'),
+('invoices', 'approve', 'invoices.approve', 'Approve invoices for payment'),
+('invoices', 'export', 'invoices.export', 'Export invoice data');
 
 -- Assign invoice permissions to Super Admin role (has all permissions)
 INSERT INTO role_permissions (role_id, permission_id)

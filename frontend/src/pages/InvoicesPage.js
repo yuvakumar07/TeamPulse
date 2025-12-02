@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { getAllInvoices, deleteInvoice, downloadInvoicePDF } from '../services/api';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import { Button } from 'primereact/button';
+import { Dropdown } from 'primereact/dropdown';
+import { Tag } from 'primereact/tag';
+import { Dialog } from 'primereact/dialog';
+import { getAllInvoices, deleteInvoice, downloadInvoicePDF, getAllProjects, getProjectById } from '../services/api';
 import GenerateInvoice from '../components/invoices/GenerateInvoice';
 import ViewInvoiceModal from '../components/invoices/ViewInvoiceModal';
 import EditInvoiceModal from '../components/invoices/EditInvoiceModal';
@@ -17,6 +23,10 @@ const InvoicesPage = () => {
     totalPages: 0
   });
   const [statusFilter, setStatusFilter] = useState('All');
+  const [projectFilter, setProjectFilter] = useState('All');
+  const [teamFilter, setTeamFilter] = useState('All');
+  const [projects, setProjects] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -25,16 +35,69 @@ const InvoicesPage = () => {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  useEffect(() => {
     fetchInvoices();
-  }, [pagination.page, statusFilter]);
+  }, [pagination.page, statusFilter, projectFilter, teamFilter]);
+
+  useEffect(() => {
+    if (projectFilter && projectFilter !== 'All') {
+      fetchTeams(projectFilter);
+    } else {
+      setTeams([]);
+      setTeamFilter('All');
+    }
+  }, [projectFilter]);
+
+  const fetchProjects = async () => {
+    try {
+      const response = await getAllProjects(1, 1000, 'All');
+      setProjects(response.data.data || []);
+    } catch (err) {
+      console.error('Error fetching projects:', err);
+      toast.error('Failed to load projects');
+    }
+  };
+
+  const fetchTeams = async (projectId) => {
+    try {
+      const response = await getProjectById(projectId);
+      const projectData = response.data.data;
+      setTeams(projectData.teams || []);
+    } catch (err) {
+      console.error('Error fetching teams:', err);
+      toast.error('Failed to load teams');
+    }
+  };
 
   const fetchInvoices = async () => {
     try {
       setLoading(true);
+
+      // Build params object
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit
+      };
+
+      if (statusFilter !== 'All') {
+        params.status = statusFilter;
+      }
+      if (projectFilter !== 'All') {
+        params.projectId = projectFilter;
+      }
+      if (teamFilter !== 'All') {
+        params.teamId = teamFilter;
+      }
+
       const response = await getAllInvoices(
-        pagination.page,
-        pagination.limit,
-        statusFilter
+        params.page,
+        params.limit,
+        params.status || null,
+        params.projectId || null,
+        params.teamId || null
       );
 
       setInvoices(response.data.data || []);
@@ -122,21 +185,113 @@ const InvoicesPage = () => {
     return months[month - 1] || '';
   };
 
-  const getStatusBadge = (status) => {
-    const statusClasses = {
-      'Draft': 'status-draft',
-      'Submitted': 'status-submitted',
-      'Approved': 'status-approved',
-      'Paid': 'status-paid',
-      'Cancelled': 'status-cancelled'
+  // PrimeReact column templates
+  const invoiceNumberTemplate = (rowData) => {
+    return <strong className="invoice-number">{rowData.invoice_number}</strong>;
+  };
+
+  const teamTemplate = (rowData) => {
+    return rowData.team_name || 'All Teams';
+  };
+
+  const periodTemplate = (rowData) => {
+    return `${getMonthName(rowData.invoice_month)} ${rowData.invoice_year}`;
+  };
+
+  const balanceHoursTemplate = (rowData) => {
+    const balance = parseFloat(rowData.total_billing_hours) - parseFloat(rowData.total_leave_hours);
+    return <strong>{balance.toFixed(1)}</strong>;
+  };
+
+  const amountTemplate = (rowData) => {
+    return <strong>{formatCurrency(rowData.total_amount)}</strong>;
+  };
+
+  const statusTemplate = (rowData) => {
+    const getSeverity = (status) => {
+      switch (status) {
+        case 'Paid': return 'success';
+        case 'Approved': return 'info';
+        case 'Submitted': return 'warning';
+        case 'Draft': return 'secondary';
+        case 'Cancelled': return 'danger';
+        default: return null;
+      }
     };
 
+    return <Tag value={rowData.status} severity={getSeverity(rowData.status)} />;
+  };
+
+  const createdTemplate = (rowData) => {
+    return new Date(rowData.created_at).toLocaleDateString();
+  };
+
+  const actionsTemplate = (rowData) => {
+    const hasPermission = authService.hasPermission;
+
     return (
-      <span className={`status-badge ${statusClasses[status] || ''}`}>
-        {status}
-      </span>
+      <div className="action-buttons">
+        <Button
+          icon="pi pi-file-pdf"
+          className="p-button-rounded p-button-danger p-button-sm"
+          onClick={() => handleDownloadPDF(rowData.id, rowData.invoice_number)}
+          tooltip="Download PDF"
+          tooltipOptions={{ position: 'top' }}
+        />
+        <Button
+          icon="pi pi-eye"
+          className="p-button-rounded p-button-info p-button-sm"
+          onClick={() => handleView(rowData.id)}
+          tooltip="View Invoice"
+          tooltipOptions={{ position: 'top' }}
+        />
+        {hasPermission('invoices.update') && (
+          <Button
+            icon="pi pi-pencil"
+            className="p-button-rounded p-button-warning p-button-sm"
+            onClick={() => handleEdit(rowData.id)}
+            tooltip="Edit Invoice"
+            tooltipOptions={{ position: 'top' }}
+          />
+        )}
+        {hasPermission('invoices.delete') && (
+          <Button
+            icon="pi pi-trash"
+            className="p-button-rounded p-button-danger p-button-sm"
+            onClick={() => handleDeleteClick(rowData.id)}
+            tooltip="Delete Invoice"
+            tooltipOptions={{ position: 'top' }}
+          />
+        )}
+      </div>
     );
   };
+
+  // Filter options
+  const statusOptions = [
+    { label: 'All Statuses', value: 'All' },
+    { label: 'Draft', value: 'Draft' },
+    { label: 'Submitted', value: 'Submitted' },
+    { label: 'Approved', value: 'Approved' },
+    { label: 'Paid', value: 'Paid' },
+    { label: 'Cancelled', value: 'Cancelled' }
+  ];
+
+  const projectOptions = [
+    { label: 'All Projects', value: 'All' },
+    ...projects.map(project => ({
+      label: project.project_team_name,
+      value: project.id
+    }))
+  ];
+
+  const teamOptions = [
+    { label: 'All Teams', value: 'All' },
+    ...teams.map(team => ({
+      label: team.agile_board_name,
+      value: team.id
+    }))
+  ];
 
   return (
     <div className="invoices-page">
@@ -145,143 +300,97 @@ const InvoicesPage = () => {
           <h1>Invoice Management</h1>
           <p className="page-subtitle">Generate and manage project invoices</p>
         </div>
-        <button
-          className="btn-generate"
+        <Button
+          label="Generate Invoice"
+          icon="pi pi-plus"
+          className="p-button-warning"
           onClick={() => setShowGenerateModal(true)}
-        >
-          + Generate Invoice
-        </button>
+        />
       </div>
 
       <div className="filters-section">
         <div className="filter-group">
-          <label htmlFor="status-filter">Filter by Status:</label>
-          <select
-            id="status-filter"
+          <label>Status:</label>
+          <Dropdown
             value={statusFilter}
+            options={statusOptions}
             onChange={(e) => {
-              setStatusFilter(e.target.value);
+              setStatusFilter(e.value);
               setPagination(prev => ({ ...prev, page: 1 }));
             }}
-          >
-            <option value="All">All Statuses</option>
-            <option value="Draft">Draft</option>
-            <option value="Submitted">Submitted</option>
-            <option value="Approved">Approved</option>
-            <option value="Paid">Paid</option>
-            <option value="Cancelled">Cancelled</option>
-          </select>
+            placeholder="Filter by Status"
+          />
+        </div>
+
+        <div className="filter-group">
+          <label>Project:</label>
+          <Dropdown
+            value={projectFilter}
+            options={projectOptions}
+            onChange={(e) => {
+              setProjectFilter(e.value);
+              setPagination(prev => ({ ...prev, page: 1 }));
+            }}
+            placeholder="Filter by Project"
+          />
+        </div>
+
+        <div className="filter-group">
+          <label>Team:</label>
+          <Dropdown
+            value={teamFilter}
+            options={teamOptions}
+            onChange={(e) => {
+              setTeamFilter(e.value);
+              setPagination(prev => ({ ...prev, page: 1 }));
+            }}
+            placeholder="Filter by Team"
+            disabled={projectFilter === 'All' || teams.length === 0}
+          />
         </div>
       </div>
 
-      {loading ? (
-        <div className="loading-container">
-          <p>Loading invoices...</p>
-        </div>
-      ) : invoices.length === 0 ? (
-        <div className="empty-state">
-          <h3>No invoices found</h3>
-          <p>Click "Generate Invoice" to create your first invoice</p>
-        </div>
-      ) : (
-        <>
-          <div className="table-container">
-            <table className="invoices-table">
-              <thead>
-                <tr>
-                  <th>Invoice Number</th>
-                  <th>Project</th>
-                  <th>Team</th>
-                  <th>Period</th>
-                  <th>Billing Hours</th>
-                  <th>Leave Hours</th>
-                  <th>Total Amount</th>
-                  <th>Status</th>
-                  <th>Created</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoices.map((invoice) => (
-                  <tr key={invoice.id}>
-                    <td>
-                      <strong className="invoice-number">{invoice.invoice_number}</strong>
-                    </td>
-                    <td>{invoice.project_team_name}</td>
-                    <td>{invoice.team_name || 'All Teams'}</td>
-                    <td>
-                      {getMonthName(invoice.invoice_month)} {invoice.invoice_year}
-                    </td>
-                    <td className="hours-cell">{parseFloat(invoice.total_billing_hours).toFixed(1)}</td>
-                    <td className="hours-cell">{parseFloat(invoice.total_leave_hours).toFixed(1)}</td>
-                    <td className="amount-cell">
-                      <strong>{formatCurrency(invoice.total_amount)}</strong>
-                    </td>
-                    <td>{getStatusBadge(invoice.status)}</td>
-                    <td>{new Date(invoice.created_at).toLocaleDateString()}</td>
-                    <td>
-                      <div className="action-buttons">
-                        <button
-                          className="btn-action btn-pdf"
-                          onClick={() => handleDownloadPDF(invoice.id, invoice.invoice_number)}
-                          title="Download PDF"
-                        >
-                          <i className="pi pi-file-pdf"></i>
-                        </button>
-                        <button
-                          className="btn-action btn-view"
-                          onClick={() => handleView(invoice.id)}
-                          title="View Invoice"
-                        >
-                          <i className="pi pi-eye"></i>
-                        </button>
-                        {hasPermission('invoices.edit') && (
-                          <button
-                            className="btn-action btn-edit"
-                            onClick={() => handleEdit(invoice.id)}
-                            title="Edit Invoice"
-                          >
-                            <i className="pi pi-pencil"></i>
-                          </button>
-                        )}
-                        {hasPermission('invoices.delete') && (
-                          <button
-                            className="btn-action btn-delete"
-                            onClick={() => handleDeleteClick(invoice.id)}
-                            title="Delete Invoice"
-                          >
-                            <i className="pi pi-trash"></i>
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      <DataTable
+        value={invoices}
+        loading={loading}
+        emptyMessage="No invoices found. Click 'Generate Invoice' to create your first invoice"
+        className="p-datatable-gridlines"
+        stripedRows
+        responsiveLayout="scroll"
+      >
+        <Column field="invoice_number" header="Invoice Number" body={invoiceNumberTemplate} sortable />
+        <Column field="project_team_name" header="Project" sortable />
+        <Column header="Team" body={teamTemplate} />
+        <Column header="Period" body={periodTemplate} />
+        <Column field="total_billing_hours" header="Billing Hours" sortable />
+        <Column field="total_leave_hours" header="Leave Hours" sortable />
+        <Column header="Balance Hours" body={balanceHoursTemplate} />
+        <Column header="Total Amount" body={amountTemplate} sortable />
+        <Column header="Status" body={statusTemplate} sortable />
+        <Column header="Created" body={createdTemplate} sortable />
+        <Column header="Actions" body={actionsTemplate} style={{ width: '12rem' }} />
+      </DataTable>
 
-          <div className="pagination">
-            <button
-              className="pagination-btn"
-              onClick={() => handlePageChange(pagination.page - 1)}
-              disabled={pagination.page === 1}
-            >
-              Previous
-            </button>
-            <span className="pagination-info">
-              Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
-            </span>
-            <button
-              className="pagination-btn"
-              onClick={() => handlePageChange(pagination.page + 1)}
-              disabled={pagination.page >= pagination.totalPages}
-            >
-              Next
-            </button>
-          </div>
-        </>
-      )}
+      <div className="pagination-container">
+        <Button
+          label="Previous"
+          icon="pi pi-chevron-left"
+          onClick={() => handlePageChange(pagination.page - 1)}
+          disabled={pagination.page === 1}
+          className="p-button-text"
+        />
+        <span className="pagination-info">
+          Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
+        </span>
+        <Button
+          label="Next"
+          icon="pi pi-chevron-right"
+          iconPos="right"
+          onClick={() => handlePageChange(pagination.page + 1)}
+          disabled={pagination.page >= pagination.totalPages}
+          className="p-button-text"
+        />
+      </div>
 
       {showGenerateModal && (
         <GenerateInvoice
@@ -311,36 +420,33 @@ const InvoicesPage = () => {
         />
       )}
 
-      {showDeleteConfirm && (
-        <div className="modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
-          <div className="modal-content delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Confirm Delete</h2>
-              <button className="close-button" onClick={() => setShowDeleteConfirm(false)}>×</button>
-            </div>
-            <div className="modal-body">
-              <p>Are you sure you want to delete this invoice?</p>
-              <p className="warning-text">This action cannot be undone.</p>
-            </div>
-            <div className="modal-footer">
-              <button
-                className="btn-secondary"
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={deleting}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn-danger"
-                onClick={handleDeleteConfirm}
-                disabled={deleting}
-              >
-                {deleting ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Dialog
+        header="Confirm Delete"
+        visible={showDeleteConfirm}
+        style={{ width: '450px' }}
+        onHide={() => setShowDeleteConfirm(false)}
+        footer={
+          <>
+            <Button
+              label="Cancel"
+              icon="pi pi-times"
+              onClick={() => setShowDeleteConfirm(false)}
+              className="p-button-text"
+              disabled={deleting}
+            />
+            <Button
+              label={deleting ? 'Deleting...' : 'Delete'}
+              icon="pi pi-check"
+              onClick={handleDeleteConfirm}
+              className="p-button-danger"
+              disabled={deleting}
+            />
+          </>
+        }
+      >
+        <p>Are you sure you want to delete this invoice?</p>
+        <p className="warning-text"><strong>This action cannot be undone.</strong></p>
+      </Dialog>
     </div>
   );
 };
