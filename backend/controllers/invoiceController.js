@@ -171,15 +171,76 @@ const getEmployeesForInvoice = async (req, res) => {
     // Sort employees by name
     employees.sort((a, b) => a.name.localeCompare(b.name));
 
+    // Get project managers to include in response
+    const [projectManagers] = await db.query(
+      `SELECT p.id,
+              om.name as offshore_manager_name,
+              osm.name as onsite_manager_name
+       FROM projects p
+       LEFT JOIN employees om ON p.offshore_manager_id = om.id
+       LEFT JOIN employees osm ON p.onsite_manager_id = osm.id
+       WHERE p.id = ?`,
+      [projectId]
+    );
+
+    const managers = projectManagers[0] || {};
+
     res.json({
       success: true,
-      data: employees
+      data: employees,
+      managers: {
+        offshore_manager: managers.offshore_manager_name || 'N/A',
+        onsite_manager: managers.onsite_manager_name || 'N/A'
+      }
     });
   } catch (error) {
     console.error('Error fetching employees for invoice:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching employees',
+      error: error.message
+    });
+  }
+};
+
+// Check if invoice already exists
+const checkInvoiceExists = async (req, res) => {
+  try {
+    const { project_id, team_id, invoice_month, invoice_year } = req.query;
+
+    // Validation
+    if (!project_id || !invoice_month || !invoice_year) {
+      return res.status(400).json({
+        success: false,
+        message: 'Project, month, and year are required'
+      });
+    }
+
+    // Check for existing invoice
+    const [existingInvoice] = await db.query(
+      `SELECT id, invoice_number FROM invoices
+       WHERE project_id = ? AND invoice_month = ? AND invoice_year = ?
+       AND (team_id = ? OR (team_id IS NULL AND ? IS NULL))`,
+      [project_id, invoice_month, invoice_year, team_id || null, team_id || null]
+    );
+
+    if (existingInvoice.length > 0) {
+      return res.json({
+        success: true,
+        exists: true,
+        data: existingInvoice[0]
+      });
+    }
+
+    res.json({
+      success: true,
+      exists: false
+    });
+  } catch (error) {
+    console.error('Error checking invoice existence:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error checking invoice',
       error: error.message
     });
   }
@@ -198,7 +259,9 @@ const createInvoice = async (req, res) => {
       invoice_month,
       invoice_year,
       employees, // Array of {employee_id, employee_name, employee_role, role_type, billing_hours, leave_hours, cost_per_hour}
-      notes
+      notes,
+      offshore_manager,
+      onsite_manager
     } = req.body;
 
     // Validation
@@ -245,19 +308,21 @@ const createInvoice = async (req, res) => {
     employees.forEach(emp => {
       const billingHours = parseFloat(emp.billing_hours) || 0;
       const leaveHours = parseFloat(emp.leave_hours) || 0;
+      const balanceHours = billingHours - leaveHours;
       const costPerHour = parseFloat(emp.cost_per_hour) || 0;
 
       totalBillingHours += billingHours;
       totalLeaveHours += leaveHours;
-      totalAmount += billingHours * costPerHour;
+      totalAmount += balanceHours * costPerHour;
     });
 
     // Create invoice
     const [invoiceResult] = await connection.query(
       `INSERT INTO invoices
        (invoice_number, project_id, team_id, invoice_month, invoice_year,
-        total_billing_hours, total_leave_hours, total_amount, notes, created_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        total_billing_hours, total_leave_hours, total_amount, notes, created_by,
+        offshore_manager, onsite_manager)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         invoiceNumber,
         project_id,
@@ -268,7 +333,9 @@ const createInvoice = async (req, res) => {
         totalLeaveHours,
         totalAmount,
         notes || null,
-        req.admin?.id || null
+        req.admin?.id || null,
+        offshore_manager || null,
+        onsite_manager || null
       ]
     );
 
@@ -278,8 +345,9 @@ const createInvoice = async (req, res) => {
     for (const emp of employees) {
       const billingHours = parseFloat(emp.billing_hours) || 0;
       const leaveHours = parseFloat(emp.leave_hours) || 0;
+      const balanceHours = billingHours - leaveHours;
       const costPerHour = parseFloat(emp.cost_per_hour) || 0;
-      const itemTotal = billingHours * costPerHour;
+      const itemTotal = balanceHours * costPerHour;
 
       await connection.query(
         `INSERT INTO invoice_items
@@ -350,6 +418,7 @@ const getAllInvoices = async (req, res) => {
     const offset = (page - 1) * limit;
     const status = req.query.status;
     const projectId = req.query.projectId;
+    const teamId = req.query.teamId;
 
     let countQuery = 'SELECT COUNT(*) as total FROM invoices i';
     let dataQuery = `
@@ -375,6 +444,12 @@ const getAllInvoices = async (req, res) => {
       conditions.push('i.project_id = ?');
       queryParams.push(projectId);
       countParams.push(projectId);
+    }
+
+    if (teamId) {
+      conditions.push('i.team_id = ?');
+      queryParams.push(teamId);
+      countParams.push(teamId);
     }
 
     if (conditions.length > 0) {
@@ -503,8 +578,9 @@ const updateInvoice = async (req, res) => {
       for (const item of items) {
         const billingHours = parseFloat(item.billing_hours) || 0;
         const leaveHours = parseFloat(item.leave_hours) || 0;
+        const balanceHours = billingHours - leaveHours;
         const costPerHour = parseFloat(item.cost_per_hour) || 0;
-        const itemTotal = billingHours * costPerHour;
+        const itemTotal = balanceHours * costPerHour;
 
         totalBillingHours += billingHours;
         totalLeaveHours += leaveHours;
@@ -712,6 +788,15 @@ const generateInvoicePDF = async (req, res) => {
     doc.font('Helvetica-Bold').text('Team:', 50, yPosition);
     doc.font('Helvetica').text(invoice.team_name || 'All Teams', 200, yPosition);
 
+    // Add manager information
+    yPosition += 20;
+    doc.font('Helvetica-Bold').text('Offshore Manager:', 50, yPosition);
+    doc.font('Helvetica').text(invoice.offshore_manager || 'N/A', 200, yPosition);
+
+    yPosition += 20;
+    doc.font('Helvetica-Bold').text('Onsite Manager:', 50, yPosition);
+    doc.font('Helvetica').text(invoice.onsite_manager || 'N/A', 200, yPosition);
+
     // Add some space before table
     yPosition += 40;
 
@@ -720,10 +805,11 @@ const generateInvoicePDF = async (req, res) => {
     doc.rect(50, yPosition, 495, 25).fillAndStroke('#323232', '#323232');
 
     doc.font('Helvetica-Bold');
-    doc.text('Employee', 60, yPosition + 8, { width: 120, continued: false });
-    doc.text('Role', 180, yPosition + 8, { width: 80, continued: false });
-    doc.text('Bill Hrs', 260, yPosition + 8, { width: 50, align: 'center', continued: false });
-    doc.text('Leave Hrs', 310, yPosition + 8, { width: 55, align: 'center', continued: false });
+    doc.text('Employee', 60, yPosition + 8, { width: 100, continued: false });
+    doc.text('Role', 160, yPosition + 8, { width: 70, continued: false });
+    doc.text('Bill Hrs', 230, yPosition + 8, { width: 45, align: 'center', continued: false });
+    doc.text('Leave Hrs', 275, yPosition + 8, { width: 45, align: 'center', continued: false });
+    doc.text('Bal Hrs', 320, yPosition + 8, { width: 45, align: 'center', continued: false });
     doc.text('Cost/Hr', 365, yPosition + 8, { width: 70, align: 'right', continued: false });
     doc.text('Total', 435, yPosition + 8, { width: 100, align: 'right', continued: false });
 
@@ -731,6 +817,8 @@ const generateInvoicePDF = async (req, res) => {
 
     // Table rows
     doc.fontSize(9).fillColor('#323232').font('Helvetica');
+
+    let recalculatedGrandTotal = 0;
 
     items.forEach((item, index) => {
       // Check if we need a new page
@@ -743,10 +831,11 @@ const generateInvoicePDF = async (req, res) => {
         doc.rect(50, yPosition, 495, 25).fillAndStroke('#323232', '#323232');
 
         doc.font('Helvetica-Bold');
-        doc.text('Employee', 60, yPosition + 8, { width: 120, continued: false });
-        doc.text('Role', 180, yPosition + 8, { width: 80, continued: false });
-        doc.text('Bill Hrs', 260, yPosition + 8, { width: 50, align: 'center', continued: false });
-        doc.text('Leave Hrs', 310, yPosition + 8, { width: 55, align: 'center', continued: false });
+        doc.text('Employee', 60, yPosition + 8, { width: 100, continued: false });
+        doc.text('Role', 160, yPosition + 8, { width: 70, continued: false });
+        doc.text('Bill Hrs', 230, yPosition + 8, { width: 45, align: 'center', continued: false });
+        doc.text('Leave Hrs', 275, yPosition + 8, { width: 45, align: 'center', continued: false });
+        doc.text('Bal Hrs', 320, yPosition + 8, { width: 45, align: 'center', continued: false });
         doc.text('Cost/Hr', 365, yPosition + 8, { width: 70, align: 'right', continued: false });
         doc.text('Total', 435, yPosition + 8, { width: 100, align: 'right', continued: false });
 
@@ -762,12 +851,17 @@ const generateInvoicePDF = async (req, res) => {
       }
 
       doc.fillColor('#323232');
-      doc.text(item.employee_name, 60, yPosition + 5, { width: 120, continued: false });
-      doc.text(item.employee_role, 180, yPosition + 5, { width: 80, continued: false });
-      doc.text(parseFloat(item.billing_hours).toFixed(1), 260, yPosition + 5, { width: 50, align: 'center', continued: false });
-      doc.text(parseFloat(item.leave_hours).toFixed(1), 310, yPosition + 5, { width: 55, align: 'center', continued: false });
+      const balanceHours = parseFloat(item.billing_hours) - parseFloat(item.leave_hours);
+      const itemTotal = balanceHours * parseFloat(item.cost_per_hour);
+      recalculatedGrandTotal += itemTotal;
+
+      doc.text(item.employee_name, 60, yPosition + 5, { width: 100, continued: false });
+      doc.text(item.employee_role, 160, yPosition + 5, { width: 70, continued: false });
+      doc.text(parseFloat(item.billing_hours).toFixed(1), 230, yPosition + 5, { width: 45, align: 'center', continued: false });
+      doc.text(parseFloat(item.leave_hours).toFixed(1), 275, yPosition + 5, { width: 45, align: 'center', continued: false });
+      doc.text(balanceHours.toFixed(1), 320, yPosition + 5, { width: 45, align: 'center', continued: false });
       doc.text(formatCurrency(item.cost_per_hour), 365, yPosition + 5, { width: 70, align: 'right', continued: false });
-      doc.text(formatCurrency(item.total_amount), 435, yPosition + 5, { width: 100, align: 'right', continued: false });
+      doc.text(formatCurrency(itemTotal), 435, yPosition + 5, { width: 100, align: 'right', continued: false });
 
       yPosition += 20;
     });
@@ -776,15 +870,19 @@ const generateInvoicePDF = async (req, res) => {
     yPosition += 10;
     doc.rect(50, yPosition, 495, 30).fillAndStroke('#323232', '#323232');
 
+    const totalBalanceHours = parseFloat(invoice.total_billing_hours) - parseFloat(invoice.total_leave_hours);
     doc.fontSize(11).fillColor('#FFC500').font('Helvetica-Bold');
-    doc.text('Total Billing Hours:', 60, yPosition + 10, { width: 200, continued: false });
-    doc.text(parseFloat(invoice.total_billing_hours).toFixed(1), 260, yPosition + 10, { width: 50, align: 'center', continued: false });
+    doc.text('Total Billing Hours:', 60, yPosition + 10, { width: 170, continued: false });
+    doc.text(parseFloat(invoice.total_billing_hours).toFixed(1), 230, yPosition + 10, { width: 45, align: 'center', continued: false });
 
-    doc.text('Total Leave Hours:', 60, yPosition + 10, { width: 200, continued: false });
-    doc.text(parseFloat(invoice.total_leave_hours).toFixed(1), 310, yPosition + 10, { width: 55, align: 'center', continued: false });
+    doc.text('Total Leave Hours:', 60, yPosition + 10, { width: 215, continued: false });
+    doc.text(parseFloat(invoice.total_leave_hours).toFixed(1), 275, yPosition + 10, { width: 45, align: 'center', continued: false });
+
+    doc.text('Total Balance Hours:', 60, yPosition + 10, { width: 260, continued: false });
+    doc.text(totalBalanceHours.toFixed(1), 320, yPosition + 10, { width: 45, align: 'center', continued: false });
 
     doc.fontSize(14).text('TOTAL AMOUNT:', 365, yPosition + 8, { width: 70, align: 'right', continued: false });
-    doc.text(formatCurrency(invoice.total_amount), 435, yPosition + 8, { width: 100, align: 'right', continued: false });
+    doc.text(formatCurrency(recalculatedGrandTotal), 435, yPosition + 8, { width: 100, align: 'right', continued: false });
 
     // Add footer
     const pageHeight = doc.page.height;
@@ -815,6 +913,7 @@ const generateInvoicePDF = async (req, res) => {
 
 module.exports = {
   getEmployeesForInvoice,
+  checkInvoiceExists,
   createInvoice,
   getAllInvoices,
   getInvoiceById,

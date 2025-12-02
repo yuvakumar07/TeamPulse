@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { getEmployeesForInvoice, createInvoice, getAllProjects } from '../../services/api';
+import { Dialog } from 'primereact/dialog';
+import { Button } from 'primereact/button';
+import { Dropdown } from 'primereact/dropdown';
+import { InputNumber } from 'primereact/inputnumber';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import { getEmployeesForInvoice, createInvoice, getAllProjects, checkInvoiceExists } from '../../services/api';
 import { getProjectById } from '../../services/api';
 import './GenerateInvoice.css';
 
@@ -18,6 +24,10 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
   const [employeeBilling, setEmployeeBilling] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [managers, setManagers] = useState({
+    offshore_manager: 'N/A',
+    onsite_manager: 'N/A'
+  });
 
   useEffect(() => {
     fetchProjects();
@@ -71,12 +81,34 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
 
     setLoading(true);
     try {
+      // Check if invoice already exists
+      const checkResponse = await checkInvoiceExists(
+        formData.project_id,
+        formData.team_id || null,
+        formData.invoice_month,
+        formData.invoice_year
+      );
+
+      if (checkResponse.data.exists) {
+        const invoiceNumber = checkResponse.data.data.invoice_number;
+        toast.warning(
+          `Invoice already exists for this period! Invoice Number: ${invoiceNumber}`,
+          { autoClose: 5000 }
+        );
+        setLoading(false);
+        return;
+      }
+
       const response = await getEmployeesForInvoice(
         formData.project_id,
         formData.team_id || null
       );
 
       const employeeList = response.data.data || [];
+      const managersData = response.data.managers || {
+        offshore_manager: 'N/A',
+        onsite_manager: 'N/A'
+      };
 
       if (employeeList.length === 0) {
         toast.warning('No employees found for the selected project/team');
@@ -85,6 +117,7 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
       }
 
       setEmployees(employeeList);
+      setManagers(managersData);
 
       // Initialize billing data for each employee
       const initialBilling = employeeList.map(emp => ({
@@ -140,7 +173,9 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
         invoice_month: parseInt(formData.invoice_month),
         invoice_year: parseInt(formData.invoice_year),
         employees: employeesWithBilling,
-        notes: ''
+        notes: '',
+        offshore_manager: managers.offshore_manager,
+        onsite_manager: managers.onsite_manager
       };
 
       await createInvoice(invoiceData);
@@ -157,17 +192,45 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
   };
 
   const calculateTotal = (emp) => {
-    const hours = parseFloat(emp.billing_hours) || 0;
+    const billingHours = parseFloat(emp.billing_hours) || 0;
+    const leaveHours = parseFloat(emp.leave_hours) || 0;
+    const balanceHours = billingHours - leaveHours;
     const rate = parseFloat(emp.cost_per_hour) || 0;
-    return (hours * rate).toFixed(2);
+    return (balanceHours * rate).toFixed(2);
   };
 
   const calculateGrandTotal = () => {
     return employeeBilling.reduce((sum, emp) => {
-      const hours = parseFloat(emp.billing_hours) || 0;
+      const billingHours = parseFloat(emp.billing_hours) || 0;
+      const leaveHours = parseFloat(emp.leave_hours) || 0;
+      const balanceHours = billingHours - leaveHours;
       const rate = parseFloat(emp.cost_per_hour) || 0;
-      return sum + (hours * rate);
+      return sum + (balanceHours * rate);
     }, 0).toFixed(2);
+  };
+
+  const isManager = (employeeName) => {
+    return employeeName === managers.offshore_manager || employeeName === managers.onsite_manager;
+  };
+
+  const getManagerType = (employeeName) => {
+    if (employeeName === managers.offshore_manager) return 'Offshore';
+    if (employeeName === managers.onsite_manager) return 'Onsite';
+    return null;
+  };
+
+  const employeeNameTemplate = (rowData) => {
+    const managerType = getManagerType(rowData.employee_name);
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <span>{rowData.employee_name}</span>
+        {managerType && (
+          <span className="manager-badge" title={`${managerType} Manager`}>
+            <i className="pi pi-star-fill"></i> {managerType} Manager
+          </span>
+        )}
+      </div>
+    );
   };
 
   const months = [
@@ -188,106 +251,118 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
+  const monthOptions = months.map(month => ({
+    label: month.label,
+    value: month.value
+  }));
+
+  const yearOptions = years.map(year => ({
+    label: year.toString(),
+    value: year
+  }));
+
+  const projectOptions = [
+    { label: 'Select Project', value: '' },
+    ...projects.map(project => ({
+      label: project.project_team_name,
+      value: project.id
+    }))
+  ];
+
+  const teamOptions = [
+    { label: 'All Teams', value: '' },
+    ...teams.map(team => ({
+      label: team.agile_board_name,
+      value: team.id
+    }))
+  ];
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div
-        className={`modal-content generate-invoice-modal ${step === 2 ? 'large' : ''}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="modal-header">
-          <h2>Generate Invoice - {step === 1 ? 'Step 1: Select Period' : 'Step 2: Enter Billing Details'}</h2>
-          <button className="close-btn" onClick={onClose}>&times;</button>
-        </div>
-
-        {step === 1 ? (
-          <form onSubmit={handleNext}>
-            <div className="form-grid">
-              <div className="form-group">
-                <label htmlFor="invoice_month">
-                  Month <span className="required">*</span>
-                </label>
-                <select
-                  id="invoice_month"
-                  name="invoice_month"
-                  value={formData.invoice_month}
-                  onChange={handleChange}
-                  required
-                >
-                  {months.map(month => (
-                    <option key={month.value} value={month.value}>
-                      {month.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="invoice_year">
-                  Year <span className="required">*</span>
-                </label>
-                <select
-                  id="invoice_year"
-                  name="invoice_year"
-                  value={formData.invoice_year}
-                  onChange={handleChange}
-                  required
-                >
-                  {years.map(year => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="project_id">
-                  Project <span className="required">*</span>
-                </label>
-                <select
-                  id="project_id"
-                  name="project_id"
-                  value={formData.project_id}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Select Project</option>
-                  {projects.map(project => (
-                    <option key={project.id} value={project.id}>
-                      {project.project_team_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="team_id">Team (Optional)</label>
-                <select
-                  id="team_id"
-                  name="team_id"
-                  value={formData.team_id}
-                  onChange={handleChange}
-                  disabled={!formData.project_id || teams.length === 0}
-                >
-                  <option value="">All Teams</option>
-                  {teams.map(team => (
-                    <option key={team.id} value={team.id}>
-                      {team.agile_board_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+    <Dialog
+      header={`Generate Invoice - ${step === 1 ? 'Step 1: Select Period' : 'Step 2: Enter Billing Details'}`}
+      visible={true}
+      onHide={onClose}
+      style={{ width: step === 2 ? '95vw' : '50vw' }}
+      maximizable
+      modal
+    >
+      {step === 1 ? (
+        <form onSubmit={handleNext}>
+          <div className="form-grid">
+            <div className="form-group">
+              <label htmlFor="invoice_month">
+                Month <span className="required">*</span>
+              </label>
+              <Dropdown
+                id="invoice_month"
+                value={formData.invoice_month}
+                options={monthOptions}
+                onChange={(e) => handleChange({ target: { name: 'invoice_month', value: e.value } })}
+                placeholder="Select Month"
+                className="w-full"
+              />
             </div>
 
-            <div className="form-actions">
-              <button type="button" className="btn btn-cancel" onClick={onClose}>
-                Cancel
-              </button>
-              <button type="submit" className="btn btn-primary" disabled={loading}>
-                {loading ? 'Loading...' : 'Next: Enter Billing Details'}
-              </button>
+            <div className="form-group">
+              <label htmlFor="invoice_year">
+                Year <span className="required">*</span>
+              </label>
+              <Dropdown
+                id="invoice_year"
+                value={formData.invoice_year}
+                options={yearOptions}
+                onChange={(e) => handleChange({ target: { name: 'invoice_year', value: e.value } })}
+                placeholder="Select Year"
+                className="w-full"
+              />
             </div>
-          </form>
+
+            <div className="form-group">
+              <label htmlFor="project_id">
+                Project <span className="required">*</span>
+              </label>
+              <Dropdown
+                id="project_id"
+                value={formData.project_id}
+                options={projectOptions}
+                onChange={(e) => handleChange({ target: { name: 'project_id', value: e.value } })}
+                placeholder="Select Project"
+                className="w-full"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="team_id">Team (Optional)</label>
+              <Dropdown
+                id="team_id"
+                value={formData.team_id}
+                options={teamOptions}
+                onChange={(e) => handleChange({ target: { name: 'team_id', value: e.value } })}
+                placeholder="All Teams"
+                disabled={!formData.project_id || teams.length === 0}
+                className="w-full"
+              />
+            </div>
+          </div>
+
+          <div className="form-actions">
+            <Button
+              label="Cancel"
+              icon="pi pi-times"
+              onClick={onClose}
+              className="p-button-text"
+              type="button"
+            />
+            <Button
+              label={loading ? 'Loading...' : 'Next: Enter Billing Details'}
+              icon="pi pi-arrow-right"
+              iconPos="right"
+              type="submit"
+              disabled={loading}
+              className="p-button-warning"
+            />
+          </div>
+        </form>
         ) : (
           <form onSubmit={handleSubmit}>
             <div className="invoice-summary">
@@ -302,99 +377,144 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
               <div className="summary-item">
                 <strong>Period:</strong> {months.find(m => m.value === parseInt(formData.invoice_month))?.label} {formData.invoice_year}
               </div>
+              <div className="summary-item">
+                <strong>Offshore Manager:</strong> {managers.offshore_manager}
+              </div>
+              <div className="summary-item">
+                <strong>Onsite Manager:</strong> {managers.onsite_manager}
+              </div>
+            </div>
+
+            <div className="manager-note-banner">
+              <i className="pi pi-info-circle"></i>
+              <span>Managers are included in the employee list below and can be billed as resources. They are highlighted with a badge.</span>
             </div>
 
             <div className="employee-billing-section">
               <h3>Employee Billing Details</h3>
-              <div className="table-container">
-                <table className="billing-table">
-                  <thead>
-                    <tr>
-                      <th>Employee Name</th>
-                      <th>Role</th>
-                      <th>Role Type</th>
-                      <th>Billing Hours</th>
-                      <th>Leave Hours</th>
-                      <th>Cost/Hour ($)</th>
-                      <th>Total ($)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {employeeBilling.map((emp) => (
-                      <tr key={emp.employee_id}>
-                        <td>{emp.employee_name}</td>
-                        <td>{emp.employee_role || 'N/A'}</td>
-                        <td>{emp.role_type || 'N/A'}</td>
-                        <td>
-                          <input
-                            type="number"
-                            min="0"
-                            max="744"
-                            step="0.5"
-                            value={emp.billing_hours}
-                            onChange={(e) => handleBillingChange(emp.employee_id, 'billing_hours', e.target.value)}
-                            className="hours-input"
-                            placeholder="0"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            min="0"
-                            max="744"
-                            step="0.5"
-                            value={emp.leave_hours}
-                            onChange={(e) => handleBillingChange(emp.employee_id, 'leave_hours', e.target.value)}
-                            className="hours-input"
-                            placeholder="0"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={emp.cost_per_hour}
-                            onChange={(e) => handleBillingChange(emp.employee_id, 'cost_per_hour', e.target.value)}
-                            className="cost-input"
-                            placeholder="0.00"
-                          />
-                        </td>
-                        <td className="total-cell">
-                          <strong>${calculateTotal(emp)}</strong>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="grand-total-row">
-                      <td colSpan="6" style={{ textAlign: 'right', paddingRight: '1rem' }}>
-                        <strong>Grand Total:</strong>
-                      </td>
-                      <td className="total-cell">
-                        <strong>${calculateGrandTotal()}</strong>
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
+              <DataTable
+                value={employeeBilling}
+                className="p-datatable-gridlines"
+                stripedRows
+                responsiveLayout="scroll"
+                footer={
+                  <div style={{ textAlign: 'right', paddingRight: '1rem' }}>
+                    <strong>Grand Total: ${calculateGrandTotal()}</strong>
+                  </div>
+                }
+              >
+                <Column
+                  field="employee_name"
+                  header="Employee Name"
+                  body={employeeNameTemplate}
+                  style={{ minWidth: '200px' }}
+                />
+                <Column
+                  field="employee_role"
+                  header="Role"
+                  body={(rowData) => rowData.employee_role || 'N/A'}
+                  style={{ minWidth: '120px' }}
+                />
+                <Column
+                  field="role_type"
+                  header="Role Type"
+                  body={(rowData) => rowData.role_type || 'N/A'}
+                  style={{ minWidth: '120px' }}
+                />
+                <Column
+                  header="Billing Hours"
+                  body={(rowData) => (
+                    <InputNumber
+                      value={rowData.billing_hours}
+                      onValueChange={(e) => handleBillingChange(rowData.employee_id, 'billing_hours', e.value)}
+                      min={0}
+                      max={744}
+                      minFractionDigits={1}
+                      maxFractionDigits={1}
+                      placeholder="0"
+                      className="w-full"
+                    />
+                  )}
+                  style={{ minWidth: '140px' }}
+                />
+                <Column
+                  header="Leave Hours"
+                  body={(rowData) => (
+                    <InputNumber
+                      value={rowData.leave_hours}
+                      onValueChange={(e) => handleBillingChange(rowData.employee_id, 'leave_hours', e.value)}
+                      min={0}
+                      max={744}
+                      minFractionDigits={1}
+                      maxFractionDigits={1}
+                      placeholder="0"
+                      className="w-full"
+                    />
+                  )}
+                  style={{ minWidth: '140px' }}
+                />
+                <Column
+                  header="Balance Hours"
+                  body={(rowData) => (
+                    <strong style={{ color: '#0066cc' }}>
+                      {(parseFloat(rowData.billing_hours || 0) - parseFloat(rowData.leave_hours || 0)).toFixed(1)}
+                    </strong>
+                  )}
+                  style={{ minWidth: '120px', textAlign: 'center' }}
+                />
+                <Column
+                  header="Cost/Hour ($)"
+                  body={(rowData) => (
+                    <InputNumber
+                      value={rowData.cost_per_hour}
+                      onValueChange={(e) => handleBillingChange(rowData.employee_id, 'cost_per_hour', e.value)}
+                      min={0}
+                      minFractionDigits={2}
+                      maxFractionDigits={2}
+                      placeholder="0.00"
+                      className="w-full"
+                    />
+                  )}
+                  style={{ minWidth: '140px' }}
+                />
+                <Column
+                  header="Total ($)"
+                  body={(rowData) => (
+                    <strong style={{ color: '#28a745' }}>
+                      ${calculateTotal(rowData)}
+                    </strong>
+                  )}
+                  style={{ minWidth: '120px', textAlign: 'right' }}
+                />
+              </DataTable>
             </div>
 
             <div className="form-actions">
-              <button type="button" className="btn btn-secondary" onClick={() => setStep(1)}>
-                Back
-              </button>
-              <button type="button" className="btn btn-cancel" onClick={onClose}>
-                Cancel
-              </button>
-              <button type="submit" className="btn btn-primary" disabled={submitting}>
-                {submitting ? 'Generating...' : 'Generate Invoice'}
-              </button>
+              <Button
+                label="Back"
+                icon="pi pi-arrow-left"
+                onClick={() => setStep(1)}
+                className="p-button-text"
+                type="button"
+              />
+              <Button
+                label="Cancel"
+                icon="pi pi-times"
+                onClick={onClose}
+                className="p-button-text"
+                type="button"
+              />
+              <Button
+                label={submitting ? 'Generating...' : 'Generate Invoice'}
+                icon="pi pi-check"
+                type="submit"
+                disabled={submitting}
+                className="p-button-warning"
+              />
             </div>
           </form>
         )}
-      </div>
-    </div>
+      </Dialog>
   );
 };
 
