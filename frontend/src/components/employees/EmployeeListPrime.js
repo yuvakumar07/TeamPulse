@@ -13,11 +13,13 @@ import { getAllEmployees, deleteEmployee, getAllProjects, getAllTeams } from '..
 import { exportEmployeesToExcel } from '../../utils/exportToExcel';
 import PermissionGuard from '../auth/PermissionGuard';
 import ImportEmployeesDialog from './ImportEmployeesDialog';
+import authService from '../../services/authService';
 
 const EmployeeListPrime = ({ onViewAssets }) => {
   const navigate = useNavigate();
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
   const [globalFilter, setGlobalFilter] = useState('');
   const [roleTypeFilter, setRoleTypeFilter] = useState('All');
   const [projectFilter, setProjectFilter] = useState('All');
@@ -42,6 +44,12 @@ const EmployeeListPrime = ({ onViewAssets }) => {
     { label: 'DEV', value: 'DEV' },
     { label: 'QA', value: 'QA' }
   ];
+
+  // Get current user on component mount
+  useEffect(() => {
+    const user = authService.getCurrentUser();
+    setCurrentUser(user);
+  }, []);
 
   // Calculate table height based on window height
   useEffect(() => {
@@ -618,13 +626,15 @@ const EmployeeListPrime = ({ onViewAssets }) => {
           body={assetsBodyTemplate}
           style={{ minWidth: '200px' }}
         />
-        <Column
-          field="invoice_total_amount"
-          header="Invoice Total"
-          body={invoiceTotalBodyTemplate}
-          sortable
-          style={{ minWidth: '150px' }}
-        />
+        {currentUser?.role_name === 'super_admin' && (
+          <Column
+            field="invoice_total_amount"
+            header="Invoice Total"
+            body={invoiceTotalBodyTemplate}
+            sortable
+            style={{ minWidth: '150px' }}
+          />
+        )}
         <Column
           header="Actions"
           body={actionBodyTemplate}
