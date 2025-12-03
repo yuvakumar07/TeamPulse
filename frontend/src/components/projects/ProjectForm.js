@@ -119,61 +119,6 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
   };
 
   const updateTeam = (index, field, value) => {
-
-    // Check if trying to assign a team lead that's already assigned to another team globally
-    if ((field == 'offshore_team_lead_id' || field == 'onsite_team_lead_id') && value) {
-      const currentTeam = teams[index];
-      const currentTeamId = currentTeam.id; // Will be undefined for new teams
-
-      // Check against all teams in the database (excluding the current team being edited)
-      const isAlreadyAssignedGlobally = allTeamsGlobal.some((team) => {
-        // Skip the current team being edited (if it exists in the database)
-        if (currentTeamId && team.id == currentTeamId) return false;
-
-        if (field == 'offshore_team_lead_id') {
-          return team.offshore_team_lead_id == value;
-        } else if (field == 'onsite_team_lead_id') {
-          return team.onsite_team_lead_id == value;
-        }
-        return false;
-      });
-
-      // Also check against other teams in the current form (for newly added teams not yet saved)
-      const isAlreadyAssignedLocally = teams.some((team, idx) => {
-        if (idx == index) return false; // Skip current team
-
-        if (field == 'offshore_team_lead_id') {
-          return team.offshore_team_lead_id == value;
-        } else if (field == 'onsite_team_lead_id') {
-          return team.onsite_team_lead_id == value;
-        }
-        return false;
-      });
-
-      if (isAlreadyAssignedGlobally || isAlreadyAssignedLocally) {
-        const employeeName = employees.find(emp => emp.id === parseInt(value))?.name || 'This employee';
-        const leadType = field === 'offshore_team_lead_id' ? 'Offshore Team Lead' : 'Onsite Team Lead';
-
-        // Find which project the employee is assigned to
-        let assignedProject = '';
-        if (isAlreadyAssignedGlobally) {
-          const assignedTeam = allTeamsGlobal.find(team => {
-            if (field == 'offshore_team_lead_id') {
-              return team.offshore_team_lead_id == value;
-            } else {
-              return team.onsite_team_lead_id == value;
-            }
-          });
-          assignedProject = assignedTeam ? ` in project "${assignedTeam.project_team_name}"` : '';
-        } else {
-          assignedProject = ' in this project';
-        }
-
-        toast.error(`${employeeName} is already assigned as ${leadType}${assignedProject}. Each team lead can only be assigned to one team across all projects.`);
-        return; // Don't update
-      }
-    }
-
     const newTeams = [...teams];
     newTeams[index][field] = value;
     setTeams(newTeams);
@@ -372,31 +317,14 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                           <option value="">Select Offshore Team Lead</option>
                           {employees
                             .filter(emp => emp.work_location === 'Offsite' && emp.role_type === 'Team Lead')
-                            .map(emp => {
-                              const currentTeamId = team.id; // Will be undefined for new teams
-
-                              // Check if already assigned globally (excluding current team)
-                              const isAssignedGlobally = allTeamsGlobal.some((t) =>
-                                (!currentTeamId || t.id !== currentTeamId) && t.offshore_team_lead_id === emp.id
-                              );
-
-                              // Check if already assigned locally in the form (for new teams not yet saved)
-                              const isAssignedLocally = teams.some((t, idx) =>
-                                idx !== index && t.offshore_team_lead_id === emp.id.toString()
-                              );
-
-                              const isAssigned = isAssignedGlobally || isAssignedLocally;
-
-                              return (
-                                <option
-                                  key={emp.id}
-                                  value={emp.id}
-                                  disabled={isAssigned}
-                                >
-                                  {emp.name} ({emp.sso || 'N/A'}) {isAssigned ? '(Already Assigned)' : ''}
-                                </option>
-                              );
-                            })}
+                            .map(emp => (
+                              <option
+                                key={emp.id}
+                                value={emp.id}
+                              >
+                                {emp.name} ({emp.sso || 'N/A'})
+                              </option>
+                            ))}
                         </select>
                       </div>
 
@@ -409,31 +337,14 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                           <option value="">Select Onsite Team Lead</option>
                           {employees
                             .filter(emp => emp.work_location === 'Onsite' && emp.role_type === 'Team Lead')
-                            .map(emp => {
-                              const currentTeamId = team.id; // Will be undefined for new teams
-
-                              // Check if already assigned globally (excluding current team)
-                              const isAssignedGlobally = allTeamsGlobal.some((t) =>
-                                (!currentTeamId || t.id !== currentTeamId) && t.onsite_team_lead_id === emp.id
-                              );
-
-                              // Check if already assigned locally in the form (for new teams not yet saved)
-                              const isAssignedLocally = teams.some((t, idx) =>
-                                idx !== index && t.onsite_team_lead_id === emp.id.toString()
-                              );
-
-                              const isAssigned = isAssignedGlobally || isAssignedLocally;
-
-                              return (
-                                <option
-                                  key={emp.id}
-                                  value={emp.id}
-                                  disabled={isAssigned}
-                                >
-                                  {emp.name} ({emp.sso || 'N/A'}) {isAssigned ? '(Already Assigned)' : ''}
-                                </option>
-                              );
-                            })}
+                            .map(emp => (
+                              <option
+                                key={emp.id}
+                                value={emp.id}
+                              >
+                                {emp.name} ({emp.sso || 'N/A'})
+                              </option>
+                            ))}
                         </select>
                       </div>
                     </div>

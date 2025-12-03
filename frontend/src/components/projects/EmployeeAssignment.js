@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { getProjectById, getAllEmployees, assignEmployeesToTeam } from '../../services/api';
+import { getProjectById, getAllEmployees, assignEmployeesToTeam, removeEmployeeFromTeam } from '../../services/api';
 import './EmployeeAssignment.css';
 
 const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
@@ -46,7 +46,10 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
       const response = await getProjectById(project.id);
       const projectData = response.data.data;
 
+      console.log('Loaded project data:', projectData);
+
       const projectTeams = projectData.teams || [];
+      console.log('Project teams:', projectTeams);
 
       setTeams(projectTeams);
 
@@ -59,6 +62,11 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
       return projectTeams;
     } catch (err) {
       console.error('Error loading project data:', err);
+      console.error('Error details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status
+      });
       toast.error('Failed to load project details');
       return [];
     } finally {
@@ -78,24 +86,34 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
   };
 
   const loadTeamEmployees = (team = selectedTeam) => {
+    console.log('Loading team employees for team:', team?.agile_board_name);
+
     if (!team) {
+      console.log('No team selected, clearing employees');
       setSelectedEmployees([]);
       return;
     }
 
     if (!team.employees || team.employees.length === 0) {
+      console.log('Team has no employees');
       setSelectedEmployees([]);
       return;
     }
 
-    // Load existing employee assignments for the selected team
-    const assignments = team.employees.map(emp => ({
-      employee_id: emp.id,
-      employee_name: emp.name,
-      employee_sso: emp.sso,
-      employee_role: emp.role
-    }));
+    console.log('Team employees from backend:', team.employees);
 
+    // Load existing employee assignments for the selected team
+    const assignments = team.employees
+      .filter(emp => !emp.is_team_lead) // Exclude team leads as they're managed separately
+      .map(emp => ({
+        assignment_id: emp.assignment_id, // Track assignment ID for direct removal
+        employee_id: emp.id,
+        employee_name: emp.name,
+        employee_sso: emp.sso,
+        employee_role: emp.role
+      }));
+
+    console.log('Mapped employee assignments:', assignments);
     setSelectedEmployees(assignments);
   };
 
@@ -141,10 +159,52 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
     setShowDropdown(true);
   };
 
-  const handleRemoveEmployee = (employeeId) => {
-    setSelectedEmployees(prev =>
-      prev.filter(emp => emp.employee_id !== employeeId)
-    );
+  const handleRemoveEmployee = async (employeeId, assignmentId) => {
+    console.log('=== REMOVE EMPLOYEE CLICKED ===');
+    console.log('Employee ID:', employeeId);
+    console.log('Assignment ID:', assignmentId);
+    console.log('Selected Team:', selectedTeam?.agile_board_name);
+
+    // If assignment_id exists, this is an existing assignment - remove it from database
+    if (assignmentId) {
+      console.log('Assignment ID exists, calling API to remove from database...');
+      try {
+        console.log('Calling removeEmployeeFromTeam API with assignmentId:', assignmentId);
+        const response = await removeEmployeeFromTeam(assignmentId);
+        console.log('API Response:', response);
+
+        toast.success('Employee removed from team successfully!');
+
+        // Reload project data to reflect the changes
+        console.log('Reloading project data...');
+        const updatedTeams = await loadProjectData();
+
+        // If we still have the same team selected, reload its employees
+        if (selectedTeam && updatedTeams) {
+          const updatedTeam = updatedTeams.find(t => t.id === selectedTeam.id);
+          if (updatedTeam) {
+            console.log('Reloading team employees...');
+            setSelectedTeam(updatedTeam);
+            loadTeamEmployees(updatedTeam);
+          }
+        }
+      } catch (err) {
+        console.error('Error removing employee:', err);
+        console.error('Error details:', {
+          message: err.message,
+          response: err.response?.data,
+          status: err.response?.status
+        });
+        toast.error(err.response?.data?.message || 'Failed to remove employee');
+      }
+    } else {
+      // If no assignment_id, this is a newly added employee not yet saved - just remove from state
+      console.log('No assignment ID, removing from local state only');
+      setSelectedEmployees(prev =>
+        prev.filter(emp => emp.employee_id !== employeeId)
+      );
+    }
+    console.log('=== REMOVE EMPLOYEE COMPLETED ===');
   };
 
   const handleSubmit = async (e) => {
@@ -164,6 +224,12 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
         }))
       };
 
+      console.log('Submitting employee assignments:', {
+        teamId: selectedTeam.id,
+        teamName: selectedTeam.agile_board_name,
+        data: dataToSubmit
+      });
+
       await assignEmployeesToTeam(selectedTeam.id, dataToSubmit);
 
       toast.success(`Employee assignments updated for "${selectedTeam.agile_board_name}"!`);
@@ -176,10 +242,16 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
         const updatedTeam = updatedTeams.find(t => t.id === selectedTeam.id);
         if (updatedTeam) {
           setSelectedTeam(updatedTeam);
+          loadTeamEmployees(updatedTeam);
         }
       }
     } catch (err) {
       console.error('Error saving employee assignments:', err);
+      console.error('Error details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status
+      });
       toast.error(err.response?.data?.message || 'Failed to save employee assignments');
     } finally {
       setSubmitting(false);
@@ -192,8 +264,8 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
       return false;
     }
 
-    // Exclude Team Leads and Managers
-    if (emp.role_type === 'Team Lead' || emp.role_type === 'Manager') {
+    // Exclude Managers and Team Leads - they are assigned at project/team level
+    if (emp.role_type === 'Manager' || emp.role_type === 'Team Lead') {
       return false;
     }
 
@@ -334,6 +406,7 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
 
             {selectedEmployees.length > 0 && (
               <div className="selected-employees">
+                {console.log('Rendering employee table with employees:', selectedEmployees)}
                 <table className="employees-table">
                   <thead>
                     <tr>
@@ -344,22 +417,29 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedEmployees.map((emp) => (
-                      <tr key={emp.employee_id}>
-                        <td>{emp.employee_name}</td>
-                        <td>{emp.employee_sso || 'N/A'}</td>
-                        <td>{emp.employee_role || 'N/A'}</td>
-                        <td>
-                          <button
-                            type="button"
-                            className="btn-remove"
-                            onClick={() => handleRemoveEmployee(emp.employee_id)}
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {selectedEmployees.map((emp) => {
+                      console.log(`Rendering employee row: ${emp.employee_name}, assignment_id: ${emp.assignment_id}`);
+                      return (
+                        <tr key={emp.employee_id}>
+                          <td>{emp.employee_name}</td>
+                          <td>{emp.employee_sso || 'N/A'}</td>
+                          <td>{emp.employee_role || 'N/A'}</td>
+                          <td>
+                            <button
+                              type="button"
+                              className="btn-remove"
+                              onClick={() => {
+                                console.log(`Remove button clicked for employee_id: ${emp.employee_id}, assignment_id: ${emp.assignment_id}`);
+                                handleRemoveEmployee(emp.employee_id, emp.assignment_id);
+                              }}
+                              title={emp.assignment_id ? `Remove from database (ID: ${emp.assignment_id})` : 'Remove from list'}
+                            >
+                              Remove
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
