@@ -60,9 +60,10 @@ const getEmployeesForInvoice = async (req, res) => {
 
       // Get team employees, excluding managers
       const [teamEmployees] = await db.query(
-        `SELECT DISTINCT e.id, e.name, e.sso, e.role, e.role_type
+        `SELECT DISTINCT e.id, e.name, e.sso, e.role, e.role_type, pt.agile_board_name as team_name
          FROM project_employees pe
          JOIN employees e ON pe.employee_id = e.id
+         LEFT JOIN project_teams pt ON pe.team_id = pt.id
          WHERE pe.team_id = ?
          AND e.id NOT IN (
            SELECT offshore_manager_id FROM projects WHERE id = ? AND offshore_manager_id IS NOT NULL
@@ -82,7 +83,8 @@ const getEmployeesForInvoice = async (req, res) => {
           name: team[0].offshore_tl_name,
           sso: null,
           role: team[0].offshore_tl_role,
-          role_type: team[0].offshore_tl_role_type
+          role_type: team[0].offshore_tl_role_type,
+          team_name: team[0].agile_board_name
         });
       }
 
@@ -92,7 +94,8 @@ const getEmployeesForInvoice = async (req, res) => {
           name: team[0].onsite_tl_name,
           sso: null,
           role: team[0].onsite_tl_role,
-          role_type: team[0].onsite_tl_role_type
+          role_type: team[0].onsite_tl_role_type,
+          team_name: team[0].agile_board_name
         });
       }
     } else {
@@ -112,9 +115,10 @@ const getEmployeesForInvoice = async (req, res) => {
 
       // Get all employees assigned to the project, excluding managers
       const [projectEmployees] = await db.query(
-        `SELECT DISTINCT e.id, e.name, e.sso, e.role, e.role_type
+        `SELECT DISTINCT e.id, e.name, e.sso, e.role, e.role_type, pt.agile_board_name as team_name
          FROM project_employees pe
          JOIN employees e ON pe.employee_id = e.id
+         LEFT JOIN project_teams pt ON pe.team_id = pt.id
          WHERE pe.project_id = ?
          AND e.id NOT IN (
            SELECT offshore_manager_id FROM projects WHERE id = ? AND offshore_manager_id IS NOT NULL
@@ -133,13 +137,13 @@ const getEmployeesForInvoice = async (req, res) => {
       // Get all team leads for the project
       const [teamLeads] = await db.query(
         `SELECT DISTINCT
-                otl.id as id, otl.name as name, otl.role as role, otl.role_type as role_type
+                otl.id as id, otl.name as name, otl.role as role, otl.role_type as role_type, pt.agile_board_name as team_name
          FROM project_teams pt
          LEFT JOIN employees otl ON pt.offshore_team_lead_id = otl.id
          WHERE pt.project_id = ? AND otl.id IS NOT NULL
          UNION
          SELECT DISTINCT
-                ostl.id as id, ostl.name as name, ostl.role as role, ostl.role_type as role_type
+                ostl.id as id, ostl.name as name, ostl.role as role, ostl.role_type as role_type, pt.agile_board_name as team_name
          FROM project_teams pt
          LEFT JOIN employees ostl ON pt.onsite_team_lead_id = ostl.id
          WHERE pt.project_id = ? AND ostl.id IS NOT NULL`,
@@ -154,7 +158,8 @@ const getEmployeesForInvoice = async (req, res) => {
             name: tl.name,
             sso: null,
             role: tl.role,
-            role_type: tl.role_type
+            role_type: tl.role_type,
+            team_name: tl.team_name
           });
         }
       });

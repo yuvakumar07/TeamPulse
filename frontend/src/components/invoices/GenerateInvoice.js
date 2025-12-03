@@ -127,6 +127,7 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
         employee_name: emp.name,
         employee_role: emp.role,
         role_type: emp.role_type,
+        team_name: emp.team_name,
         billing_hours: 0,
         leave_hours: 0,
         cost_per_hour: 0,
@@ -139,6 +140,7 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
         employee_name: mgr.name,
         employee_role: mgr.role,
         role_type: mgr.role_type,
+        team_name: mgr.team_name,
         manager_type: mgr.manager_type === 'offshore' ? 'Offshore' : 'Onsite',
         billing_hours: 0,
         leave_hours: 0,
@@ -294,7 +296,7 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
   ];
 
   const teamOptions = [
-    { label: 'All Teams', value: '' },
+    { label: 'All Teams', value: 0 },
     ...teams.map(team => ({
       label: team.agile_board_name,
       value: team.id
@@ -440,6 +442,12 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
                   style={{ minWidth: '120px' }}
                 />
                 <Column
+                  field="team_name"
+                  header="Project Team"
+                  body={(rowData) => rowData.team_name || 'N/A'}
+                  style={{ minWidth: '150px' }}
+                />
+                <Column
                   header="Billing Hours"
                   body={(rowData) => (
                     <InputNumber
@@ -548,6 +556,12 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
                     header="Role Type"
                     body={(rowData) => rowData.role_type || 'N/A'}
                     style={{ minWidth: '120px' }}
+                  />
+                  <Column
+                    field="team_name"
+                    header="Project Team"
+                    body={(rowData) => rowData.team_name || 'N/A'}
+                    style={{ minWidth: '150px' }}
                   />
                   <Column
                     header="Billing Hours"
