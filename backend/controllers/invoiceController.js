@@ -440,6 +440,8 @@ const getAllInvoices = async (req, res) => {
     const status = req.query.status;
     const projectId = req.query.projectId;
     const teamId = req.query.teamId;
+    const month = req.query.month;
+    const year = req.query.year;
 
     let countQuery = 'SELECT COUNT(*) as total FROM invoices i';
     let dataQuery = `
@@ -471,6 +473,18 @@ const getAllInvoices = async (req, res) => {
       conditions.push('i.team_id = ?');
       queryParams.push(teamId);
       countParams.push(teamId);
+    }
+
+    if (month) {
+      conditions.push('i.invoice_month = ?');
+      queryParams.push(month);
+      countParams.push(month);
+    }
+
+    if (year) {
+      conditions.push('i.invoice_year = ?');
+      queryParams.push(year);
+      countParams.push(year);
     }
 
     if (conditions.length > 0) {

@@ -144,7 +144,7 @@ export const getEmployeesForInvoice = (projectId, teamId = null) => {
   }
   return api.get('/invoices/employees', { params });
 };
-export const getAllInvoices = (page = 1, limit = 10, status = null, projectId = null, teamId = null) => {
+export const getAllInvoices = (page = 1, limit = 10, status = null, projectId = null, teamId = null, month = null, year = null) => {
   const params = { page, limit };
   if (status && status !== 'All') {
     params.status = status;
@@ -154,6 +154,12 @@ export const getAllInvoices = (page = 1, limit = 10, status = null, projectId = 
   }
   if (teamId) {
     params.teamId = teamId;
+  }
+  if (month) {
+    params.month = month;
+  }
+  if (year) {
+    params.year = year;
   }
   return api.get('/invoices', { params });
 };

@@ -25,6 +25,8 @@ const InvoicesPage = () => {
   const [statusFilter, setStatusFilter] = useState('All');
   const [projectFilter, setProjectFilter] = useState('All');
   const [teamFilter, setTeamFilter] = useState('All');
+  const [monthFilter, setMonthFilter] = useState('All');
+  const [yearFilter, setYearFilter] = useState('All');
   const [projects, setProjects] = useState([]);
   const [teams, setTeams] = useState([]);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
@@ -40,7 +42,7 @@ const InvoicesPage = () => {
 
   useEffect(() => {
     fetchInvoices();
-  }, [pagination.page, statusFilter, projectFilter, teamFilter]);
+  }, [pagination.page, statusFilter, projectFilter, teamFilter, monthFilter, yearFilter]);
 
   useEffect(() => {
     if (projectFilter && projectFilter !== 'All') {
@@ -91,13 +93,21 @@ const InvoicesPage = () => {
       if (teamFilter !== 'All') {
         params.teamId = teamFilter;
       }
+      if (monthFilter !== 'All') {
+        params.month = monthFilter;
+      }
+      if (yearFilter !== 'All') {
+        params.year = yearFilter;
+      }
 
       const response = await getAllInvoices(
         params.page,
         params.limit,
         params.status || null,
         params.projectId || null,
-        params.teamId || null
+        params.teamId || null,
+        params.month || null,
+        params.year || null
       );
 
       setInvoices(response.data.data || []);
@@ -293,6 +303,32 @@ const InvoicesPage = () => {
     }))
   ];
 
+  const monthOptions = [
+    { label: 'All Months', value: 'All' },
+    { label: 'January', value: 1 },
+    { label: 'February', value: 2 },
+    { label: 'March', value: 3 },
+    { label: 'April', value: 4 },
+    { label: 'May', value: 5 },
+    { label: 'June', value: 6 },
+    { label: 'July', value: 7 },
+    { label: 'August', value: 8 },
+    { label: 'September', value: 9 },
+    { label: 'October', value: 10 },
+    { label: 'November', value: 11 },
+    { label: 'December', value: 12 }
+  ];
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
+  const yearOptions = [
+    { label: 'All Years', value: 'All' },
+    ...years.map(year => ({
+      label: year.toString(),
+      value: year
+    }))
+  ];
+
   return (
     <div className="invoices-page">
       <div className="page-header">
@@ -346,6 +382,32 @@ const InvoicesPage = () => {
             }}
             placeholder="Filter by Team"
             disabled={projectFilter === 'All' || teams.length === 0}
+          />
+        </div>
+
+        <div className="filter-group">
+          <label>Month:</label>
+          <Dropdown
+            value={monthFilter}
+            options={monthOptions}
+            onChange={(e) => {
+              setMonthFilter(e.value);
+              setPagination(prev => ({ ...prev, page: 1 }));
+            }}
+            placeholder="Filter by Month"
+          />
+        </div>
+
+        <div className="filter-group">
+          <label>Year:</label>
+          <Dropdown
+            value={yearFilter}
+            options={yearOptions}
+            onChange={(e) => {
+              setYearFilter(e.value);
+              setPagination(prev => ({ ...prev, page: 1 }));
+            }}
+            placeholder="Filter by Year"
           />
         </div>
       </div>
