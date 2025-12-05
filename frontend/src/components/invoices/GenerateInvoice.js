@@ -235,6 +235,36 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
     return (balanceHours * rate).toFixed(2);
   };
 
+  const calculateManagerTotal = (mgr) => {
+    const billingHours = parseFloat(mgr.billing_hours) || 0;
+    const leaveHours = parseFloat(mgr.leave_hours) || 0;
+    const balanceHours = billingHours - leaveHours;
+    const rate = parseFloat(mgr.cost_per_hour) || 0;
+    let total = balanceHours * rate;
+
+    // Add 0.11% bonus for Offshore Managers
+    if (mgr.manager_type === 'Offshore') {
+      total = total * 1.0011; // 0.11% bonus
+    }
+
+    return total.toFixed(2);
+  };
+
+  const calculateManagerBonus = (mgr) => {
+    const billingHours = parseFloat(mgr.billing_hours) || 0;
+    const leaveHours = parseFloat(mgr.leave_hours) || 0;
+    const balanceHours = billingHours - leaveHours;
+    const rate = parseFloat(mgr.cost_per_hour) || 0;
+    const baseTotal = balanceHours * rate;
+
+    // Calculate 0.11% bonus for Offshore Managers
+    if (mgr.manager_type === 'Offshore') {
+      return (baseTotal * 0.0011).toFixed(2);
+    }
+
+    return '0.00';
+  };
+
   const calculateEmployeeTotal = () => {
     return employeeBilling.reduce((sum, emp) => {
       const billingHours = parseFloat(emp.billing_hours) || 0;
@@ -245,18 +275,14 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
     }, 0);
   };
 
-  const calculateManagerTotal = () => {
+  const calculateManagerTotalSum = () => {
     return managerBilling.reduce((sum, mgr) => {
-      const billingHours = parseFloat(mgr.billing_hours) || 0;
-      const leaveHours = parseFloat(mgr.leave_hours) || 0;
-      const balanceHours = billingHours - leaveHours;
-      const rate = parseFloat(mgr.cost_per_hour) || 0;
-      return sum + (balanceHours * rate);
+      return sum + parseFloat(calculateManagerTotal(mgr));
     }, 0);
   };
 
   const calculateGrandTotal = () => {
-    return (calculateEmployeeTotal() + calculateManagerTotal()).toFixed(2);
+    return (calculateEmployeeTotal() + calculateManagerTotalSum()).toFixed(2);
   };
 
   const months = [
@@ -528,7 +554,7 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
                   responsiveLayout="scroll"
                   footer={
                     <div style={{ textAlign: 'right', paddingRight: '1rem' }}>
-                      <strong>Manager Subtotal: ${calculateManagerTotal().toFixed(2)}</strong>
+                      <strong>Manager Subtotal: ${calculateManagerTotalSum().toFixed(2)}</strong>
                     </div>
                   }
                 >
@@ -620,10 +646,19 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
                     style={{ minWidth: '140px' }}
                   />
                   <Column
+                    header="Bonus ($)"
+                    body={(rowData) => (
+                      <span style={{ color: rowData.manager_type === 'Offshore' ? '#FFC500' : '#999', fontWeight: '500' }}>
+                        {rowData.manager_type === 'Offshore' ? `+$${calculateManagerBonus(rowData)}` : '-'}
+                      </span>
+                    )}
+                    style={{ minWidth: '100px', textAlign: 'center' }}
+                  />
+                  <Column
                     header="Total ($)"
                     body={(rowData) => (
                       <strong style={{ color: '#28a745' }}>
-                        ${calculateTotal(rowData)}
+                        ${calculateManagerTotal(rowData)}
                       </strong>
                     )}
                     style={{ minWidth: '120px', textAlign: 'right' }}

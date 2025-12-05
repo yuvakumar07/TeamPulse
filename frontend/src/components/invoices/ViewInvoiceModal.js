@@ -127,6 +127,7 @@ const ViewInvoiceModal = ({ invoiceId, onClose }) => {
                   <tr>
                     <th>Employee</th>
                     <th>Role</th>
+                    <th>Type</th>
                     <th>Billing Hours</th>
                     <th>Leave Hours</th>
                     <th>Balance Hours</th>
@@ -140,6 +141,16 @@ const ViewInvoiceModal = ({ invoiceId, onClose }) => {
                       <tr key={index}>
                         <td>{item.employee_name}</td>
                         <td>{item.employee_role}</td>
+                        <td>
+                          {item.manager_type ? (
+                            <span className={`manager-type-badge ${item.manager_type.toLowerCase()}`}>
+                              {item.manager_type} Manager
+                              {item.manager_type === 'Offshore' && <span className="bonus-indicator" title="Includes 0.11% bonus"> ★</span>}
+                            </span>
+                          ) : (
+                            <span style={{ color: '#999' }}>Employee</span>
+                          )}
+                        </td>
                         <td className="hours-cell">{parseFloat(item.billing_hours).toFixed(1)}</td>
                         <td className="hours-cell">{parseFloat(item.leave_hours).toFixed(1)}</td>
                         <td className="balance-hours-cell">
@@ -151,7 +162,7 @@ const ViewInvoiceModal = ({ invoiceId, onClose }) => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="7" className="no-items">No items found</td>
+                      <td colSpan="8" className="no-items">No items found</td>
                     </tr>
                   )}
                 </tbody>

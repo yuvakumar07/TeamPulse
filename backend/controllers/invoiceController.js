@@ -331,10 +331,16 @@ const createInvoice = async (req, res) => {
       const leaveHours = parseFloat(emp.leave_hours) || 0;
       const balanceHours = billingHours - leaveHours;
       const costPerHour = parseFloat(emp.cost_per_hour) || 0;
+      let itemTotal = balanceHours * costPerHour;
+
+      // Add 0.11% bonus for Offshore Managers
+      if (emp.manager_type === 'Offshore') {
+        itemTotal = itemTotal * 1.0011;
+      }
 
       totalBillingHours += billingHours;
       totalLeaveHours += leaveHours;
-      totalAmount += balanceHours * costPerHour;
+      totalAmount += itemTotal;
     });
 
     // Create invoice
@@ -368,13 +374,18 @@ const createInvoice = async (req, res) => {
       const leaveHours = parseFloat(emp.leave_hours) || 0;
       const balanceHours = billingHours - leaveHours;
       const costPerHour = parseFloat(emp.cost_per_hour) || 0;
-      const itemTotal = balanceHours * costPerHour;
+      let itemTotal = balanceHours * costPerHour;
+
+      // Add 0.11% bonus for Offshore Managers
+      if (emp.manager_type === 'Offshore') {
+        itemTotal = itemTotal * 1.0011;
+      }
 
       await connection.query(
         `INSERT INTO invoice_items
          (invoice_id, employee_id, employee_name, employee_role, role_type,
-          billing_hours, leave_hours, cost_per_hour, total_amount, notes)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          billing_hours, leave_hours, cost_per_hour, total_amount, notes, manager_type)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           invoiceId,
           emp.employee_id,
@@ -385,7 +396,8 @@ const createInvoice = async (req, res) => {
           leaveHours,
           costPerHour,
           itemTotal,
-          emp.notes || null
+          emp.notes || null,
+          emp.manager_type || null
         ]
       );
     }
@@ -615,7 +627,12 @@ const updateInvoice = async (req, res) => {
         const leaveHours = parseFloat(item.leave_hours) || 0;
         const balanceHours = billingHours - leaveHours;
         const costPerHour = parseFloat(item.cost_per_hour) || 0;
-        const itemTotal = balanceHours * costPerHour;
+        let itemTotal = balanceHours * costPerHour;
+
+        // Add 0.11% bonus for Offshore Managers
+        if (item.manager_type === 'Offshore') {
+          itemTotal = itemTotal * 1.0011;
+        }
 
         totalBillingHours += billingHours;
         totalLeaveHours += leaveHours;
@@ -887,7 +904,13 @@ const generateInvoicePDF = async (req, res) => {
 
       doc.fillColor('#323232');
       const balanceHours = parseFloat(item.billing_hours) - parseFloat(item.leave_hours);
-      const itemTotal = balanceHours * parseFloat(item.cost_per_hour);
+      let itemTotal = balanceHours * parseFloat(item.cost_per_hour);
+
+      // Add 0.11% bonus for Offshore Managers
+      if (item.manager_type === 'Offshore') {
+        itemTotal = itemTotal * 1.0011;
+      }
+
       recalculatedGrandTotal += itemTotal;
 
       doc.text(item.employee_name, 60, yPosition + 5, { width: 100, continued: false });
