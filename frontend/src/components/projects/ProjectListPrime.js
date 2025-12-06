@@ -12,6 +12,7 @@ import { getAllProjects, deleteProject } from '../../services/api';
 import EmployeeDetailsModal from '../modals/EmployeeDetailsModal';
 import EmployeeAssignment from './EmployeeAssignment';
 import PermissionGuard from '../auth/PermissionGuard';
+import ImportProjectsTeamsDialog from './ImportProjectsTeamsDialog';
 
 const ProjectListPrime = ({ onEdit, onAdd }) => {
   const [projects, setProjects] = useState([]);
@@ -22,6 +23,7 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
   const [selectedProjectForEmployees, setSelectedProjectForEmployees] = useState(null);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [selectedProjectForAssignment, setSelectedProjectForAssignment] = useState(null);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [lazyState, setlazyState] = useState({
     first: 0,
     rows: 10,
@@ -185,6 +187,14 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
       <div className="flex gap-2">
         <PermissionGuard permission="projects.create">
           <Button
+            label="Import"
+            icon="pi pi-upload"
+            onClick={() => setShowImportDialog(true)}
+            className="p-button-outlined"
+          />
+        </PermissionGuard>
+        <PermissionGuard permission="projects.create">
+          <Button
             label="Add Project"
             icon="pi pi-plus"
             onClick={onAdd}
@@ -289,6 +299,15 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
           }}
         />
       )}
+
+      <ImportProjectsTeamsDialog
+        visible={showImportDialog}
+        onHide={() => setShowImportDialog(false)}
+        onSuccess={() => {
+          loadProjects();
+          setShowImportDialog(false);
+        }}
+      />
     </div>
   );
 };

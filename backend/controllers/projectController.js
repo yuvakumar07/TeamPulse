@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const xlsx = require('xlsx');
 
 // Get all projects with employee assignments
 const getAllProjects = async (req, res) => {
@@ -632,11 +633,186 @@ const deleteProject = async (req, res) => {
   }
 };
 
+// Import projects and teams from Excel/CSV
+const importProjectsAndTeams = async (req, res) => {
+  const connection = await db.getConnection();
+
+  try {
+    // Check if file was uploaded
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
+      });
+    }
+
+    // Read the uploaded file
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json(worksheet);
+
+    if (!data || data.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'File is empty or contains no valid data'
+      });
+    }
+
+    await connection.beginTransaction();
+
+    const results = {
+      total: data.length,
+      projectsImported: 0,
+      teamsImported: 0,
+      skipped: 0,
+      errors: []
+    };
+
+    const validStatuses = ['Planning', 'Active', 'On Hold', 'Completed', 'Cancelled'];
+    const projectCache = new Map(); // Cache to track created/existing projects
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      const rowNum = i + 2; // Excel row number (1-indexed + header row)
+
+      try {
+        // Validate required fields
+        if (!row.project_team_name || row.project_team_name.trim() === '') {
+          results.errors.push({
+            row: rowNum,
+            error: 'Missing project_team_name'
+          });
+          results.skipped++;
+          continue;
+        }
+
+        const projectTeamName = row.project_team_name.trim();
+        let projectId = null;
+
+        // Check if we've already processed this project in current import
+        if (projectCache.has(projectTeamName)) {
+          projectId = projectCache.get(projectTeamName);
+        } else {
+          // Validate project_status if provided
+          let projectStatus = 'Planning'; // Default status
+          if (row.project_status && row.project_status.trim() !== '') {
+            const status = row.project_status.trim();
+            if (validStatuses.includes(status)) {
+              projectStatus = status;
+            } else {
+              results.errors.push({
+                row: rowNum,
+                error: `Invalid project_status: ${status}. Valid values are: ${validStatuses.join(', ')}`
+              });
+              results.skipped++;
+              continue;
+            }
+          }
+
+          // Check if project already exists in database
+          const [existing] = await connection.query(
+            'SELECT id FROM projects WHERE project_team_name = ?',
+            [projectTeamName]
+          );
+
+          if (existing.length > 0) {
+            // Project exists, use its ID
+            projectId = existing[0].id;
+            projectCache.set(projectTeamName, projectId);
+          } else {
+            // Create new project
+            const [result] = await connection.query(
+              `INSERT INTO projects (project_team_name, project_status)
+               VALUES (?, ?)`,
+              [projectTeamName, projectStatus]
+            );
+            projectId = result.insertId;
+            projectCache.set(projectTeamName, projectId);
+            results.projectsImported++;
+          }
+        }
+
+        // Now handle team data if provided
+        if (row.agile_board_name && row.agile_board_name.trim() !== '') {
+          const agileBoardName = row.agile_board_name.trim();
+          const agileTeamJiraKey = row.agile_team_jira_key?.trim() || null;
+
+          // Check if this team already exists for this project
+          const [existingTeam] = await connection.query(
+            'SELECT id FROM project_teams WHERE project_id = ? AND agile_board_name = ?',
+            [projectId, agileBoardName]
+          );
+
+          if (existingTeam.length > 0) {
+            results.errors.push({
+              row: rowNum,
+              error: `Team "${agileBoardName}" already exists for project "${projectTeamName}"`
+            });
+            results.skipped++;
+            continue;
+          }
+
+          // Insert team
+          await connection.query(
+            `INSERT INTO project_teams (project_id, agile_board_name, agile_team_jira_key)
+             VALUES (?, ?, ?)`,
+            [projectId, agileBoardName, agileTeamJiraKey]
+          );
+
+          results.teamsImported++;
+        }
+      } catch (error) {
+        results.errors.push({
+          row: rowNum,
+          error: error.message
+        });
+        results.skipped++;
+      }
+    }
+
+    // Log the action if admin is authenticated
+    if (req.admin) {
+      await connection.query(
+        'INSERT INTO audit_logs (admin_id, action, entity_type, entity_id, description, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [
+          req.admin.id,
+          'IMPORT',
+          'projects',
+          null,
+          `Imported ${results.projectsImported} projects and ${results.teamsImported} teams from ${req.file.originalname}`,
+          req.ip || req.connection.remoteAddress,
+          req.headers['user-agent'] || 'Unknown'
+        ]
+      );
+    }
+
+    await connection.commit();
+
+    res.json({
+      success: true,
+      message: `Import completed. ${results.projectsImported} projects and ${results.teamsImported} teams imported, ${results.skipped} skipped.`,
+      results
+    });
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error importing projects and teams:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error importing projects and teams',
+      error: error.message
+    });
+  } finally {
+    connection.release();
+  }
+};
+
 module.exports = {
   getAllProjects,
   getProjectById,
   createProject,
   updateProject,
   assignEmployeesToProject,
-  deleteProject
+  deleteProject,
+  importProjectsAndTeams
 };
