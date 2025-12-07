@@ -49,7 +49,7 @@ const getAllEmployees = async (req, res) => {
     const sortOrder = req.query.sortOrder || 'DESC';
 
     // Whitelist of allowed sort fields to prevent SQL injection
-    const allowedSortFields = ['id', 'sso', 'name', 'role', 'role_type', 'phone', 'location', 'criticality', 'status', 'skills', 'attrition', 'created_at'];
+    const allowedSortFields = ['id', 'sso', 'name', 'role', 'role_type', 'phone', 'location', 'work_location', 'criticality', 'status', 'skills', 'attrition', 'created_at'];
     const validSortField = allowedSortFields.includes(sortField) ? sortField : 'created_at';
     const validSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
 
@@ -69,6 +69,10 @@ const getAllEmployees = async (req, res) => {
                ORDER BY p.project_team_name
                SEPARATOR '||'
              ) as allocated_projects,
+             GROUP_CONCAT(DISTINCT p.project_team_name ORDER BY p.project_team_name SEPARATOR ', ') as project_team_name,
+             GROUP_CONCAT(DISTINCT p.project_status ORDER BY p.project_team_name SEPARATOR ', ') as project_status,
+             GROUP_CONCAT(DISTINCT pt.agile_board_name ORDER BY p.project_team_name SEPARATOR ', ') as agile_board_name,
+             GROUP_CONCAT(DISTINCT pt.agile_team_jira_key ORDER BY p.project_team_name SEPARATOR ', ') as agile_team_jira_key,
              COUNT(DISTINCT a.id) as asset_count,
              GROUP_CONCAT(
                DISTINCT CONCAT(a.asset_tag, ':', a.asset_type, ':', a.status)
@@ -568,6 +572,8 @@ const deleteEmployee = async (req, res) => {
 
 // Import employees from Excel/CSV
 const importEmployees = async (req, res) => {
+  const connection = await db.getConnection();
+
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -601,14 +607,17 @@ const importEmployees = async (req, res) => {
       const rowNumber = i + 2; // Excel rows start at 1, and row 1 is header
 
       try {
+        await connection.beginTransaction();
+
         // Map Excel columns to database fields (case-insensitive)
         const employeeData = {
-          sso: row.SSO || row.sso || null,
+          sso: (row.SSO || row.sso) ? String(row.SSO || row.sso) : null,
           name: row.Name || row.name || null,
           role: row.Role || row.role || null,
-          role_type: row['Role Type'] || row['role type'] || row.role_type || row['ROLE TYPE'] || null,
+          role_type: row['Role Type'] || row['role type'] || row.role_type || row['ROLE TYPE'] || 'DEV',
           phone: row.Phone || row.phone || null,
           location: row.Location || row.location || null,
+          joining_date: row['Joining Date'] || row['joining date'] || row.joining_date || row['JOINING DATE'] || null,
           criticality: row.Criticality || row.criticality || 'Medium',
           status: row.Status || row.status || 'Active',
           skills: row.Skills || row.skills || null,
@@ -618,18 +627,27 @@ const importEmployees = async (req, res) => {
           asset_return_id: row['Asset Return ID'] || row['asset return id'] || row.asset_return_id || row['ASSET RETURN ID'] || null,
           comments: row.Comments || row.comments || null,
           attrition: row.Attrition || row.attrition || 'No',
-          visa_type: row['Visa Type'] || row['visa type'] || row.visa_type || row['VISA TYPE'] || 'None',
+          visa_type: row['Visa Type'] || row['visa type'] || row.visa_type || row['VISA TYPE'] || 'H1B',
           current_visa_start_date: row['Current Visa Start Date'] || row['current visa start date'] || row.current_visa_start_date || row['CURRENT VISA START DATE'] || null,
           current_visa_end_date: row['Current Visa End Date'] || row['current visa end date'] || row.current_visa_end_date || row['CURRENT VISA END DATE'] || null,
           i94_expiry_date: row['I94 Expiry Date'] || row['i94 expiry date'] || row.i94_expiry_date || row['I94 EXPIRY DATE'] || null,
           passport_number: row['Passport Number'] || row['passport number'] || row.passport_number || row['PASSPORT NUMBER'] || null,
           passport_expiry_date: row['Passport Expiry Date'] || row['passport expiry date'] || row.passport_expiry_date || row['PASSPORT EXPIRY DATE'] || null,
           sponsor_company: row['Sponsor Company'] || row['sponsor company'] || row.sponsor_company || row['SPONSOR COMPANY'] || null,
-          visa_notes: row['Visa Notes'] || row['visa notes'] || row.visa_notes || row['VISA NOTES'] || null
+          visa_notes: row['Visa Notes'] || row['visa notes'] || row.visa_notes || row['VISA NOTES'] || null,
+          work_location: row['Work Location'] || row['work location'] || row.work_location || row['WORK LOCATION'] || 'Offshore',
+          offshore_manager_id: row['Offshore Manager ID'] || row['offshore manager id'] || row.offshore_manager_id || row['OFFSHORE MANAGER ID'] || null,
+          onsite_manager_id: row['Onsite Manager ID'] || row['onsite manager id'] || row.onsite_manager_id || row['ONSITE MANAGER ID'] || null
         };
+
+        // Extract project and team information
+        const projectTeamName = row['Project Team Name'] || row['project team name'] || row.project_team_name || row['PROJECT TEAM NAME'] || null;
+        const agileBoardName = row['Agile Board Name'] || row['agile board name'] || row.agile_board_name || row['AGILE BOARD NAME'] || null;
+        const allocationPercentage = row['Allocation Percentage'] || row['allocation percentage'] || row.allocation_percentage || row['ALLOCATION PERCENTAGE'] || 0;
 
         // Validate required fields
         if (!employeeData.name) {
+          await connection.rollback();
           results.failed++;
           results.errors.push({
             row: rowNumber,
@@ -639,7 +657,7 @@ const importEmployees = async (req, res) => {
         }
 
         // Convert date strings to proper format if needed
-        const dateFields = ['last_working_day', 'current_visa_start_date', 'current_visa_end_date', 'i94_expiry_date', 'passport_expiry_date'];
+        const dateFields = ['joining_date', 'last_working_day', 'current_visa_start_date', 'current_visa_end_date', 'i94_expiry_date', 'passport_expiry_date'];
         dateFields.forEach(field => {
           if (employeeData[field]) {
             // Handle Excel date serial numbers
@@ -663,46 +681,163 @@ const importEmployees = async (req, res) => {
           employeeData.current_visa_end_date
         );
 
-        // Insert employee
-        await db.query(
-          `INSERT INTO employees
-          (sso, name, role, role_type, phone, location, criticality, status, skills, last_working_day,
-           possible_candidate, asset_id, asset_return_id, comments, attrition, visa_type, visa_status,
-           current_visa_start_date, current_visa_end_date, i94_expiry_date, passport_number,
-           passport_expiry_date, sponsor_company, visa_notes)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            employeeData.sso,
-            employeeData.name,
-            employeeData.role,
-            employeeData.role_type,
-            employeeData.phone,
-            employeeData.location,
-            employeeData.criticality,
-            employeeData.status,
-            employeeData.skills,
-            employeeData.last_working_day,
-            employeeData.possible_candidate,
-            employeeData.asset_id,
-            employeeData.asset_return_id,
-            employeeData.comments,
-            employeeData.attrition,
-            employeeData.visa_type,
-            computedVisaStatus,
-            employeeData.current_visa_start_date,
-            employeeData.current_visa_end_date,
-            employeeData.i94_expiry_date,
-            employeeData.passport_number,
-            employeeData.passport_expiry_date,
-            employeeData.sponsor_company,
-            employeeData.visa_notes
-          ]
-        );
+        // Check if employee already exists (by SSO or name if SSO not provided)
+        let employeeId;
+        let existingEmployee = null;
 
+        if (employeeData.sso) {
+          // Convert SSO to string (Excel might read it as number)
+          const ssoString = String(employeeData.sso).trim();
+          if (ssoString !== '') {
+            const [existing] = await connection.query(
+              'SELECT id FROM employees WHERE sso = ?',
+              [ssoString]
+            );
+            if (existing.length > 0) {
+              existingEmployee = existing[0];
+              employeeId = existingEmployee.id;
+            }
+          }
+        }
+
+        // If employee doesn't exist, create new employee
+        if (!existingEmployee) {
+          const [employeeResult] = await connection.query(
+            `INSERT INTO employees
+            (sso, name, role, role_type, phone, location, joining_date, criticality, status, skills, last_working_day,
+             possible_candidate, asset_id, asset_return_id, comments, attrition, visa_type, visa_status,
+             current_visa_start_date, current_visa_end_date, i94_expiry_date, passport_number,
+             passport_expiry_date, sponsor_company, visa_notes, work_location, offshore_manager_id, onsite_manager_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              employeeData.sso,
+              employeeData.name,
+              employeeData.role,
+              employeeData.role_type,
+              employeeData.phone,
+              employeeData.location,
+              employeeData.joining_date,
+              employeeData.criticality,
+              employeeData.status,
+              employeeData.skills,
+              employeeData.last_working_day,
+              employeeData.possible_candidate,
+              employeeData.asset_id,
+              employeeData.asset_return_id,
+              employeeData.comments,
+              employeeData.attrition,
+              employeeData.visa_type,
+              computedVisaStatus,
+              employeeData.current_visa_start_date,
+              employeeData.current_visa_end_date,
+              employeeData.i94_expiry_date,
+              employeeData.passport_number,
+              employeeData.passport_expiry_date,
+              employeeData.sponsor_company,
+              employeeData.visa_notes,
+              employeeData.work_location || 'Offshore',
+              employeeData.offshore_manager_id || null,
+              employeeData.onsite_manager_id || null
+            ]
+          );
+          employeeId = employeeResult.insertId;
+        }
+
+        // Handle project and team assignment based on Role Type
+        // Following "Assign Employees to Teams" modal logic:
+        // - Managers and Team Leads are NOT assigned via project_employees
+        // - They are managed at project/team level (offshore_manager_id, onsite_manager_id, team_lead_id)
+        // - Only DEV, QA, and other non-manager roles are assigned to project_employees
+        if (projectTeamName && projectTeamName.trim() !== '') {
+          // Look up project by project_team_name
+          const [projects] = await connection.query(
+            'SELECT id FROM projects WHERE project_team_name = ?',
+            [projectTeamName.trim()]
+          );
+
+          if (projects.length === 0) {
+            await connection.rollback();
+            results.failed++;
+            results.errors.push({
+              row: rowNumber,
+              name: employeeData.name,
+              error: `Project not found: ${projectTeamName}`
+            });
+            continue;
+          }
+
+          const projectId = projects[0].id;
+          let teamId = null;
+
+          // If agile board name is provided, look up the team
+          if (agileBoardName && agileBoardName.trim() !== '') {
+            const [teams] = await connection.query(
+              'SELECT id FROM project_teams WHERE project_id = ? AND agile_board_name = ?',
+              [projectId, agileBoardName.trim()]
+            );
+
+            if (teams.length === 0) {
+              await connection.rollback();
+              results.failed++;
+              results.errors.push({
+                row: rowNumber,
+                name: employeeData.name,
+                error: `Team not found: ${agileBoardName} in project ${projectTeamName}`
+              });
+              continue;
+            }
+
+            teamId = teams[0].id;
+          }
+
+          // Check role_type to determine assignment behavior
+          const roleType = employeeData.role_type?.trim();
+          const isManagerOrLead = roleType === 'Manager' || roleType === 'Team Lead';
+
+          if (isManagerOrLead) {
+            // Managers and Team Leads should NOT be assigned to project_employees
+            // They are assigned at project/team level:
+            // - Managers: offshore_manager_id, onsite_manager_id in projects table
+            // - Team Leads: offshore_team_lead_id, onsite_team_lead_id in project_teams table
+            console.log(`Skipping project_employees assignment for ${roleType}: ${employeeData.name} (ID: ${employeeId})`);
+            console.log(`Note: Assign ${roleType}s through Project/Team management UI`);
+          } else {
+            // Assign DEV, QA, and other non-manager roles to project_employees
+            // Delete any "allocated only" record (team_id = NULL) for this employee in this project
+            if (teamId) {
+              await connection.query(
+                `DELETE FROM project_employees
+                 WHERE project_id = ? AND employee_id = ? AND team_id IS NULL`,
+                [projectId, employeeId]
+              );
+            }
+
+            // Check if this assignment already exists
+            const [existingAssignment] = await connection.query(
+              'SELECT id FROM project_employees WHERE project_id = ? AND employee_id = ? AND (team_id = ? OR (team_id IS NULL AND ? IS NULL))',
+              [projectId, employeeId, teamId, teamId]
+            );
+
+            if (existingAssignment.length === 0) {
+              // Insert into project_employees (no allocation_percentage in insert)
+              await connection.query(
+                'INSERT INTO project_employees (project_id, team_id, employee_id) VALUES (?, ?, ?)',
+                [projectId, teamId, employeeId]
+              );
+            }
+          }
+        }
+
+        await connection.commit();
         results.success++;
       } catch (error) {
+        await connection.rollback();
         results.failed++;
         let errorMessage = error.message;
+
+        // Log detailed error for debugging
+        console.error(`Import error at row ${rowNumber}:`, error);
+        console.error('Row data:', row);
 
         // Handle duplicate SSO error
         if (error.code === 'ER_DUP_ENTRY') {
@@ -745,6 +880,8 @@ const importEmployees = async (req, res) => {
       message: 'Error importing employees',
       error: error.message
     });
+  } finally {
+    connection.release();
   }
 };
 

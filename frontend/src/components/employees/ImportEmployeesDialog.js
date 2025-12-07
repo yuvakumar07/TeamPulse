@@ -107,18 +107,59 @@ const ImportEmployeesDialog = ({ visible, onHide, onSuccess }) => {
         'SSO': 'SSO001',
         'Name': 'John Doe',
         'Role': 'Software Engineer',
+        'Project Team Name': '',
+        'Project Status': '',
+        'Agile Board Name': '',
+        'Agile Team JIRA Key': '',
+        'Offshore Manager ID': '',
+        'Onsite Manager ID': '',
         'Role Type': 'DEV',
+        'Joining Date': '2024-01-15',
+        'Work Location': 'Offshore',
         'Phone': '555-0101',
         'Location': 'New York',
         'Criticality': 'High',
         'Status': 'Active',
         'Skills': 'Java, Python, React',
+        'Attrition': 'No',
         'Last Working Day': '',
         'Possible Candidate': '',
         'Asset ID': 'ASSET001',
         'Asset Return ID': '',
         'Comments': 'Example employee',
+        'Visa Type': 'H1B',
+        'Current Visa Start Date': '2024-01-01',
+        'Current Visa End Date': '2026-12-31',
+        'I94 Expiry Date': '2026-12-31',
+        'Passport Number': 'A12345678',
+        'Passport Expiry Date': '2030-12-31',
+        'Sponsor Company': 'ABC Corp',
+        'Visa Notes': 'Active visa status'
+      },
+      {
+        'SSO': 'SSO002',
+        'Name': 'Jane Smith',
+        'Role': 'QA Engineer',
+        'Project Team Name': '',
+        'Project Status': '',
+        'Agile Board Name': '',
+        'Agile Team JIRA Key': '',
+        'Offshore Manager ID': '',
+        'Onsite Manager ID': '',
+        'Role Type': 'DEV',
+        'Joining Date': '2024-01-15',
+        'Work Location': 'Onsite',
+        'Phone': '555-0101',
+        'Location': 'New York',
+        'Criticality': 'High',
+        'Status': 'Active',
+        'Skills': 'Java, Python, React',
         'Attrition': 'No',
+        'Last Working Day': '',
+        'Possible Candidate': '',
+        'Asset ID': 'ASSET001',
+        'Asset Return ID': '',
+        'Comments': 'Example employee',
         'Visa Type': 'H1B',
         'Current Visa Start Date': '2024-01-01',
         'Current Visa End Date': '2026-12-31',
@@ -134,13 +175,39 @@ const ImportEmployeesDialog = ({ visible, onHide, onSuccess }) => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Employees');
 
-    // Set column widths
+    // Set column widths for all columns (matching new order)
     const colWidths = [
-      { wch: 10 }, { wch: 20 }, { wch: 25 }, { wch: 12 }, { wch: 15 },
-      { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 30 }, { wch: 18 },
-      { wch: 20 }, { wch: 12 }, { wch: 18 }, { wch: 30 }, { wch: 12 },
-      { wch: 15 }, { wch: 22 }, { wch: 20 }, { wch: 18 }, { wch: 18 },
-      { wch: 20 }, { wch: 20 }, { wch: 30 }
+      { wch: 10 },  // SSO
+      { wch: 20 },  // Name
+      { wch: 25 },  // Role
+      { wch: 20 },  // Project Team Name
+      { wch: 15 },  // Project Status (read-only, leave blank)
+      { wch: 20 },  // Agile Board Name
+      { wch: 20 },  // Agile Team JIRA Key (read-only, leave blank)
+      { wch: 20 },  // Offshore Manager ID
+      { wch: 20 },  // Onsite Manager ID
+      { wch: 12 },  // Role Type
+      { wch: 15 },  // Joining Date
+      { wch: 15 },  // Work Location
+      { wch: 15 },  // Phone
+      { wch: 15 },  // Location
+      { wch: 12 },  // Criticality
+      { wch: 10 },  // Status
+      { wch: 30 },  // Skills
+      { wch: 12 },  // Attrition
+      { wch: 18 },  // Last Working Day
+      { wch: 20 },  // Possible Candidate
+      { wch: 12 },  // Asset ID
+      { wch: 18 },  // Asset Return ID
+      { wch: 30 },  // Comments
+      { wch: 15 },  // Visa Type
+      { wch: 22 },  // Current Visa Start Date
+      { wch: 20 },  // Current Visa End Date
+      { wch: 18 },  // I94 Expiry Date
+      { wch: 18 },  // Passport Number
+      { wch: 20 },  // Passport Expiry Date
+      { wch: 20 },  // Sponsor Company
+      { wch: 30 }   // Visa Notes
     ];
     ws['!cols'] = colWidths;
 
@@ -220,7 +287,13 @@ const ImportEmployeesDialog = ({ visible, onHide, onSuccess }) => {
         <div className="mb-3">
           <Message
             severity="info"
-            text="Upload an Excel (.xlsx, .xls) or CSV file with employee data. The file should contain headers matching the employee fields."
+            text="Upload an Excel (.xlsx, .xls) or CSV file with employee data. To assign employees to projects/teams, enter the exact 'Project Team Name' and 'Agile Board Name' from your system. For multiple project assignments, use the same SSO in multiple rows with different projects."
+          />
+        </div>
+        <div className="mb-3">
+          <Message
+            severity="warn"
+            text="⚠️ Important: Project Team Name and Agile Board Name must exactly match existing projects/teams in your system. Leave blank if not assigning to a project. The same employee (SSO) can appear in multiple rows for multiple project assignments."
           />
         </div>
 
