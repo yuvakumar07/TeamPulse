@@ -64,6 +64,7 @@ export const getEmployeeById = (id) => api.get(`/employees/${id}`);
 export const createEmployee = (data) => api.post('/employees', data);
 export const updateEmployee = (id, data) => api.put(`/employees/${id}`, data);
 export const deleteEmployee = (id) => api.delete(`/employees/${id}`);
+export const getEmployeeRoles = () => api.get('/employees/roles/lookup');
 
 // Project API calls
 export const getAllProjects = (page = 1, limit = 10, status = null, sortField = 'created_at', sortOrder = 'DESC', search = null) => {
@@ -198,5 +199,13 @@ export const downloadInvoicePDF = async (id, invoiceNumber) => {
 
   return response;
 };
+
+// Lookup API calls
+export const getLookupsByCategory = (category) => api.get(`/lookups/category/${category}`);
+export const getAllLookupCategories = () => api.get('/lookups/categories');
+export const getAllLookups = () => api.get('/lookups/all');
+export const createLookup = (data) => api.post('/lookups', data);
+export const updateLookup = (id, data) => api.put(`/lookups/${id}`, data);
+export const deleteLookup = (id) => api.delete(`/lookups/${id}`);
 
 export default api;

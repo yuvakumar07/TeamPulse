@@ -7,7 +7,8 @@ const {
   createEmployee,
   updateEmployee,
   deleteEmployee,
-  importEmployees
+  importEmployees,
+  getEmployeeRoles
 } = require('../controllers/employeeController');
 const { verifyToken, checkAdminStatus } = require('../middleware/authMiddleware');
 const { requirePermission, attachPermissions } = require('../middleware/permissionsMiddleware');
@@ -41,6 +42,7 @@ router.use(attachPermissions);
 // Routes with permission checks
 // Note: Specific routes must come before parameterized routes (/:id)
 router.get('/', requirePermission('employees.view'), getAllEmployees);
+router.get('/roles/lookup', requirePermission('employees.view'), getEmployeeRoles);
 router.post('/import', upload.single('file'), requirePermission('employees.create'), importEmployees);
 router.post('/', requirePermission('employees.create'), createEmployee);
 router.get('/:id', requirePermission('employees.view'), getEmployeeById);

@@ -10,7 +10,7 @@ import { Button } from 'primereact/button';
 import { Divider } from 'primereact/divider';
 import { MultiSelect } from 'primereact/multiselect';
 import { classNames } from 'primereact/utils';
-import { createEmployee, updateEmployee, getAllProjects, getAllTeams, getProjectTeams } from '../../services/api';
+import { createEmployee, updateEmployee, getAllProjects, getAllTeams, getProjectTeams, getEmployeeRoles } from '../../services/api';
 
 const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -45,6 +45,7 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
   const [submitting, setSubmitting] = useState(false);
   const [projects, setProjects] = useState([]);
   const [allTeams, setAllTeams] = useState([]); // All teams across all projects
+  const [roles, setRoles] = useState([]); // Employee roles from lookup table
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [projectAllocations, setProjectAllocations] = useState({}); // { projectId: allocationPercentage }
   const [projectTeamSelections, setProjectTeamSelections] = useState({}); // { projectId: teamId }
@@ -79,6 +80,22 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
       }
     };
     fetchTeams();
+  }, []);
+
+  // Fetch all employee roles on component mount
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const response = await getEmployeeRoles();
+        if (response.data.success) {
+          setRoles(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching roles:', error);
+        toast.error('Failed to load roles');
+      }
+    };
+    fetchRoles();
   }, []);
 
   useEffect(() => {
@@ -361,10 +378,15 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
 
         <div className="field col-12 md:col-6">
           <label htmlFor="role">Role</label>
-          <InputText
+          <Dropdown
             id="role"
             value={formData.role}
-            onChange={(e) => handleChange('role', e.target.value)}
+            options={roles.map(r => ({ label: r.role_name, value: r.role_name }))}
+            onChange={(e) => handleChange('role', e.value)}
+            placeholder="Select a role"
+            filter
+            showClear
+            emptyMessage="No roles available"
           />
         </div>
 

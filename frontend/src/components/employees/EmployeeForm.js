@@ -9,7 +9,7 @@ import { Button } from 'primereact/button';
 import { TabView, TabPanel } from 'primereact/tabview';
 import { MultiSelect } from 'primereact/multiselect';
 import { classNames } from 'primereact/utils';
-import { createEmployee, updateEmployee, getAllProjects, getAllTeams } from '../../services/api';
+import { createEmployee, updateEmployee, getAllProjects, getAllTeams, getEmployeeRoles, getLookupsByCategory } from '../../services/api';
 import './EmployeeForm.css';
 
 const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
@@ -47,6 +47,13 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
   const [submitting, setSubmitting] = useState(false);
   const [projects, setProjects] = useState([]);
   const [allTeams, setAllTeams] = useState([]);
+  const [roles, setRoles] = useState([]); // Employee roles from lookup table
+  const [roleTypeOptions, setRoleTypeOptions] = useState([]);
+  const [attritionOptions, setAttritionOptions] = useState([]);
+  const [workLocationOptions, setWorkLocationOptions] = useState([]);
+  const [criticalityOptions, setCriticalityOptions] = useState([]);
+  const [statusOptions, setStatusOptions] = useState([]);
+  const [visaTypeOptions, setVisaTypeOptions] = useState([]);
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [projectAllocations, setProjectAllocations] = useState({}); // Deprecated - keeping for backward compatibility
   const [projectTeamSelections, setProjectTeamSelections] = useState({});
@@ -82,6 +89,87 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
       }
     };
     fetchTeams();
+  }, []);
+
+  // Fetch all employee roles on component mount
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const response = await getEmployeeRoles();
+        if (response.data.success) {
+          setRoles(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching roles:', error);
+        toast.error('Failed to load roles');
+      }
+    };
+    fetchRoles();
+  }, []);
+
+  // Fetch all lookup values on component mount
+  useEffect(() => {
+    const fetchLookups = async () => {
+      try {
+        // Fetch Role Type lookups
+        const roleTypeResponse = await getLookupsByCategory('Role Type');
+        if (roleTypeResponse.data.success) {
+          setRoleTypeOptions(roleTypeResponse.data.data.map(item => ({
+            label: item.type_name,
+            value: item.type_id
+          })));
+        }
+
+        // Fetch Attrition lookups
+        const attritionResponse = await getLookupsByCategory('Attrition');
+        if (attritionResponse.data.success) {
+          setAttritionOptions(attritionResponse.data.data.map(item => ({
+            label: item.type_name,
+            value: item.type_id
+          })));
+        }
+
+        // Fetch Work Location lookups
+        const workLocationResponse = await getLookupsByCategory('Work Location');
+        if (workLocationResponse.data.success) {
+          setWorkLocationOptions(workLocationResponse.data.data.map(item => ({
+            label: item.type_name,
+            value: item.type_id
+          })));
+        }
+
+        // Fetch Criticality lookups
+        const criticalityResponse = await getLookupsByCategory('Criticality');
+        if (criticalityResponse.data.success) {
+          setCriticalityOptions(criticalityResponse.data.data.map(item => ({
+            label: item.type_name,
+            value: item.type_id
+          })));
+        }
+
+        // Fetch Status lookups
+        const statusResponse = await getLookupsByCategory('Status');
+        if (statusResponse.data.success) {
+          setStatusOptions(statusResponse.data.data.map(item => ({
+            label: item.type_name,
+            value: item.type_id
+          })));
+        }
+
+        // Fetch Visa Type lookups
+        const visaTypeResponse = await getLookupsByCategory('Visa Type');
+        if (visaTypeResponse.data.success) {
+          setVisaTypeOptions(visaTypeResponse.data.data.map(item => ({
+            label: item.type_name,
+            value: item.type_id
+          })));
+        }
+      } catch (error) {
+        console.error('Error fetching lookups:', error);
+        toast.error('Failed to load lookup values');
+      }
+    };
+    fetchLookups();
   }, []);
 
   useEffect(() => {
@@ -397,48 +485,6 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
     }
   };
 
-  const roleTypeOptions = [
-    { label: 'DEV', value: 'DEV' },
-    { label: 'QA', value: 'QA' },
-    { label: 'Team Lead', value: 'Team Lead' },
-    { label: 'Manager', value: 'Manager' }
-  ];
-
-  const criticalityOptions = [
-    { label: 'Low', value: 'Low' },
-    { label: 'Medium', value: 'Medium' },
-    { label: 'High', value: 'High' },
-    { label: 'Critical', value: 'Critical' }
-  ];
-
-  const statusOptions = [
-    { label: 'Active', value: 'Active' },
-    { label: 'Inactive', value: 'Inactive' },
-    { label: 'On Leave', value: 'On Leave' },
-    { label: 'Terminated', value: 'Terminated' }
-  ];
-
-  const attritionOptions = [
-    { label: 'No', value: 'No' },
-    { label: 'Yes', value: 'Yes' },
-    { label: 'At Risk', value: 'At Risk' }
-  ];
-
-  const workLocationOptions = [
-    { label: 'Offshore', value: 'Offshore' },
-    { label: 'Onsite', value: 'Onsite' }
-  ];
-
-  const visaTypeOptions = [
-    { label: 'None', value: 'None' },
-    { label: 'H1B', value: 'H1B' },
-    { label: 'L1', value: 'L1' },
-    { label: 'L2', value: 'L2' },
-    { label: 'Green Card', value: 'Green Card' },
-    { label: 'US Citizen', value: 'US Citizen' },
-    { label: 'Other', value: 'Other' }
-  ];
-
   return (
     <div className="employee-form-container p-fluid">
       <form onSubmit={handleSubmit}>
@@ -476,10 +522,15 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
               </div>
               <div className="field col-12 md:col-3">
                 <label htmlFor="role">Role</label>
-                <InputText
+                <Dropdown
                   id="role"
                   value={formData.role}
-                  onChange={(e) => handleChange('role', e.target.value)}
+                  options={roles.map(r => ({ label: r.role_name, value: r.role_name }))}
+                  onChange={(e) => handleChange('role', e.value)}
+                  placeholder="Select a role"
+                  filter
+                  showClear
+                  emptyMessage="No roles available"
                 />
               </div>
 

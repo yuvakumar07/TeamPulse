@@ -885,11 +885,33 @@ const importEmployees = async (req, res) => {
   }
 };
 
+// Get all employee roles from lookup table
+const getEmployeeRoles = async (req, res) => {
+  try {
+    const [roles] = await db.query(
+      'SELECT id, role_name, description FROM employee_roles WHERE is_active = TRUE ORDER BY role_name ASC'
+    );
+
+    res.json({
+      success: true,
+      data: roles
+    });
+  } catch (error) {
+    console.error('Error fetching employee roles:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching employee roles',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getAllEmployees,
   getEmployeeById,
   createEmployee,
   updateEmployee,
   deleteEmployee,
-  importEmployees
+  importEmployees,
+  getEmployeeRoles
 };

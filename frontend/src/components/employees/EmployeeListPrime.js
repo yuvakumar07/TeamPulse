@@ -9,7 +9,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { Tag } from 'primereact/tag';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Toolbar } from 'primereact/toolbar';
-import { getAllEmployees, deleteEmployee, getAllProjects, getAllTeams } from '../../services/api';
+import { getAllEmployees, deleteEmployee, getAllProjects, getAllTeams, getLookupsByCategory } from '../../services/api';
 import { exportEmployeesToExcel } from '../../utils/exportToExcel';
 import PermissionGuard from '../auth/PermissionGuard';
 import ImportEmployeesDialog from './ImportEmployeesDialog';
@@ -27,6 +27,7 @@ const EmployeeListPrime = ({ onViewAssets }) => {
   const [projects, setProjects] = useState([]);
   const [allTeams, setAllTeams] = useState([]); // Store all teams
   const [teams, setTeams] = useState([]); // Filtered teams based on project
+  const [roleTypeOptions, setRoleTypeOptions] = useState([{ label: 'All', value: 'All' }]); // Role Type options from lookup
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [lazyState, setlazyState] = useState({
     first: 0,
@@ -39,16 +40,33 @@ const EmployeeListPrime = ({ onViewAssets }) => {
   const [tableHeight, setTableHeight] = useState('calc(100vh - 350px)');
   const dt = useRef(null);
 
-  const roleTypeOptions = [
-    { label: 'All', value: 'All' },
-    { label: 'DEV', value: 'DEV' },
-    { label: 'QA', value: 'QA' }
-  ];
-
   // Get current user on component mount
   useEffect(() => {
     const user = authService.getCurrentUser();
     setCurrentUser(user);
+  }, []);
+
+  // Fetch Role Type lookups on component mount
+  useEffect(() => {
+    const fetchRoleTypes = async () => {
+      try {
+        const response = await getLookupsByCategory('Role Type');
+        if (response.data.success) {
+          const options = [
+            { label: 'All', value: 'All' },
+            ...response.data.data.map(item => ({
+              label: item.type_name,
+              value: item.type_id
+            }))
+          ];
+          setRoleTypeOptions(options);
+        }
+      } catch (error) {
+        console.error('Error fetching role types:', error);
+        // Keep default 'All' option if fetch fails
+      }
+    };
+    fetchRoleTypes();
   }, []);
 
   // Calculate table height based on window height
