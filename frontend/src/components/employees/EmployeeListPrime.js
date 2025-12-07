@@ -305,11 +305,51 @@ const EmployeeListPrime = ({ onViewAssets }) => {
                 style={{ fontSize: '0.7rem', marginRight: '4px' }}
               />
             )}
-          
+
           </div>
         ))}
       </div>
     );
+  };
+
+  const projectTeamNameBodyTemplate = (rowData) => {
+    if (!rowData.project_team_name) {
+      return <span className="text-500">-</span>;
+    }
+    return <span>{rowData.project_team_name}</span>;
+  };
+
+  const projectStatusBodyTemplate = (rowData) => {
+    if (!rowData.project_status) {
+      return <span className="text-500">-</span>;
+    }
+
+    const getSeverity = (status) => {
+      switch (status) {
+        case 'Active': return 'success';
+        case 'Planning': return 'info';
+        case 'On Hold': return 'warning';
+        case 'Completed': return 'secondary';
+        case 'Cancelled': return 'danger';
+        default: return null;
+      }
+    };
+
+    return <Tag value={rowData.project_status} severity={getSeverity(rowData.project_status)} />;
+  };
+
+  const agileBoardNameBodyTemplate = (rowData) => {
+    if (!rowData.agile_board_name) {
+      return <span className="text-500">-</span>;
+    }
+    return <span>{rowData.agile_board_name}</span>;
+  };
+
+  const agileTeamJiraKeyBodyTemplate = (rowData) => {
+    if (!rowData.agile_team_jira_key) {
+      return <span className="text-500">-</span>;
+    }
+    return <span>{rowData.agile_team_jira_key}</span>;
   };
 
   const assetsBodyTemplate = (rowData) => {
@@ -561,6 +601,34 @@ const EmployeeListPrime = ({ onViewAssets }) => {
         <Column field="sso" header="SSO" sortable style={{ minWidth: '120px' }} />
         <Column field="name" header="Name" sortable style={{ minWidth: '150px' }} />
         <Column field="work_location" header="Work Location" sortable style={{ minWidth: '160px' }} />
+        <Column field="role" header="Role" sortable style={{ minWidth: '150px' }} />
+        <Column
+          field="project_team_name"
+          header="Project Team Name"
+          body={projectTeamNameBodyTemplate}
+          style={{ minWidth: '180px' }}
+        />
+        <Column
+          field="project_status"
+          header="Project Status"
+          body={projectStatusBodyTemplate}
+          style={{ minWidth: '150px' }}
+        />
+        <Column
+          field="agile_board_name"
+          header="Agile Board Name"
+          body={agileBoardNameBodyTemplate}
+          style={{ minWidth: '180px' }}
+        />
+        <Column
+          field="agile_team_jira_key"
+          header="Agile Team JIRA Key"
+          body={agileTeamJiraKeyBodyTemplate}
+          style={{ minWidth: '180px' }}
+        />
+        <Column field="offshore_manager_id" header="Offshore Manager ID" sortable style={{ minWidth: '180px' }} />
+        <Column field="onsite_manager_id" header="Onsite Manager ID" sortable style={{ minWidth: '180px' }} />
+        <Column field="role_type" header="Role Type" sortable style={{ minWidth: '120px' }} />
         <Column
           field="joining_date"
           header="Joining Date"
@@ -568,8 +636,6 @@ const EmployeeListPrime = ({ onViewAssets }) => {
           sortable
           style={{ minWidth: '140px' }}
         />
-        <Column field="role" header="Role" sortable style={{ minWidth: '150px' }} />
-        <Column field="role_type" header="Role Type" sortable style={{ minWidth: '120px' }} />
         <Column field="phone" header="Phone" sortable style={{ minWidth: '130px' }} />
         <Column field="location" header="Location" sortable style={{ minWidth: '130px' }} />
         <Column
@@ -613,12 +679,6 @@ const EmployeeListPrime = ({ onViewAssets }) => {
           body={visaStatusBodyTemplate}
           sortable
           style={{ minWidth: '200px' }}
-        />
-        <Column
-          field="allocated_projects"
-          header="Projects & Teams"
-          body={allocatedProjectsBodyTemplate}
-          style={{ minWidth: '300px' }}
         />
         <Column
           field="asset_count"

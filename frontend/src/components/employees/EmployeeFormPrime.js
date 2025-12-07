@@ -30,8 +30,8 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
     asset_return_id: '',
     comments: '',
     attrition: 'No',
-    offshore_manager_id: null,
-    onsite_manager_id: null,
+    offshore_manager_id: '',
+    onsite_manager_id: '',
     visa_type: 'None',
     current_visa_start_date: null,
     current_visa_end_date: null,
@@ -100,8 +100,8 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
         asset_return_id: employee.asset_return_id || '',
         comments: employee.comments || '',
         attrition: employee.attrition || 'No',
-        offshore_manager_id: employee.offshore_manager_id || null,
-        onsite_manager_id: employee.onsite_manager_id || null,
+        offshore_manager_id: employee.offshore_manager_id || '',
+        onsite_manager_id: employee.onsite_manager_id || '',
         visa_type: employee.visa_type || 'None',
         current_visa_start_date: employee.current_visa_start_date ? new Date(employee.current_visa_start_date) : null,
         current_visa_end_date: employee.current_visa_end_date ? new Date(employee.current_visa_end_date) : null,
@@ -157,8 +157,8 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
       asset_return_id: '',
       comments: '',
       attrition: 'No',
-      offshore_manager_id: null,
-      onsite_manager_id: null,
+      offshore_manager_id: '',
+      onsite_manager_id: '',
       visa_type: 'None',
       current_visa_start_date: null,
       current_visa_end_date: null,
@@ -501,21 +501,21 @@ const EmployeeFormPrime = ({ employee, visible, onHide, onSuccess }) => {
 
         <div className="field col-12 md:col-4">
           <label htmlFor="offshore_manager_id">Offshore Manager ID</label>
-          <InputNumber
+          <InputText
             id="offshore_manager_id"
-            value={formData.offshore_manager_id}
-            onValueChange={(e) => handleChange('offshore_manager_id', e.value)}
-            useGrouping={false}
+            value={formData.offshore_manager_id || ''}
+            onChange={(e) => handleChange('offshore_manager_id', e.target.value)}
+            placeholder="Enter offshore manager ID or name"
           />
         </div>
 
         <div className="field col-12 md:col-4">
           <label htmlFor="onsite_manager_id">Onsite Manager ID</label>
-          <InputNumber
+          <InputText
             id="onsite_manager_id"
-            value={formData.onsite_manager_id}
-            onValueChange={(e) => handleChange('onsite_manager_id', e.value)}
-            useGrouping={false}
+            value={formData.onsite_manager_id || ''}
+            onChange={(e) => handleChange('onsite_manager_id', e.target.value)}
+            placeholder="Enter onsite manager ID or name"
           />
         </div>
 

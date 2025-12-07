@@ -424,9 +424,9 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
     { label: 'At Risk', value: 'At Risk' }
   ];
 
-  const workLocationOptions = [   
-    { label: 'Offsite', value: 'Offsite' },
-     { label: 'Onsite', value: 'Onsite' }
+  const workLocationOptions = [
+    { label: 'Offshore', value: 'Offshore' },
+    { label: 'Onsite', value: 'Onsite' }
   ];
 
   const visaTypeOptions = [

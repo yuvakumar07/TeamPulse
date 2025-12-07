@@ -231,7 +231,7 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
               >
                 <option value="">Select Offshore Manager</option>
                 {employees
-                  .filter(emp => emp.work_location === 'Offsite' && emp.role_type === 'Manager')
+                  .filter(emp => emp.work_location === 'Offshore' && emp.role_type === 'Manager')
                   .map(emp => (
                     <option key={emp.id} value={emp.id}>
                       {emp.name} ({emp.sso || 'N/A'})
@@ -316,7 +316,7 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                         >
                           <option value="">Select Offshore Team Lead</option>
                           {employees
-                            .filter(emp => emp.work_location === 'Offsite' && emp.role_type === 'Team Lead')
+                            .filter(emp => emp.work_location === 'Offshore' && emp.role_type === 'Team Lead')
                             .map(emp => (
                               <option
                                 key={emp.id}
