@@ -9,7 +9,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { Tag } from 'primereact/tag';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Toolbar } from 'primereact/toolbar';
-import { getAllEmployees, deleteEmployee, getAllProjects, getAllTeams, getLookupsByCategory } from '../../services/api';
+import { getAllEmployees, deleteEmployee, getAllProjects, getAllTeams, getLookupsByCategory, getEmployeeRoles } from '../../services/api';
 import { exportEmployeesToExcel } from '../../utils/exportToExcel';
 import PermissionGuard from '../auth/PermissionGuard';
 import ImportEmployeesDialog from './ImportEmployeesDialog';
@@ -22,12 +22,14 @@ const EmployeeListPrime = ({ onViewAssets }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [globalFilter, setGlobalFilter] = useState('');
   const [roleTypeFilter, setRoleTypeFilter] = useState('All');
+  const [roleFilter, setRoleFilter] = useState('All');
   const [projectFilter, setProjectFilter] = useState('All');
   const [teamFilter, setTeamFilter] = useState('All');
   const [projects, setProjects] = useState([]);
   const [allTeams, setAllTeams] = useState([]); // Store all teams
   const [teams, setTeams] = useState([]); // Filtered teams based on project
   const [roleTypeOptions, setRoleTypeOptions] = useState([{ label: 'All', value: 'All' }]); // Role Type options from lookup
+  const [roleOptions, setRoleOptions] = useState([{ label: 'All', value: 'All' }]); // Role options from lookup
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [lazyState, setlazyState] = useState({
     first: 0,
@@ -51,7 +53,9 @@ const EmployeeListPrime = ({ onViewAssets }) => {
     const fetchRoleTypes = async () => {
       try {
         const response = await getLookupsByCategory('Role Type');
+
         if (response.data.success) {
+          console.log(response.data.data, 'response.data')
           const options = [
             { label: 'All', value: 'All' },
             ...response.data.data.map(item => ({
@@ -67,6 +71,29 @@ const EmployeeListPrime = ({ onViewAssets }) => {
       }
     };
     fetchRoleTypes();
+  }, []);
+
+  // Fetch Roles from employee_roles lookup table on component mount
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const response = await getEmployeeRoles();
+        if (response.data.success) {
+          const options = [
+            { label: 'All', value: 'All' },
+            ...response.data.data.map(role => ({
+              label: role.role_name,
+              value: role.role_name
+            }))
+          ];
+          setRoleOptions(options);
+        }
+      } catch (error) {
+        console.error('Error fetching roles:', error);
+        // Keep default 'All' option if fetch fails
+      }
+    };
+    fetchRoles();
   }, []);
 
   // Calculate table height based on window height
@@ -157,7 +184,7 @@ const EmployeeListPrime = ({ onViewAssets }) => {
 
   useEffect(() => {
     loadEmployees();
-  }, [lazyState, roleTypeFilter, projectFilter, teamFilter, globalFilter]);
+  }, [lazyState, roleTypeFilter, roleFilter, projectFilter, teamFilter, globalFilter]);
 
   const loadEmployees = async () => {
     try {
@@ -167,7 +194,7 @@ const EmployeeListPrime = ({ onViewAssets }) => {
       const sortField = lazyState.sortField || 'id';
       const sortOrder = lazyState.sortOrder === 1 ? 'ASC' : 'DESC';
 
-      const response = await getAllEmployees(page, limit, roleTypeFilter, sortField, sortOrder, globalFilter, projectFilter, teamFilter);
+      const response = await getAllEmployees(page, limit, roleTypeFilter, sortField, sortOrder, globalFilter, projectFilter, teamFilter, roleFilter);
       setEmployees(response.data.data);
       setTotalRecords(response.data.pagination.total);
     } catch (err) {
@@ -547,6 +574,22 @@ const EmployeeListPrime = ({ onViewAssets }) => {
           />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label htmlFor="roleFilter">Role:</label>
+          <Dropdown
+            id="roleFilter"
+            value={roleFilter}
+            onChange={(e) => {
+              setRoleFilter(e.value);
+              setlazyState({ ...lazyState, first: 0, page: 0 });
+            }}
+            options={roleOptions}
+            placeholder="Select Role"
+            style={{ width: '200px' }}
+            filter
+            showClear
+          />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <label htmlFor="projectFilter">Project:</label>
           <Dropdown
             id="projectFilter"
@@ -558,6 +601,8 @@ const EmployeeListPrime = ({ onViewAssets }) => {
             options={projects}
             placeholder="Select Project"
             style={{ width: '200px' }}
+            filter
+            showClear
           />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -572,6 +617,8 @@ const EmployeeListPrime = ({ onViewAssets }) => {
             options={teams}
             placeholder="Select Agile Board"
             style={{ width: '250px' }}
+            filter
+            showClear
           />
         </div>
       </div>

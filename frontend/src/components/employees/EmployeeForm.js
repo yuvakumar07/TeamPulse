@@ -116,7 +116,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
         if (roleTypeResponse.data.success) {
           setRoleTypeOptions(roleTypeResponse.data.data.map(item => ({
             label: item.type_name,
-            value: item.type_id
+            value: item.type_name
           })));
         }
 
@@ -125,16 +125,17 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
         if (attritionResponse.data.success) {
           setAttritionOptions(attritionResponse.data.data.map(item => ({
             label: item.type_name,
-            value: item.type_id
+            value: item.type_name
           })));
         }
 
         // Fetch Work Location lookups
         const workLocationResponse = await getLookupsByCategory('Work Location');
+        console.log(workLocationResponse.data.data, 'workLocationResponse.data')
         if (workLocationResponse.data.success) {
           setWorkLocationOptions(workLocationResponse.data.data.map(item => ({
             label: item.type_name,
-            value: item.type_id
+            value: item.type_name
           })));
         }
 
@@ -143,7 +144,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
         if (criticalityResponse.data.success) {
           setCriticalityOptions(criticalityResponse.data.data.map(item => ({
             label: item.type_name,
-            value: item.type_id
+            value: item.type_name
           })));
         }
 
@@ -152,7 +153,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
         if (statusResponse.data.success) {
           setStatusOptions(statusResponse.data.data.map(item => ({
             label: item.type_name,
-            value: item.type_id
+            value: item.type_name
           })));
         }
 
@@ -161,7 +162,7 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
         if (visaTypeResponse.data.success) {
           setVisaTypeOptions(visaTypeResponse.data.data.map(item => ({
             label: item.type_name,
-            value: item.type_id
+            value: item.type_name
           })));
         }
       } catch (error) {

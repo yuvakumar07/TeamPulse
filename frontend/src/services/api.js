@@ -38,10 +38,13 @@ api.interceptors.response.use(
 );
 
 // Employee API calls
-export const getAllEmployees = (page = 1, limit = 10, roleType = null, sortField = 'created_at', sortOrder = 'DESC', search = null, project = null, team = null) => {
+export const getAllEmployees = (page = 1, limit = 10, roleType = null, sortField = 'created_at', sortOrder = 'DESC', search = null, project = null, team = null, role = null) => {
   const params = { page, limit };
   if (roleType && roleType !== 'All') {
     params.role_type = roleType;
+  }
+  if (role && role !== 'All') {
+    params.role = role;
   }
   if (sortField) {
     params.sortField = sortField;

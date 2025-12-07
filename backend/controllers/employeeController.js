@@ -42,6 +42,7 @@ const getAllEmployees = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
     const roleType = req.query.role_type;
+    const role = req.query.role;
     const search = req.query.search;
     const project = req.query.project;
     const team = req.query.team;
@@ -98,12 +99,19 @@ const getAllEmployees = async (req, res) => {
       countParams.push(roleType);
     }
 
+    // Add role filter if provided
+    if (role && role !== 'All') {
+      conditions.push('e.role = ?');
+      queryParams.push(role);
+      countParams.push(role);
+    }
+
     // Add search filter if provided
     if (search && search.trim() !== '') {
       const searchPattern = `%${search.trim()}%`;
-      conditions.push('(e.sso LIKE ? OR e.name LIKE ? OR e.role LIKE ? OR e.phone LIKE ? OR e.location LIKE ? OR e.skills LIKE ?)');
-      queryParams.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
-      countParams.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+      conditions.push('(e.sso LIKE ? OR e.name LIKE ? OR e.role LIKE ? OR e.phone LIKE ? OR e.location LIKE ? OR e.skills LIKE ? OR CAST(e.offshore_manager_id AS CHAR) LIKE ? OR CAST(e.onsite_manager_id AS CHAR) LIKE ?)');
+      queryParams.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+      countParams.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
     }
 
     // Add project filter if provided
