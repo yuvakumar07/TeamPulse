@@ -671,6 +671,31 @@ const importProjectsAndTeams = async (req, res) => {
 
     const validStatuses = ['Planning', 'Active', 'On Hold', 'Completed', 'Cancelled'];
     const projectCache = new Map(); // Cache to track created/existing projects
+    const employeeCache = new Map(); // Cache to store employee lookups
+
+    // Helper function to find employee by name or SSO
+    const findEmployeeId = async (identifier) => {
+      if (!identifier || identifier.trim() === '') {
+        return null;
+      }
+
+      const key = identifier.trim().toLowerCase();
+
+      // Check cache first
+      if (employeeCache.has(key)) {
+        return employeeCache.get(key);
+      }
+
+      // Search by name or SSO
+      const [employees] = await connection.query(
+        'SELECT id FROM employees WHERE LOWER(name) = ? OR LOWER(sso) = ? LIMIT 1',
+        [key, key]
+      );
+
+      const employeeId = employees.length > 0 ? employees[0].id : null;
+      employeeCache.set(key, employeeId);
+      return employeeId;
+    };
 
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
@@ -710,6 +735,30 @@ const importProjectsAndTeams = async (req, res) => {
             }
           }
 
+          // Look up manager IDs
+          let offshoreManagerId = null;
+          let onsiteManagerId = null;
+
+          if (row.offshore_manager) {
+            offshoreManagerId = await findEmployeeId(row.offshore_manager);
+            if (!offshoreManagerId) {
+              results.errors.push({
+                row: rowNum,
+                warning: `Offshore manager "${row.offshore_manager}" not found in employees. Project will be created without offshore manager.`
+              });
+            }
+          }
+
+          if (row.onsite_manager) {
+            onsiteManagerId = await findEmployeeId(row.onsite_manager);
+            if (!onsiteManagerId) {
+              results.errors.push({
+                row: rowNum,
+                warning: `Onsite manager "${row.onsite_manager}" not found in employees. Project will be created without onsite manager.`
+              });
+            }
+          }
+
           // Check if project already exists in database
           const [existing] = await connection.query(
             'SELECT id FROM projects WHERE project_team_name = ?',
@@ -717,15 +766,23 @@ const importProjectsAndTeams = async (req, res) => {
           );
 
           if (existing.length > 0) {
-            // Project exists, use its ID
+            // Project exists, update it with manager information
             projectId = existing[0].id;
+            await connection.query(
+              `UPDATE projects
+               SET project_status = ?,
+                   offshore_manager_id = COALESCE(?, offshore_manager_id),
+                   onsite_manager_id = COALESCE(?, onsite_manager_id)
+               WHERE id = ?`,
+              [projectStatus, offshoreManagerId, onsiteManagerId, projectId]
+            );
             projectCache.set(projectTeamName, projectId);
           } else {
-            // Create new project
+            // Create new project with manager information
             const [result] = await connection.query(
-              `INSERT INTO projects (project_team_name, project_status)
-               VALUES (?, ?)`,
-              [projectTeamName, projectStatus]
+              `INSERT INTO projects (project_team_name, project_status, offshore_manager_id, onsite_manager_id)
+               VALUES (?, ?, ?, ?)`,
+              [projectTeamName, projectStatus, offshoreManagerId, onsiteManagerId]
             );
             projectId = result.insertId;
             projectCache.set(projectTeamName, projectId);

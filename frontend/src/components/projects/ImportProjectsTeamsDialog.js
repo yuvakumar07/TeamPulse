@@ -106,36 +106,48 @@ const ImportProjectsTeamsDialog = ({ visible, onHide, onSuccess }) => {
       {
         'project_team_name': 'Project Alpha',
         'project_status': 'Active',
+        'offshore_manager': 'John Doe',
+        'onsite_manager': 'Jane Smith',
         'agile_board_name': 'Alpha Team 1',
         'agile_team_jira_key': 'ALPHA1'
       },
       {
         'project_team_name': 'Project Alpha',
         'project_status': 'Active',
+        'offshore_manager': 'John Doe',
+        'onsite_manager': 'Jane Smith',
         'agile_board_name': 'Alpha Team 2',
         'agile_team_jira_key': 'ALPHA2'
       },
       {
         'project_team_name': 'Project Beta',
         'project_status': 'Planning',
+        'offshore_manager': 'Robert Johnson',
+        'onsite_manager': '',
         'agile_board_name': 'Beta Development Team',
         'agile_team_jira_key': 'BETA'
       },
       {
         'project_team_name': 'Project Gamma',
         'project_status': 'On Hold',
+        'offshore_manager': 'SSO005',
+        'onsite_manager': 'SSO006',
         'agile_board_name': 'Gamma Core Team',
         'agile_team_jira_key': 'GAMMA'
       },
       {
         'project_team_name': 'Project Delta',
         'project_status': 'Completed',
+        'offshore_manager': '',
+        'onsite_manager': '',
         'agile_board_name': 'Delta Team',
         'agile_team_jira_key': 'DELTA'
       },
       {
         'project_team_name': 'Project Epsilon',
         'project_status': 'Planning',
+        'offshore_manager': 'Michael Brown',
+        'onsite_manager': 'Sarah Davis',
         'agile_board_name': '',
         'agile_team_jira_key': ''
       }
@@ -149,6 +161,8 @@ const ImportProjectsTeamsDialog = ({ visible, onHide, onSuccess }) => {
     ws['!cols'] = [
       { wch: 25 }, // project_team_name
       { wch: 18 }, // project_status
+      { wch: 22 }, // offshore_manager
+      { wch: 22 }, // onsite_manager
       { wch: 30 }, // agile_board_name
       { wch: 22 }  // agile_team_jira_key
     ];
@@ -166,6 +180,8 @@ const ImportProjectsTeamsDialog = ({ visible, onHide, onSuccess }) => {
         <DataTable value={previewData} size="small" stripedRows scrollable scrollHeight="300px">
           <Column field="project_team_name" header="Project Team Name" style={{ minWidth: '200px' }} />
           <Column field="project_status" header="Project Status" style={{ minWidth: '150px' }} />
+          <Column field="offshore_manager" header="Offshore Manager" style={{ minWidth: '180px' }} />
+          <Column field="onsite_manager" header="Onsite Manager" style={{ minWidth: '180px' }} />
           <Column field="agile_board_name" header="Agile Board Name" style={{ minWidth: '200px' }} />
           <Column field="agile_team_jira_key" header="Jira Key" style={{ minWidth: '150px' }} />
         </DataTable>
@@ -240,16 +256,30 @@ const ImportProjectsTeamsDialog = ({ visible, onHide, onSuccess }) => {
         <div className="mb-3">
           <Message
             severity="warn"
-            text="Required: project_team_name. Optional: project_status (Planning, Active, On Hold, Completed, Cancelled), agile_board_name, agile_team_jira_key"
+            text="Required: project_team_name. Optional: project_status, offshore_manager, onsite_manager, agile_board_name, agile_team_jira_key"
           />
+        </div>
+
+        <div className="mb-3">
+          <h5>Field Specifications:</h5>
+          <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
+            <li><strong>project_team_name:</strong> Required - Name of the project</li>
+            <li><strong>project_status:</strong> Optional - Planning, Active, On Hold, Completed, or Cancelled (default: Planning)</li>
+            <li><strong>offshore_manager:</strong> Optional - Employee name or SSO of offshore manager</li>
+            <li><strong>onsite_manager:</strong> Optional - Employee name or SSO of onsite manager</li>
+            <li><strong>agile_board_name:</strong> Optional - Name of the agile board/team</li>
+            <li><strong>agile_team_jira_key:</strong> Optional - Jira project key</li>
+          </ul>
         </div>
 
         <div className="mb-3">
           <h5>Import Behavior:</h5>
           <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
             <li>Multiple rows with the same project_team_name will create one project with multiple teams</li>
+            <li>Manager names or SSOs will be looked up in the employee database</li>
+            <li>If a manager is not found, the project will be created without that manager assignment</li>
             <li>If agile_board_name is empty, only the project will be created</li>
-            <li>Existing projects will be reused when adding teams</li>
+            <li>Existing projects will be updated with manager information if provided</li>
             <li>Duplicate team names within the same project will be skipped</li>
           </ul>
         </div>
