@@ -14,9 +14,12 @@ const lookupData = {
   ],
   'Status': [
     { type_id: 'Active', type_name: 'Active', description: 'Currently active employee', sort_order: 1 },
-    { type_id: 'Inactive', type_name: 'Inactive', description: 'Inactive employee', sort_order: 2 },
+    { type_id: 'In-active', type_name: 'In-active', description: 'Inactive employee', sort_order: 2 },
     { type_id: 'On Leave', type_name: 'On Leave', description: 'On leave', sort_order: 3 },
-    { type_id: 'Terminated', type_name: 'Terminated', description: 'Employment terminated', sort_order: 4 }
+    { type_id: 'Terminated', type_name: 'Terminated', description: 'Employment terminated', sort_order: 4 },
+    { type_id: 'Resigned', type_name: 'Resigned', description: 'Resigned', sort_order: 5 },
+    { type_id: 'Active-R', type_name: 'Active-R', description: 'Active-R', sort_order: 6 },
+    { type_id: 'Exit', type_name: 'Exit', description: 'Exit', sort_order: 7 }
   ],
   'Visa Type': [
     { type_id: 'None', type_name: 'None', description: 'No visa required', sort_order: 1 },
