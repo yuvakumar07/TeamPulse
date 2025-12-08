@@ -98,7 +98,8 @@ const getProjectById = async (req, res) => {
               om.id as offshore_manager_emp_id, om.sso as offshore_manager_sso,
               om.name as offshore_manager_name, om.role as offshore_manager_role,
               osm.id as onsite_manager_emp_id, osm.sso as onsite_manager_sso,
-              osm.name as onsite_manager_name, osm.role as onsite_manager_role
+              osm.name as onsite_manager_name, osm.role as onsite_manager_role,
+              p.temp_offshore_manager_name, p.temp_onsite_manager_name
        FROM projects p
        LEFT JOIN employees om ON p.offshore_manager_id = om.id
        LEFT JOIN employees osm ON p.onsite_manager_id = osm.id
@@ -259,6 +260,7 @@ const getProjectById = async (req, res) => {
     const {
       offshore_manager_emp_id, offshore_manager_sso, offshore_manager_name, offshore_manager_role,
       onsite_manager_emp_id, onsite_manager_sso, onsite_manager_name, onsite_manager_role,
+      temp_offshore_manager_name, temp_onsite_manager_name,
       ...baseProjectData
     } = projectData;
 
@@ -275,7 +277,9 @@ const getProjectById = async (req, res) => {
         sso: onsite_manager_sso,
         name: onsite_manager_name,
         role: onsite_manager_role
-      } : null
+      } : null,
+      temp_offshore_manager_name: temp_offshore_manager_name || null,
+      temp_onsite_manager_name: temp_onsite_manager_name || null
     };
 
     res.json({
@@ -735,16 +739,20 @@ const importProjectsAndTeams = async (req, res) => {
             }
           }
 
-          // Look up manager IDs
+          // Look up manager IDs and prepare temporary names
           let offshoreManagerId = null;
           let onsiteManagerId = null;
+          let tempOffshoreManagerName = null;
+          let tempOnsiteManagerName = null;
 
           if (row.offshore_manager) {
             offshoreManagerId = await findEmployeeId(row.offshore_manager);
             if (!offshoreManagerId) {
+              // Store the name temporarily when employee not found
+              tempOffshoreManagerName = row.offshore_manager.trim();
               results.errors.push({
                 row: rowNum,
-                warning: `Offshore manager "${row.offshore_manager}" not found in employees. Project will be created without offshore manager.`
+                warning: `Offshore manager "${row.offshore_manager}" not found in employees. Name stored temporarily for later matching.`
               });
             }
           }
@@ -752,9 +760,11 @@ const importProjectsAndTeams = async (req, res) => {
           if (row.onsite_manager) {
             onsiteManagerId = await findEmployeeId(row.onsite_manager);
             if (!onsiteManagerId) {
+              // Store the name temporarily when employee not found
+              tempOnsiteManagerName = row.onsite_manager.trim();
               results.errors.push({
                 row: rowNum,
-                warning: `Onsite manager "${row.onsite_manager}" not found in employees. Project will be created without onsite manager.`
+                warning: `Onsite manager "${row.onsite_manager}" not found in employees. Name stored temporarily for later matching.`
               });
             }
           }
@@ -772,17 +782,19 @@ const importProjectsAndTeams = async (req, res) => {
               `UPDATE projects
                SET project_status = ?,
                    offshore_manager_id = COALESCE(?, offshore_manager_id),
-                   onsite_manager_id = COALESCE(?, onsite_manager_id)
+                   onsite_manager_id = COALESCE(?, onsite_manager_id),
+                   temp_offshore_manager_name = ?,
+                   temp_onsite_manager_name = ?
                WHERE id = ?`,
-              [projectStatus, offshoreManagerId, onsiteManagerId, projectId]
+              [projectStatus, offshoreManagerId, onsiteManagerId, tempOffshoreManagerName, tempOnsiteManagerName, projectId]
             );
             projectCache.set(projectTeamName, projectId);
           } else {
             // Create new project with manager information
             const [result] = await connection.query(
-              `INSERT INTO projects (project_team_name, project_status, offshore_manager_id, onsite_manager_id)
-               VALUES (?, ?, ?, ?)`,
-              [projectTeamName, projectStatus, offshoreManagerId, onsiteManagerId]
+              `INSERT INTO projects (project_team_name, project_status, offshore_manager_id, onsite_manager_id, temp_offshore_manager_name, temp_onsite_manager_name)
+               VALUES (?, ?, ?, ?, ?, ?)`,
+              [projectTeamName, projectStatus, offshoreManagerId, onsiteManagerId, tempOffshoreManagerName, tempOnsiteManagerName]
             );
             projectId = result.insertId;
             projectCache.set(projectTeamName, projectId);

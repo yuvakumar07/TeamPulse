@@ -277,7 +277,7 @@ const ImportProjectsTeamsDialog = ({ visible, onHide, onSuccess }) => {
           <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
             <li>Multiple rows with the same project_team_name will create one project with multiple teams</li>
             <li>Manager names or SSOs will be looked up in the employee database</li>
-            <li>If a manager is not found, the project will be created without that manager assignment</li>
+            <li><strong>New:</strong> If a manager is not found, the name will be stored temporarily for later matching. This prevents data loss and allows linking when the employee is added later</li>
             <li>If agile_board_name is empty, only the project will be created</li>
             <li>Existing projects will be updated with manager information if provided</li>
             <li>Duplicate team names within the same project will be skipped</li>
