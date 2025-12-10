@@ -45,8 +45,8 @@ const getEmployeesForInvoice = async (req, res) => {
                 ostl.role as onsite_tl_role, ostl.role_type as onsite_tl_role_type
          FROM project_teams pt
          JOIN projects p ON pt.project_id = p.id
-         LEFT JOIN employees otl ON pt.offshore_team_lead_id = otl.id
-         LEFT JOIN employees ostl ON pt.onsite_team_lead_id = ostl.id
+         LEFT JOIN employees otl ON pt.offshore_team_lead_id = otl.id AND otl.status = 'Active'
+         LEFT JOIN employees ostl ON pt.onsite_team_lead_id = ostl.id AND ostl.status = 'Active'
          WHERE pt.id = ? AND pt.project_id = ?`,
         [teamId, projectId]
       );
@@ -65,6 +65,7 @@ const getEmployeesForInvoice = async (req, res) => {
          JOIN employees e ON pe.employee_id = e.id
          LEFT JOIN project_teams pt ON pe.team_id = pt.id
          WHERE pe.team_id = ?
+         AND e.status = 'Active'
          AND e.id NOT IN (
            SELECT offshore_manager_id FROM projects WHERE id = ? AND offshore_manager_id IS NOT NULL
            UNION
@@ -107,8 +108,8 @@ const getEmployeesForInvoice = async (req, res) => {
                 osm.id as onsite_mgr_id, osm.name as onsite_mgr_name,
                 osm.role as onsite_mgr_role, osm.role_type as onsite_mgr_role_type
          FROM projects p
-         LEFT JOIN employees om ON p.offshore_manager_id = om.id
-         LEFT JOIN employees osm ON p.onsite_manager_id = osm.id
+         LEFT JOIN employees om ON p.offshore_manager_id = om.id AND om.status = 'Active'
+         LEFT JOIN employees osm ON p.onsite_manager_id = osm.id AND osm.status = 'Active'
          WHERE p.id = ?`,
         [projectId]
       );
@@ -120,6 +121,7 @@ const getEmployeesForInvoice = async (req, res) => {
          JOIN employees e ON pe.employee_id = e.id
          LEFT JOIN project_teams pt ON pe.team_id = pt.id
          WHERE pe.project_id = ?
+         AND e.status = 'Active'
          AND e.id NOT IN (
            SELECT offshore_manager_id FROM projects WHERE id = ? AND offshore_manager_id IS NOT NULL
            UNION
@@ -140,13 +142,13 @@ const getEmployeesForInvoice = async (req, res) => {
                 otl.id as id, otl.name as name, otl.role as role, otl.role_type as role_type, pt.agile_board_name as team_name
          FROM project_teams pt
          LEFT JOIN employees otl ON pt.offshore_team_lead_id = otl.id
-         WHERE pt.project_id = ? AND otl.id IS NOT NULL
+         WHERE pt.project_id = ? AND otl.id IS NOT NULL AND otl.status = 'Active'
          UNION
          SELECT DISTINCT
                 ostl.id as id, ostl.name as name, ostl.role as role, ostl.role_type as role_type, pt.agile_board_name as team_name
          FROM project_teams pt
          LEFT JOIN employees ostl ON pt.onsite_team_lead_id = ostl.id
-         WHERE pt.project_id = ? AND ostl.id IS NOT NULL`,
+         WHERE pt.project_id = ? AND ostl.id IS NOT NULL AND ostl.status = 'Active'`,
         [projectId, projectId]
       );
 
@@ -176,8 +178,8 @@ const getEmployeesForInvoice = async (req, res) => {
               osm.id as onsite_manager_id, osm.name as onsite_manager_name,
               osm.role as onsite_manager_role, osm.role_type as onsite_manager_role_type
        FROM projects p
-       LEFT JOIN employees om ON p.offshore_manager_id = om.id
-       LEFT JOIN employees osm ON p.onsite_manager_id = osm.id
+       LEFT JOIN employees om ON p.offshore_manager_id = om.id AND om.status = 'Active'
+       LEFT JOIN employees osm ON p.onsite_manager_id = osm.id AND osm.status = 'Active'
        WHERE p.id = ?`,
       [projectId]
     );
