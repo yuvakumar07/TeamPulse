@@ -288,13 +288,23 @@ const EmployeeListPrime = ({ onViewAssets }) => {
   };
 
   const visaTypeBodyTemplate = (rowData) => {
-    if (!rowData.visa_type || rowData.visa_type === 'None') {
-      return <Tag value="None" severity="secondary" />;
+    // Show visa type only for Onsite employees
+    if (rowData.role_type === 'Onsite' || rowData.work_location === 'Onsite') {
+      if (!rowData.visa_type || rowData.visa_type === 'None') {
+        return <Tag value="N/A" severity="secondary" />;
+      }
+      return <Tag value={rowData.visa_type} severity="info" />;
     }
-    return <Tag value={rowData.visa_type} severity="info" />;
+    // For non-Onsite employees, show N/A
+    return <Tag value="N/A" severity="secondary" />;
   };
 
   const visaStatusBodyTemplate = (rowData) => {
+    // Show visa status only for Onsite employees
+    if (rowData.role_type !== 'Onsite' && rowData.work_location !== 'Onsite') {
+      return <Tag value="N/A" severity="secondary" />;
+    }
+
     const getSeverity = (status) => {
       switch (status) {
         case 'Active': return 'success';

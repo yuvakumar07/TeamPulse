@@ -76,8 +76,8 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
 
   const fetchAvailableEmployees = async () => {
     try {
-      // Fetch all employees without pagination for selection
-      const response = await getAllEmployees(1, 1000, 'All');
+      // Fetch only active employees for selection
+      const response = await getAllEmployees(1, 1000, 'Active');
       setAvailableEmployees(response.data.data || []);
     } catch (err) {
       console.error('Error fetching employees:', err);
