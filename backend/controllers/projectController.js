@@ -26,6 +26,7 @@ const getAllProjects = async (req, res) => {
              (SELECT COUNT(*) FROM project_teams pt WHERE pt.project_id = p.id) as team_count
       FROM projects p
       LEFT JOIN project_employees pe ON p.id = pe.project_id
+      LEFT JOIN employees ee ON ee.id = pe.employee_id
     `;
     const queryParams = [];
     const countParams = [];
@@ -50,7 +51,7 @@ const getAllProjects = async (req, res) => {
     if (conditions.length > 0) {
       const whereClause = ' WHERE ' + conditions.join(' AND ');
       countQuery += whereClause;
-      dataQuery += whereClause;
+      dataQuery += whereClause + 'AND ee.status = "Active"';
     }
 
     // Group by project for aggregation
