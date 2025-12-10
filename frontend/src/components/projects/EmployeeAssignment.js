@@ -77,7 +77,7 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
   const fetchAvailableEmployees = async () => {
     try {
       // Fetch only active employees for selection
-      const response = await getAllEmployees(1, 1000, 'Active');
+      const response = await getAllEmployees(1, 1000, 'All', 'created_at', 'DESC', null, null, null, null, 'Active');
       setAvailableEmployees(response.data.data || []);
     } catch (err) {
       console.error('Error fetching employees:', err);
