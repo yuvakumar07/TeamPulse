@@ -25,11 +25,19 @@ const EmployeeListPrime = ({ onViewAssets }) => {
   const [roleFilter, setRoleFilter] = useState('All');
   const [projectFilter, setProjectFilter] = useState('All');
   const [teamFilter, setTeamFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('All');
   const [projects, setProjects] = useState([]);
   const [allTeams, setAllTeams] = useState([]); // Store all teams
   const [teams, setTeams] = useState([]); // Filtered teams based on project
   const [roleTypeOptions, setRoleTypeOptions] = useState([{ label: 'All', value: 'All' }]); // Role Type options from lookup
   const [roleOptions, setRoleOptions] = useState([{ label: 'All', value: 'All' }]); // Role options from lookup
+  const [statusOptions] = useState([
+    { label: 'All', value: 'All' },
+    { label: 'Active', value: 'Active' },
+    { label: 'Inactive', value: 'Inactive' },
+    { label: 'On Leave', value: 'On Leave' },
+    { label: 'Terminated', value: 'Terminated' }
+  ]);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [lazyState, setlazyState] = useState({
     first: 0,
@@ -184,7 +192,7 @@ const EmployeeListPrime = ({ onViewAssets }) => {
 
   useEffect(() => {
     loadEmployees();
-  }, [lazyState, roleTypeFilter, roleFilter, projectFilter, teamFilter, globalFilter]);
+  }, [lazyState, roleTypeFilter, roleFilter, projectFilter, teamFilter, statusFilter, globalFilter]);
 
   const loadEmployees = async () => {
     try {
@@ -194,7 +202,7 @@ const EmployeeListPrime = ({ onViewAssets }) => {
       const sortField = lazyState.sortField || 'id';
       const sortOrder = lazyState.sortOrder === 1 ? 'ASC' : 'DESC';
 
-      const response = await getAllEmployees(page, limit, roleTypeFilter, sortField, sortOrder, globalFilter, projectFilter, teamFilter, roleFilter);
+      const response = await getAllEmployees(page, limit, roleTypeFilter, sortField, sortOrder, globalFilter, projectFilter, teamFilter, roleFilter, statusFilter);
       setEmployees(response.data.data);
       setTotalRecords(response.data.pagination.total);
     } catch (err) {
@@ -629,6 +637,20 @@ const EmployeeListPrime = ({ onViewAssets }) => {
             style={{ width: '250px' }}
             filter
             showClear
+          />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label htmlFor="statusFilter">Status:</label>
+          <Dropdown
+            id="statusFilter"
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.value);
+              setlazyState({ ...lazyState, first: 0, page: 0 });
+            }}
+            options={statusOptions}
+            placeholder="Select Status"
+            style={{ width: '150px' }}
           />
         </div>
       </div>

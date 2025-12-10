@@ -46,6 +46,7 @@ const getAllEmployees = async (req, res) => {
     const search = req.query.search;
     const project = req.query.project;
     const team = req.query.team;
+    const status = req.query.status;
     const sortField = req.query.sortField || 'created_at';
     const sortOrder = req.query.sortOrder || 'DESC';
 
@@ -126,6 +127,13 @@ const getAllEmployees = async (req, res) => {
       conditions.push('pt.agile_board_name = ?');
       queryParams.push(team.trim());
       countParams.push(team.trim());
+    }
+
+    // Add status filter if provided
+    if (status && status !== 'All') {
+      conditions.push('e.status = ?');
+      queryParams.push(status);
+      countParams.push(status);
     }
 
     // Apply WHERE conditions
