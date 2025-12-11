@@ -202,14 +202,20 @@ const getEmployeeById = async (req, res) => {
     const employee = employees[0];
     employee.visa_status = calculateVisaStatus(employee.visa_type, employee.current_visa_start_date, employee.current_visa_end_date);
 
-    // Fetch employee's project and team assignments
+    // Fetch employee's project and team assignments with manager information
     const [projectAssignments] = await db.query(
       `SELECT pe.project_id, pe.team_id,
               p.project_team_name,
-              pt.agile_board_name
+              pt.agile_board_name,
+              om.id as offshore_manager_id,
+              om.name as offshore_manager_name,
+              osm.id as onsite_manager_id,
+              osm.name as onsite_manager_name
        FROM project_employees pe
        JOIN projects p ON pe.project_id = p.id
        LEFT JOIN project_teams pt ON pe.team_id = pt.id
+       LEFT JOIN employees om ON p.offshore_manager_id = om.id
+       LEFT JOIN employees osm ON p.onsite_manager_id = osm.id
        WHERE pe.employee_id = ?
        ORDER BY p.project_team_name, pt.agile_board_name`,
       [id]

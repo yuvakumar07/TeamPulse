@@ -32,8 +32,6 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
     attrition: 'No',
     notice_period_days: null,
     work_location: 'Onsite',
-    offshore_manager_id: null,
-    onsite_manager_id: null,
     visa_type: 'None',
     current_visa_start_date: null,
     current_visa_end_date: null,
@@ -194,8 +192,6 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
         attrition: employee.attrition || 'No',
         notice_period_days: employee.notice_period_days || null,
         work_location: employee.work_location || 'Onsite',
-        offshore_manager_id: employee.offshore_manager_id || null,
-        onsite_manager_id: employee.onsite_manager_id || null,
         visa_type: employee.visa_type || 'None',
         current_visa_start_date: employee.current_visa_start_date ? new Date(employee.current_visa_start_date) : null,
         current_visa_end_date: employee.current_visa_end_date ? new Date(employee.current_visa_end_date) : null,
@@ -644,30 +640,6 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 />
               </div>
 
-              {(formData.role_type === 'QA' || formData.role_type === 'DEV' || formData.role_type === 'Team Lead') && (
-                <>
-                  <div className="field col-12 md:col-3">
-                    <label htmlFor="offshore_manager_id">Offshore Manager ID</label>
-                    <InputNumber
-                      id="offshore_manager_id"
-                      value={formData.offshore_manager_id}
-                      onValueChange={(e) => handleChange('offshore_manager_id', e.value)}
-                      useGrouping={false}
-                    />
-                  </div>
-
-                  <div className="field col-12 md:col-3">
-                    <label htmlFor="onsite_manager_id">Onsite Manager ID</label>
-                    <InputNumber
-                      id="onsite_manager_id"
-                      value={formData.onsite_manager_id}
-                      onValueChange={(e) => handleChange('onsite_manager_id', e.value)}
-                      useGrouping={false}
-                    />
-                  </div>
-                </>
-              )}
-
               <div className="field col-12 md:col-3">
                 <label htmlFor="asset_id">Asset ID</label>
                 <InputText
@@ -719,6 +691,8 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                           if (!projectGroups[assignment.project_id]) {
                             projectGroups[assignment.project_id] = {
                               project_name: assignment.project_team_name,
+                              offshore_manager_name: assignment.offshore_manager_name,
+                              onsite_manager_name: assignment.onsite_manager_name,
                               teams: []
                             };
                           }
@@ -734,6 +708,22 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                               <div style={{ fontWeight: '600', color: '#323232', marginBottom: '0.5rem' }}>
                                 {projectGroup.project_name}
                               </div>
+                              {/* Display managers */}
+                              <div style={{ fontSize: '0.85rem', color: '#495057', marginLeft: '1rem', marginBottom: '0.5rem' }}>
+                                {projectGroup.offshore_manager_name && (
+                                  <div style={{ marginBottom: '0.25rem' }}>
+                                    <i className="pi pi-user mr-2" style={{ fontSize: '0.75rem', color: '#FFC500' }}></i>
+                                    <strong>Offshore Manager:</strong> {projectGroup.offshore_manager_name}
+                                  </div>
+                                )}
+                                {projectGroup.onsite_manager_name && (
+                                  <div style={{ marginBottom: '0.25rem' }}>
+                                    <i className="pi pi-user mr-2" style={{ fontSize: '0.75rem', color: '#FFC500' }}></i>
+                                    <strong>Onsite Manager:</strong> {projectGroup.onsite_manager_name}
+                                  </div>
+                                )}
+                              </div>
+                              {/* Display teams */}
                               {projectGroup.teams.map((team, teamIdx) => (
                                 <div key={teamIdx} style={{ fontSize: '0.9rem', color: '#6c757d', marginLeft: '1rem', marginBottom: '0.25rem' }}>
                                   <i className="pi pi-users mr-2" style={{ fontSize: '0.8rem' }}></i>
