@@ -349,9 +349,8 @@ const createInvoice = async (req, res) => {
     const [invoiceResult] = await connection.query(
       `INSERT INTO invoices
        (invoice_number, project_id, team_id, invoice_month, invoice_year,
-        total_billing_hours, total_leave_hours, total_amount, notes, created_by,
-        offshore_manager, onsite_manager)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        total_billing_hours, total_leave_hours, total_amount, notes, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         invoiceNumber,
         project_id,
@@ -362,9 +361,7 @@ const createInvoice = async (req, res) => {
         totalLeaveHours,
         totalAmount,
         notes || null,
-        req.admin?.id || null,
-        offshore_manager || null,
-        onsite_manager || null
+        req.admin?.id || null
       ]
     );
 
