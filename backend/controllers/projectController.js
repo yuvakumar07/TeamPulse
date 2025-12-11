@@ -21,7 +21,7 @@ const getAllProjects = async (req, res) => {
     let countQuery = 'SELECT COUNT(*) as total FROM projects p';
     let dataQuery = `
       SELECT p.*,
-             COUNT(DISTINCT pe.employee_id) as employee_count,
+             COUNT(DISTINCT CASE WHEN ee.status = 'Active' THEN pe.employee_id END) as employee_count,
              0 as total_allocation,
              (SELECT COUNT(*) FROM project_teams pt WHERE pt.project_id = p.id) as team_count
       FROM projects p
@@ -51,7 +51,7 @@ const getAllProjects = async (req, res) => {
     if (conditions.length > 0) {
       const whereClause = ' WHERE ' + conditions.join(' AND ');
       countQuery += whereClause;
-      dataQuery += whereClause + 'AND ee.status = "Active"';
+      dataQuery += whereClause;
     }
 
     // Group by project for aggregation
@@ -133,7 +133,7 @@ const getProjectById = async (req, res) => {
     // Get employees grouped by teams
     const teamsWithEmployees = [];
     for (const team of teams) {
-      // Get regular team employees
+      // Get regular team employees (only active employees)
       const [employees] = await db.query(
         `SELECT pe.id as assignment_id, pe.team_id,
                 e.id, e.sso, e.name, e.role, e.role_type, e.location,
@@ -142,7 +142,7 @@ const getProjectById = async (req, res) => {
                 NULL as team_lead_type
          FROM project_employees pe
          JOIN employees e ON pe.employee_id = e.id
-         WHERE pe.team_id = ?
+         WHERE pe.team_id = ? AND e.status = 'Active'
          ORDER BY e.name`,
         [team.id]
       );
@@ -236,22 +236,23 @@ const getProjectById = async (req, res) => {
       });
     }
 
-    // Get total employee count across all teams
+    // Get total employee count across all teams (only active employees)
     const [countResult] = await db.query(
       `SELECT COUNT(DISTINCT pe.employee_id) as total_employees
        FROM project_employees pe
-       WHERE pe.project_id = ?`,
+       JOIN employees e ON pe.employee_id = e.id
+       WHERE pe.project_id = ? AND e.status = 'Active'`,
       [id]
     );
 
-    // Get allocated employees (not assigned to any specific team yet)
+    // Get allocated employees (not assigned to any specific team yet, only active employees)
     const [allocatedEmployees] = await db.query(
       `SELECT pe.id as assignment_id,
               e.id, e.sso, e.name, e.role, e.role_type, e.location,
               0 as total_allocation
        FROM project_employees pe
        JOIN employees e ON pe.employee_id = e.id
-       WHERE pe.project_id = ? AND pe.team_id IS NULL
+       WHERE pe.project_id = ? AND pe.team_id IS NULL AND e.status = 'Active'
        ORDER BY e.name`,
       [id]
     );
