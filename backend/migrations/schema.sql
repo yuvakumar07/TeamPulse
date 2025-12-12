@@ -21,16 +21,16 @@ CREATE TABLE IF NOT EXISTS employees (
   asset_return_id VARCHAR(50),
   comments TEXT,
   attrition ENUM('Yes', 'No', 'At Risk') DEFAULT 'No',
-  offshore_manager_id INT,
-  onsite_manager_id INT,
+  temp_offshore_manager_id INT,
+  temp_onsite_manager_id INT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (offshore_manager_id) REFERENCES employees(id) ON DELETE SET NULL,
-  FOREIGN KEY (onsite_manager_id) REFERENCES employees(id) ON DELETE SET NULL
+  FOREIGN KEY (temp_offshore_manager_id) REFERENCES employees(id) ON DELETE SET NULL,
+  FOREIGN KEY (temp_onsite_manager_id) REFERENCES employees(id) ON DELETE SET NULL
 );
 
 -- Insert sample data
-INSERT INTO employees (sso, name, role, role_type, phone, location, criticality, status, skills, last_working_day, possible_candidate, asset_id, asset_return_id, comments, attrition, offshore_manager_id, onsite_manager_id) VALUES
+INSERT INTO employees (sso, name, role, role_type, phone, location, criticality, status, skills, last_working_day, possible_candidate, asset_id, asset_return_id, comments, attrition, temp_offshore_manager_id, temp_onsite_manager_id) VALUES
 ('SSO001', 'John Doe', 'Software Engineer', 'DEV', '555-0101', 'New York', 'High', 'Active', 'Java, Python, React', NULL, NULL, 'ASSET001', NULL, 'Excellent performer', 'No', NULL, NULL),
 ('SSO002', 'Jane Smith', 'Marketing Manager', 'DEV', '555-0102', 'San Francisco', 'Critical', 'Active', 'Digital Marketing, SEO, Analytics', NULL, NULL, 'ASSET002', NULL, 'Team lead', 'No', NULL, NULL),
 ('SSO003', 'Robert Johnson', 'Sales Representative', 'DEV', '555-0103', 'Chicago', 'Medium', 'Active', 'Sales, CRM, Negotiation', NULL, NULL, 'ASSET003', NULL, 'Good sales record', 'No', NULL, NULL),

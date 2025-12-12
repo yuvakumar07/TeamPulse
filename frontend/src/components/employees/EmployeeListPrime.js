@@ -256,6 +256,22 @@ const EmployeeListPrime = ({ onViewAssets }) => {
     setShowImportDialog(false);
   };
 
+  const handleResetFilters = () => {
+    setGlobalFilter('');
+    setRoleTypeFilter('All');
+    setRoleFilter('All');
+    setProjectFilter('All');
+    setTeamFilter('All');
+    setStatusFilter('All');
+    setlazyState({
+      first: 0,
+      rows: 10,
+      page: 0,
+      sortField: 'id',
+      sortOrder: 1
+    });
+  };
+
   // Column templates
   const criticalityBodyTemplate = (rowData) => {
     const getSeverity = (criticality) => {
@@ -653,6 +669,13 @@ const EmployeeListPrime = ({ onViewAssets }) => {
             style={{ width: '150px' }}
           />
         </div>
+        <Button
+          icon="pi pi-filter-slash"
+          label="Reset Filters"
+          className="p-button-outlined"
+          onClick={handleResetFilters}
+          style={{ height: '40px' }}
+        />
       </div>
     </div>
   );
@@ -723,8 +746,6 @@ const EmployeeListPrime = ({ onViewAssets }) => {
           body={agileTeamJiraKeyBodyTemplate}
           style={{ minWidth: '180px' }}
         />
-        <Column field="offshore_manager_id" header="Offshore Manager ID" sortable style={{ minWidth: '180px' }} />
-        <Column field="onsite_manager_id" header="Onsite Manager ID" sortable style={{ minWidth: '180px' }} />
         <Column field="role_type" header="Role Type" sortable style={{ minWidth: '120px' }} />
         <Column
           field="joining_date"

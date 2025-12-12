@@ -65,8 +65,8 @@ export const exportEmployeesToExcel = (employees, filename = 'employees') => {
     'Asset Return ID': emp.asset_return_id || 'N/A',
     'Comments': emp.comments || 'N/A',
     'Attrition': emp.attrition || 'N/A',
-    'Offshore Manager ID': emp.offshore_manager_id || 'N/A',
-    'Onsite Manager ID': emp.onsite_manager_id || 'N/A',
+    'Temp Offshore Manager ID': emp.temp_offshore_manager_id || 'N/A',
+    'Temp Onsite Manager ID': emp.temp_onsite_manager_id || 'N/A',
     'Created At': formatDate(emp.created_at),
     'Updated At': formatDate(emp.updated_at)
   }));
@@ -101,8 +101,8 @@ export const exportEmployeesToExcel = (employees, filename = 'employees') => {
     { wch: 18 }, // Asset Return ID
     { wch: 30 }, // Comments
     { wch: 12 }, // Attrition
-    { wch: 18 }, // Offshore Manager ID
-    { wch: 18 }, // Onsite Manager ID
+    { wch: 18 }, // Temp Offshore Manager ID
+    { wch: 18 }, // Temp Onsite Manager ID
     { wch: 20 }, // Created At
     { wch: 20 }  // Updated At
   ];

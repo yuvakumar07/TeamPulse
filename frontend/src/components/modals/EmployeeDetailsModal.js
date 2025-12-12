@@ -86,29 +86,10 @@ const EmployeeDetailsModal = ({ projectId, projectName, isOpen, onClose }) => {
     return (
       <div>
         <div style={{ fontWeight: rowData.is_team_lead ? '600' : 'normal' }}>
-          {rowData.is_team_lead && (
-            <i className="pi pi-star-fill" style={{ color: '#ffc107', marginRight: '0.5rem' }} title={rowData.team_lead_type}></i>
-          )}
           {rowData.name}
-        </div>
-        {rowData.is_team_lead && (
-          <small style={{ color: '#856404', fontStyle: 'italic' }}>
-            {rowData.team_lead_type}
-          </small>
-        )}
+        </div>        
       </div>
     );
-  };
-
-  const allocationBodyTemplate = (rowData) => {
-    const allocation = parseFloat(rowData.allocation_percentage || 0);
-    const getSeverity = () => {
-      if (allocation > 100) return 'danger';
-      if (allocation === 100) return 'success';
-      if (allocation >= 75) return 'info';
-      return 'warning';
-    };
-    return <Tag value={`${allocation.toFixed(2)}%`} severity={getSeverity()} />;
   };
 
   const teamBodyTemplate = (rowData) => {
@@ -174,7 +155,7 @@ const EmployeeDetailsModal = ({ projectId, projectName, isOpen, onClose }) => {
       <Column field="location" header="Location" sortable style={{ minWidth: '120px' }} />
       <Column field="team_name" header="Team" body={teamBodyTemplate} sortable style={{ minWidth: '180px' }} />
       <Column field="assignment_type" header="Status" body={assignmentTypeBodyTemplate} sortable style={{ minWidth: '150px' }} />
-      <Column field="allocation_percentage" header="Allocation" body={allocationBodyTemplate} sortable style={{ minWidth: '120px' }} />
+      
     </DataTable>
   );
 
@@ -215,9 +196,7 @@ const EmployeeDetailsModal = ({ projectId, projectName, isOpen, onClose }) => {
                       <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>
                         SSO: {projectData.managers.offshore_manager.sso} | Role: {projectData.managers.offshore_manager.role}
                       </div>
-                      <div style={{ fontSize: '0.9rem' }}>
-                        Allocation: <Tag value={`${projectData.managers.offshore_manager.allocation}%`} severity="info" />
-                      </div>
+                      
                     </div>
                   </div>
                 )}
@@ -232,9 +211,7 @@ const EmployeeDetailsModal = ({ projectId, projectName, isOpen, onClose }) => {
                       <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>
                         SSO: {projectData.managers.onsite_manager.sso} | Role: {projectData.managers.onsite_manager.role}
                       </div>
-                      <div style={{ fontSize: '0.9rem' }}>
-                        Allocation: <Tag value={`${projectData.managers.onsite_manager.allocation}%`} severity="success" />
-                      </div>
+                      
                     </div>
                   </div>
                 )}
@@ -319,9 +296,7 @@ const EmployeeDetailsModal = ({ projectId, projectName, isOpen, onClose }) => {
                                     <div style={{ color: '#6c757d' }}>
                                       {team.team_leads.offshore_team_lead.sso} | {team.team_leads.offshore_team_lead.role}
                                     </div>
-                                    <div>
-                                      Allocation: <Tag value={`${team.team_leads.offshore_team_lead.allocation}%`} severity="info" />
-                                    </div>
+                                    
                                   </div>
                                 </div>
                               )}
@@ -336,9 +311,7 @@ const EmployeeDetailsModal = ({ projectId, projectName, isOpen, onClose }) => {
                                     <div style={{ color: '#6c757d' }}>
                                       {team.team_leads.onsite_team_lead.sso} | {team.team_leads.onsite_team_lead.role}
                                     </div>
-                                    <div>
-                                      Allocation: <Tag value={`${team.team_leads.onsite_team_lead.allocation}%`} severity="success" />
-                                    </div>
+                                    
                                   </div>
                                 </div>
                               )}
@@ -367,7 +340,7 @@ const EmployeeDetailsModal = ({ projectId, projectName, isOpen, onClose }) => {
                             <Column field="role" header="Role" sortable style={{ minWidth: '150px' }} />
                             <Column field="role_type" header="Role Type" body={roleTypeBodyTemplate} sortable style={{ minWidth: '120px' }} />
                             <Column field="location" header="Location" sortable style={{ minWidth: '120px' }} />
-                            <Column field="allocation_percentage" header="Allocation" body={allocationBodyTemplate} sortable style={{ minWidth: '120px' }} />
+                            
                           </DataTable>
                         )}
                       </div>

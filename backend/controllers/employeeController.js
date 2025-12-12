@@ -110,9 +110,9 @@ const getAllEmployees = async (req, res) => {
     // Add search filter if provided
     if (search && search.trim() !== '') {
       const searchPattern = `%${search.trim()}%`;
-      conditions.push('(e.sso LIKE ? OR e.name LIKE ? OR e.role LIKE ? OR e.phone LIKE ? OR e.location LIKE ? OR e.skills LIKE ? OR CAST(e.offshore_manager_id AS CHAR) LIKE ? OR CAST(e.onsite_manager_id AS CHAR) LIKE ?)');
-      queryParams.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
-      countParams.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+      conditions.push('(e.sso LIKE ? OR e.name LIKE ? OR e.role LIKE ? OR e.phone LIKE ? OR e.location LIKE ? OR e.skills LIKE ?)');
+      queryParams.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+      countParams.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
     }
 
     // Add project filter if provided
@@ -263,8 +263,8 @@ const createEmployee = async (req, res) => {
       attrition,
       notice_period_days,
       work_location,
-      offshore_manager_id,
-      onsite_manager_id,
+      temp_offshore_manager_id,
+      temp_onsite_manager_id,
       visa_type,
       current_visa_start_date,
       current_visa_end_date,
@@ -307,13 +307,13 @@ const createEmployee = async (req, res) => {
     const [result] = await connection.query(
       `INSERT INTO employees
       (sso, name, role, role_type, phone, location, criticality, status, skills, joining_date, last_working_day,
-       possible_candidate, asset_id, asset_return_id, comments, attrition, notice_period_days, work_location, offshore_manager_id, onsite_manager_id,
+       possible_candidate, asset_id, asset_return_id, comments, attrition, notice_period_days, work_location, temp_offshore_manager_id, temp_onsite_manager_id,
        visa_type, visa_status, current_visa_start_date, current_visa_end_date, i94_expiry_date,
        passport_number, passport_expiry_date, sponsor_company, visa_notes)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [sso, name, role, role_type, phone, location, criticality || 'Medium', status || 'Active',
        skills, joining_date, last_working_day, possible_candidate, asset_id, asset_return_id, comments,
-       attrition || 'No', notice_period_days, work_location || 'Onsite', offshore_manager_id, onsite_manager_id,
+       attrition || 'No', notice_period_days, work_location || 'Onsite', temp_offshore_manager_id, temp_onsite_manager_id,
        visa_type || 'None', computedVisaStatus, current_visa_start_date, current_visa_end_date,
        i94_expiry_date, passport_number, passport_expiry_date, sponsor_company, visa_notes]
     );
@@ -409,8 +409,8 @@ const updateEmployee = async (req, res) => {
       attrition,
       notice_period_days,
       work_location,
-      offshore_manager_id,
-      onsite_manager_id,
+      temp_offshore_manager_id,
+      temp_onsite_manager_id,
       visa_type,
       current_visa_start_date,
       current_visa_end_date,
@@ -461,13 +461,13 @@ const updateEmployee = async (req, res) => {
       SET sso = ?, name = ?, role = ?, role_type = ?, phone = ?, location = ?,
           criticality = ?, status = ?, skills = ?, joining_date = ?, last_working_day = ?,
           possible_candidate = ?, asset_id = ?, asset_return_id = ?, comments = ?,
-          attrition = ?, notice_period_days = ?, work_location = ?, offshore_manager_id = ?, onsite_manager_id = ?,
+          attrition = ?, notice_period_days = ?, work_location = ?, temp_offshore_manager_id = ?, temp_onsite_manager_id = ?,
           visa_type = ?, visa_status = ?, current_visa_start_date = ?, current_visa_end_date = ?,
           i94_expiry_date = ?, passport_number = ?, passport_expiry_date = ?, sponsor_company = ?, visa_notes = ?
       WHERE id = ?`,
       [sso, name, role, role_type, phone, location, criticality, status, skills,
        joining_date, last_working_day, possible_candidate, asset_id, asset_return_id, comments,
-       attrition, notice_period_days, work_location, offshore_manager_id, onsite_manager_id,
+       attrition, notice_period_days, work_location, temp_offshore_manager_id, temp_onsite_manager_id,
        visa_type, computedVisaStatus, current_visa_start_date, current_visa_end_date,
        i94_expiry_date, passport_number, passport_expiry_date, sponsor_company, visa_notes, id]
     );
@@ -658,8 +658,8 @@ const importEmployees = async (req, res) => {
           sponsor_company: row['Sponsor Company'] || row['sponsor company'] || row.sponsor_company || row['SPONSOR COMPANY'] || null,
           visa_notes: row['Visa Notes'] || row['visa notes'] || row.visa_notes || row['VISA NOTES'] || null,
           work_location: row['Work Location'] || row['work location'] || row.work_location || row['WORK LOCATION'] || 'Offshore',
-          offshore_manager_id: row['Offshore Manager ID'] || row['offshore manager id'] || row.offshore_manager_id || row['OFFSHORE MANAGER ID'] || null,
-          onsite_manager_id: row['Onsite Manager ID'] || row['onsite manager id'] || row.onsite_manager_id || row['ONSITE MANAGER ID'] || null
+          temp_offshore_manager_id: row['Temp Offshore Manager ID'] || row['temp offshore manager id'] || row.temp_offshore_manager_id || row['TEMP OFFSHORE MANAGER ID'] || null,
+          temp_onsite_manager_id: row['Temp Onsite Manager ID'] || row['temp onsite manager id'] || row.temp_onsite_manager_id || row['TEMP ONSITE MANAGER ID'] || null
         };
 
         // Extract project and team information
@@ -729,7 +729,7 @@ const importEmployees = async (req, res) => {
             (sso, name, role, role_type, phone, location, joining_date, criticality, status, skills, last_working_day,
              possible_candidate, asset_id, asset_return_id, comments, attrition, visa_type, visa_status,
              current_visa_start_date, current_visa_end_date, i94_expiry_date, passport_number,
-             passport_expiry_date, sponsor_company, visa_notes, work_location, offshore_manager_id, onsite_manager_id)
+             passport_expiry_date, sponsor_company, visa_notes, work_location, temp_offshore_manager_id, temp_onsite_manager_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               employeeData.sso,
@@ -758,8 +758,8 @@ const importEmployees = async (req, res) => {
               employeeData.sponsor_company,
               employeeData.visa_notes,
               employeeData.work_location || 'Offshore',
-              employeeData.offshore_manager_id || null,
-              employeeData.onsite_manager_id || null
+              employeeData.temp_offshore_manager_id || null,
+              employeeData.temp_onsite_manager_id || null
             ]
           );
           employeeId = employeeResult.insertId;

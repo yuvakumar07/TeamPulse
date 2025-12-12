@@ -102,6 +102,18 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
     setShowAssignmentModal(true);
   };
 
+  const handleResetFilters = () => {
+    setGlobalFilter('');
+    setStatusFilter('All');
+    setlazyState({
+      first: 0,
+      rows: 10,
+      page: 0,
+      sortField: 'created_at',
+      sortOrder: -1
+    });
+  };
+
   // Column templates
   const statusBodyTemplate = (rowData) => {
     const getSeverity = (status) => {
@@ -231,6 +243,13 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
           options={statusOptions}
           placeholder="Select Status"
           style={{ width: '200px' }}
+        />
+        <Button
+          icon="pi pi-filter-slash"
+          label="Reset Filters"
+          className="p-button-outlined"
+          onClick={handleResetFilters}
+          style={{ height: '40px' }}
         />
       </div>
     </div>
