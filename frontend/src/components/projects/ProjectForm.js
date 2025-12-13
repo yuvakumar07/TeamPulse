@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { InputText } from 'primereact/inputtext';
+import { Dropdown } from 'primereact/dropdown';
+import { Button } from 'primereact/button';
 import { createProject, updateProject, getProjectById, createProjectTeam, updateProjectTeam, deleteProjectTeam, getAllEmployees, getAllTeams } from '../../services/api';
 import './ProjectForm.css';
 
@@ -65,6 +68,19 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const handleDropdownChange = (name, value) => {
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -178,6 +194,35 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
     }
   };
 
+  // Dropdown options
+  const projectStatusOptions = [
+    { label: 'Planning', value: 'Planning' },
+    { label: 'Active', value: 'Active' },
+    { label: 'On Hold', value: 'On Hold' },
+    { label: 'Completed', value: 'Completed' },
+    { label: 'Cancelled', value: 'Cancelled' }
+  ];
+
+  const offshoreManagerOptions = [
+    { label: 'Select Temp Offshore Manager', value: '' },
+    ...employees
+      .filter(emp => emp.work_location === 'Offshore' && emp.role_type === 'Manager')
+      .map(emp => ({
+        label: `${emp.name} (${emp.sso || 'N/A'})`,
+        value: emp.id
+      }))
+  ];
+
+  const onsiteManagerOptions = [
+    { label: 'Select Temp Onsite Manager', value: '' },
+    ...employees
+      .filter(emp => emp.work_location === 'Onsite' && emp.role_type === 'Manager')
+      .map(emp => ({
+        label: `${emp.name} (${emp.sso || 'N/A'})`,
+        value: emp.id
+      }))
+  ];
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content project-form" onClick={(e) => e.stopPropagation()}>
@@ -192,82 +237,70 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
               <label htmlFor="project_team_name">
                 Project Team Name <span className="required">*</span>
               </label>
-              <input
-                type="text"
+              <InputText
                 id="project_team_name"
                 name="project_team_name"
                 value={formData.project_team_name}
                 onChange={handleChange}
-                className={errors.project_team_name ? 'error' : ''}
+                className={errors.project_team_name ? 'p-invalid' : ''}
               />
               {errors.project_team_name && (
-                <span className="error-message">{errors.project_team_name}</span>
+                <small className="p-error">{errors.project_team_name}</small>
               )}
             </div>
 
             <div className="form-group">
               <label htmlFor="project_status">Project Status</label>
-              <select
+              <Dropdown
                 id="project_status"
                 name="project_status"
                 value={formData.project_status}
-                onChange={handleChange}
-              >
-                <option value="Planning">Planning</option>
-                <option value="Active">Active</option>
-                <option value="On Hold">On Hold</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
+                options={projectStatusOptions}
+                onChange={(e) => handleDropdownChange('project_status', e.value)}
+              />
             </div>
 
             <div className="form-group">
               <label htmlFor="temp_offshore_manager_id">Temp Offshore Manager</label>
-              <select
+              <Dropdown
                 id="temp_offshore_manager_id"
                 name="temp_offshore_manager_id"
                 value={formData.temp_offshore_manager_id}
-                onChange={handleChange}
-              >
-                <option value="">Select Temp Offshore Manager</option>
-                {employees
-                  .filter(emp => emp.work_location === 'Offshore' && emp.role_type === 'Manager')
-                  .map(emp => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.name} ({emp.sso || 'N/A'})
-                    </option>
-                  ))}
-              </select>
+                options={offshoreManagerOptions}
+                onChange={(e) => handleDropdownChange('temp_offshore_manager_id', e.value)}
+                filter
+                showClear
+                placeholder="Select Temp Offshore Manager"
+              />
             </div>
 
             <div className="form-group">
               <label htmlFor="temp_onsite_manager_id">Temp Onsite Manager</label>
-              <select
+              <Dropdown
                 id="temp_onsite_manager_id"
                 name="temp_onsite_manager_id"
                 value={formData.temp_onsite_manager_id}
-                onChange={handleChange}
-              >
-                <option value="">Select Temp Onsite Manager</option>
-                {employees
-                  .filter(emp => emp.work_location === 'Onsite' && emp.role_type === 'Manager')
-                  .map(emp => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.name} ({emp.sso || 'N/A'})
-                    </option>
-                  ))}
-              </select>
+                options={onsiteManagerOptions}
+                onChange={(e) => handleDropdownChange('temp_onsite_manager_id', e.value)}
+                filter
+                showClear
+                placeholder="Select Temp Onsite Manager"
+              />
             </div>
           </div>
 
              <div className='teamheader'>
               <h3>Teams</h3>
-              <button type="button" className="btn btn-secondary" onClick={addTeam}>
-                + Add Team
-              </button>
+              <Button
+                type="button"
+                label="Add Team"
+                icon="pi pi-plus"
+                className="p-button-secondary"
+                onClick={addTeam}
+              />
             </div>
           <>
-           
+
 
             {teams.length === 0 ? (
               <p style={{ textAlign: 'center', color: '#666', padding: '1rem' }}>
@@ -275,92 +308,104 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
               </p>
             ) : (
               <div className="teams-list">
-                {teams.map((team, index) => (
-                  <div key={index}  style={{ marginBottom: '15px', padding: '15px', border: '1px solid #dee2e6', borderRadius: '6px', backgroundColor: '#f8f9fa' }}>
-                    <div className='teamheader'>
-                      <h4 style={{ margin: 0, color: '#495057' }}>Team #{index + 1}</h4>
-                      <button
-                        type="button"
-                        className="btn btn-danger btn-sm"
-                        onClick={() => removeTeam(index)}
-                      >
-                        Remove Team
-                      </button>
-                    </div>
+                {teams.map((team, index) => {
+                  const offshoreTeamLeadOptions = [
+                    { label: 'Select Offshore Team Lead', value: '' },
+                    ...employees
+                      .filter(emp => emp.work_location === 'Offshore' && emp.role_type === 'Team Lead')
+                      .map(emp => ({
+                        label: `${emp.name} (${emp.sso || 'N/A'})`,
+                        value: emp.id
+                      }))
+                  ];
 
-                    <div className="form-grid m-0" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '0 15px' }}>
-                      <div className="form-group">
-                        <label>Agile Board Name</label>
-                        <input
-                          type="text"
-                          value={team.agile_board_name}
-                          onChange={(e) => updateTeam(index, 'agile_board_name', e.target.value)}
-                          placeholder="Enter board name"
+                  const onsiteTeamLeadOptions = [
+                    { label: 'Select Onsite Team Lead', value: '' },
+                    ...employees
+                      .filter(emp => emp.work_location === 'Onsite' && emp.role_type === 'Team Lead')
+                      .map(emp => ({
+                        label: `${emp.name} (${emp.sso || 'N/A'})`,
+                        value: emp.id
+                      }))
+                  ];
+
+                  return (
+                    <div key={index}  style={{ marginBottom: '15px', padding: '15px', border: '1px solid #dee2e6', borderRadius: '6px', backgroundColor: '#f8f9fa' }}>
+                      <div className='teamheader'>
+                        <h4 style={{ margin: 0, color: '#495057' }}>Team #{index + 1}</h4>
+                        <Button
+                          type="button"
+                          label="Remove Team"
+                          icon="pi pi-trash"
+                          className="p-button-danger p-button-sm"
+                          onClick={() => removeTeam(index)}
                         />
                       </div>
-                      <div className="form-group">
-                        <label>Agile Team JIRA Key</label>
-                        <input
-                          type="text"
-                          value={team.agile_team_jira_key || ''}
-                          onChange={(e) => updateTeam(index, 'agile_team_jira_key', e.target.value)}
-                          placeholder="e.g., PROJ-123"
-                        />
-                      </div>
 
-                      <div className="form-group">
-                        <label>Offshore Team Lead</label>
-                        <select
-                          value={team.offshore_team_lead_id || ''}
-                          onChange={(e) => updateTeam(index, 'offshore_team_lead_id', e.target.value)}
-                        >
-                          <option value="">Select Offshore Team Lead</option>
-                          {employees
-                            .filter(emp => emp.work_location === 'Offshore' && emp.role_type === 'Team Lead')
-                            .map(emp => (
-                              <option
-                                key={emp.id}
-                                value={emp.id}
-                              >
-                                {emp.name} ({emp.sso || 'N/A'})
-                              </option>
-                            ))}
-                        </select>
-                      </div>
+                      <div className="form-grid m-0" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '0 15px' }}>
+                        <div className="form-group">
+                          <label>Agile Board Name</label>
+                          <InputText
+                            value={team.agile_board_name}
+                            onChange={(e) => updateTeam(index, 'agile_board_name', e.target.value)}
+                            placeholder="Enter board name"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Agile Team JIRA Key</label>
+                          <InputText
+                            value={team.agile_team_jira_key || ''}
+                            onChange={(e) => updateTeam(index, 'agile_team_jira_key', e.target.value)}
+                            placeholder="e.g., PROJ-123"
+                          />
+                        </div>
 
-                      <div className="form-group">
-                        <label>Onsite Team Lead</label>
-                        <select
-                          value={team.onsite_team_lead_id || ''}
-                          onChange={(e) => updateTeam(index, 'onsite_team_lead_id', e.target.value)}
-                        >
-                          <option value="">Select Onsite Team Lead</option>
-                          {employees
-                            .filter(emp => emp.work_location === 'Onsite' && emp.role_type === 'Team Lead')
-                            .map(emp => (
-                              <option
-                                key={emp.id}
-                                value={emp.id}
-                              >
-                                {emp.name} ({emp.sso || 'N/A'})
-                              </option>
-                            ))}
-                        </select>
+                        <div className="form-group">
+                          <label>Offshore Team Lead</label>
+                          <Dropdown
+                            value={team.offshore_team_lead_id || ''}
+                            options={offshoreTeamLeadOptions}
+                            onChange={(e) => updateTeam(index, 'offshore_team_lead_id', e.value)}
+                            filter
+                            showClear
+                            placeholder="Select Offshore Team Lead"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label>Onsite Team Lead</label>
+                          <Dropdown
+                            value={team.onsite_team_lead_id || ''}
+                            options={onsiteTeamLeadOptions}
+                            onChange={(e) => updateTeam(index, 'onsite_team_lead_id', e.value)}
+                            filter
+                            showClear
+                            placeholder="Select Onsite Team Lead"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </>
 
           <div className="form-actions">
-            <button type="button" className="btn btn-cancel" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={submitting}>
-              {submitting ? 'Saving...' : (project ? 'Update Project' : 'Create Project')}
-            </button>
+            <Button
+              type="button"
+              label="Cancel"
+              icon="pi pi-times"
+              className="p-button-text"
+              onClick={onClose}
+            />
+            <Button
+              type="submit"
+              label={submitting ? 'Saving...' : (project ? 'Update Project' : 'Create Project')}
+              icon="pi pi-check"
+              loading={submitting}
+              disabled={submitting}
+            />
           </div>
         </form>
       </div>
