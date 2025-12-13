@@ -351,6 +351,8 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
                 options={monthOptions}
                 onChange={(e) => handleChange({ target: { name: 'invoice_month', value: e.value } })}
                 placeholder="Select Month"
+                filter
+                filterPlaceholder="Search months"
                 className="w-full"
               />
             </div>
@@ -365,6 +367,8 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
                 options={yearOptions}
                 onChange={(e) => handleChange({ target: { name: 'invoice_year', value: e.value } })}
                 placeholder="Select Year"
+                filter
+                filterPlaceholder="Search years"
                 className="w-full"
               />
             </div>
@@ -379,6 +383,9 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
                 options={projectOptions}
                 onChange={(e) => handleChange({ target: { name: 'project_id', value: e.value } })}
                 placeholder="Select Project"
+                filter
+                filterPlaceholder="Search projects"
+                showClear
                 className="w-full"
               />
             </div>
@@ -391,6 +398,9 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
                 options={teamOptions}
                 onChange={(e) => handleChange({ target: { name: 'team_id', value: e.value } })}
                 placeholder="All Teams"
+                filter
+                filterPlaceholder="Search teams"
+                showClear
                 disabled={!formData.project_id || teams.length === 0}
                 className="w-full"
               />

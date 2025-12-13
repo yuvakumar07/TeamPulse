@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { Dialog } from 'primereact/dialog';
+import { Button } from 'primereact/button';
 import { getInvoiceById } from '../../services/api';
 import './ViewInvoiceModal.css';
 
@@ -55,33 +57,29 @@ const ViewInvoiceModal = ({ invoiceId, onClose }) => {
     );
   };
 
-  if (loading) {
-    return (
-      <div className="modal-overlay">
-        <div className="modal-content view-invoice-modal">
-          <div className="modal-header">
-            <h2>Loading...</h2>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!invoice) {
+  if (!invoice && !loading) {
     return null;
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content view-invoice-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Invoice Details</h2>
-          <button className="close-button" onClick={onClose}>×</button>
+    <Dialog
+      header="Invoice Details"
+      visible={true}
+      onHide={onClose}
+      style={{ width: '90vw' }}
+      maximizable
+      modal
+    >
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          <i className="pi pi-spin pi-spinner" style={{ fontSize: '2rem' }}></i>
+          <p>Loading invoice details...</p>
         </div>
-
-        <div className="modal-body">
-          {/* Invoice Header Info */}
-          <div className="invoice-header-info">
+      ) : invoice ? (
+        <>
+          <div className="modal-body">
+            {/* Invoice Header Info */}
+            <div className="invoice-header-info">
             <div className="info-grid">
               <div className="info-item">
                 <label>Invoice Number:</label>
@@ -195,11 +193,17 @@ const ViewInvoiceModal = ({ invoiceId, onClose }) => {
           </div>
         </div>
 
-        <div className="modal-footer">
-          <button className="btn-secondary" onClick={onClose}>Close</button>
-        </div>
-      </div>
-    </div>
+          <div className="modal-footer">
+            <Button
+              label="Close"
+              icon="pi pi-times"
+              onClick={onClose}
+              className="p-button-secondary"
+            />
+          </div>
+        </>
+      ) : null}
+    </Dialog>
   );
 };
 
