@@ -10,8 +10,8 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     project_team_name: '',
     project_status: 'Planning',
-    temp_offshore_manager_id: '',
-    temp_onsite_manager_id: ''
+    offshore_manager_id: '',
+    onsite_manager_id: ''
   });
   const [teams, setTeams] = useState([]);
   const [errors, setErrors] = useState({});
@@ -55,8 +55,8 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
       setFormData({
         project_team_name: projectData.project_team_name || '',
         project_status: projectData.project_status || 'Planning',
-        temp_offshore_manager_id: projectData.temp_offshore_manager_id || '',
-        temp_onsite_manager_id: projectData.temp_onsite_manager_id || ''
+        offshore_manager_id: projectData.offshore_manager_id || '',
+        onsite_manager_id: projectData.onsite_manager_id || ''
       });
 
       setTeams(projectData.teams || []);
@@ -204,7 +204,7 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
   ];
 
   const offshoreManagerOptions = [
-    { label: 'Select Temp Offshore Manager', value: '' },
+    { label: 'Select Offshore Manager', value: '' },
     ...employees
       .filter(emp => emp.work_location === 'Offshore' && emp.role_type === 'Manager')
       .map(emp => ({
@@ -214,7 +214,7 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
   ];
 
   const onsiteManagerOptions = [
-    { label: 'Select Temp Onsite Manager', value: '' },
+    { label: 'Select Onsite Manager', value: '' },
     ...employees
       .filter(emp => emp.work_location === 'Onsite' && emp.role_type === 'Manager')
       .map(emp => ({
@@ -261,30 +261,30 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="temp_offshore_manager_id">Temp Offshore Manager</label>
+              <label htmlFor="offshore_manager_id">Offshore Manager</label>
               <Dropdown
-                id="temp_offshore_manager_id"
-                name="temp_offshore_manager_id"
-                value={formData.temp_offshore_manager_id}
+                id="offshore_manager_id"
+                name="offshore_manager_id"
+                value={formData.offshore_manager_id}
                 options={offshoreManagerOptions}
-                onChange={(e) => handleDropdownChange('temp_offshore_manager_id', e.value)}
+                onChange={(e) => handleDropdownChange('offshore_manager_id', e.value)}
                 filter
                 showClear
-                placeholder="Select Temp Offshore Manager"
+                placeholder="Select Offshore Manager"
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="temp_onsite_manager_id">Temp Onsite Manager</label>
+              <label htmlFor="onsite_manager_id">Onsite Manager</label>
               <Dropdown
-                id="temp_onsite_manager_id"
-                name="temp_onsite_manager_id"
-                value={formData.temp_onsite_manager_id}
+                id="onsite_manager_id"
+                name="onsite_manager_id"
+                value={formData.onsite_manager_id}
                 options={onsiteManagerOptions}
-                onChange={(e) => handleDropdownChange('temp_onsite_manager_id', e.value)}
+                onChange={(e) => handleDropdownChange('onsite_manager_id', e.value)}
                 filter
                 showClear
-                placeholder="Select Temp Onsite Manager"
+                placeholder="Select Onsite Manager"
               />
             </div>
           </div>
