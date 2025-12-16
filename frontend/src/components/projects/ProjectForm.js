@@ -12,8 +12,6 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
     project_status: 'Planning',
     offshore_manager_id: '',
     onsite_manager_id: ''
-    offshore_manager_id: '',
-    onsite_manager_id: ''
   });
   const [teams, setTeams] = useState([]);
   const [errors, setErrors] = useState({});
@@ -57,8 +55,6 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
       setFormData({
         project_team_name: projectData.project_team_name || '',
         project_status: projectData.project_status || 'Planning',
-        offshore_manager_id: projectData.offshore_manager_id || '',
-        onsite_manager_id: projectData.onsite_manager_id || ''
         offshore_manager_id: projectData.offshore_manager_id || '',
         onsite_manager_id: projectData.onsite_manager_id || ''
       });
