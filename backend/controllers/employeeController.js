@@ -223,6 +223,21 @@ const getEmployeeById = async (req, res) => {
 
     employee.project_assignments = projectAssignments;
 
+    // Fetch projects where employee is a manager (offshore or onsite)
+    const [managedProjects] = await db.query(
+      `SELECT p.id, p.project_team_name, p.offshore_manager_id, p.onsite_manager_id,
+              om.name as offshore_manager_name,
+              osm.name as onsite_manager_name
+       FROM projects p
+       LEFT JOIN employees om ON p.offshore_manager_id = om.id
+       LEFT JOIN employees osm ON p.onsite_manager_id = osm.id
+       WHERE p.offshore_manager_id = ? OR p.onsite_manager_id = ?
+       ORDER BY p.project_team_name`,
+      [id, id]
+    );
+
+    employee.managed_projects = managedProjects;
+
     res.json({
       success: true,
       data: employee

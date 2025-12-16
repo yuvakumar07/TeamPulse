@@ -671,12 +671,49 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
             </div>
           </TabPanel>
 
-          {/* Tab 3: Project Assignments */}
+          
           <TabPanel header="Project Assignments" leftIcon="pi pi-building mr-2">
             <div className="formgrid grid">
 
-              {/* Show current assignments when editing */}
-              {employee && employee.project_assignments && employee.project_assignments.length > 0 && (
+              {/* Show managed projects for Managers */}
+              {employee && formData.role_type === 'Manager' && employee.managed_projects && employee.managed_projects.length > 0 && (
+                <div className="col-12 mb-3">
+                  <div className="p-3" style={{ background: '#e7f3ff', borderRadius: '6px', border: '1px solid #b3d9ff' }}>
+                    <h4 className="mt-0 mb-3" style={{ color: '#0066cc' }}>
+                      <i className="pi pi-briefcase mr-2"></i>
+                      Managed Projects
+                    </h4>
+                    <div className="grid">
+                      {employee.managed_projects.map((project, idx) => (
+                        <div key={idx} className="col-12 md:col-6 mb-2">
+                          <div className="p-2" style={{ background: 'white', borderRadius: '4px', border: '1px solid #dee2e6' }}>
+                            <div style={{ fontWeight: '600', color: '#323232', marginBottom: '0.5rem' }}>
+                              {project.project_team_name}
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: '#495057', marginLeft: '1rem' }}>
+                              {project.offshore_manager_name && (
+                                <div style={{ marginBottom: '0.25rem' }}>
+                                  <i className="pi pi-user mr-2" style={{ fontSize: '0.75rem', color: '#FFC500' }}></i>
+                                  <strong>Offshore Manager:</strong> {project.offshore_manager_name}
+                                </div>
+                              )}
+                              {project.onsite_manager_name && (
+                                <div style={{ marginBottom: '0.25rem' }}>
+                                  <i className="pi pi-user mr-2" style={{ fontSize: '0.75rem', color: '#FFC500' }}></i>
+                                  <strong>Onsite Manager:</strong> {project.onsite_manager_name}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Show current project/team assignments for non-Managers */}
+              {employee && formData.role_type !== 'Manager' && employee.project_assignments && employee.project_assignments.length > 0 && (
                 <div className="col-12 mb-3">
                   <div className="p-3" style={{ background: '#e7f3ff', borderRadius: '6px', border: '1px solid #b3d9ff' }}>
                     <h4 className="mt-0 mb-3" style={{ color: '#0066cc' }}>
@@ -739,20 +776,23 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                 </div>
               )}
 
-              <div className="field col-12">
-                <label htmlFor="projects">Assign Projects</label>
-                <MultiSelect
-                  id="projects"
-                  value={selectedProjects}
-                  options={projects.map(p => ({ label: p.project_team_name, value: p.id }))}
-                  onChange={(e) => handleProjectSelection(e.value)}
-                  placeholder="Select projects to assign"
-                  display="chip"
-                  filter
-                />
-              </div>
+              {/* Assign Projects - Hide for Manager role type */}
+              {formData.role_type !== 'Manager' && (
+                <div className="field col-12">
+                  <label htmlFor="projects">Assign Projects</label>
+                  <MultiSelect
+                    id="projects"
+                    value={selectedProjects}
+                    options={projects.map(p => ({ label: p.project_team_name, value: p.id }))}
+                    onChange={(e) => handleProjectSelection(e.value)}
+                    placeholder="Select projects to assign"
+                    display="chip"
+                    filter
+                  />
+                </div>
+              )}
 
-              {selectedProjects.length > 0 && (
+              {formData.role_type !== 'Manager' && selectedProjects.length > 0 && (
                 <div className="col-12">
                   <div className="p-3" style={{ background: '#f8f9fa', borderRadius: '6px' }}>
                     <h4 className="mt-0 mb-3">Project & Team Assignments</h4>
@@ -802,8 +842,9 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                   </div>
                 </div>
               )}
+              
             </div>
-          </TabPanel>
+          </TabPanel>          
 
           {/* Tab 4: Visa & Immigration - Only show if Work Location is Onsite */}
           {formData.work_location === 'Onsite' && (
