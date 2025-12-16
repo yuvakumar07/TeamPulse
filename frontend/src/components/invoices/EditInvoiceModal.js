@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { Dialog } from 'primereact/dialog';
+import { Button } from 'primereact/button';
+import { Dropdown } from 'primereact/dropdown';
+import { InputNumber } from 'primereact/inputnumber';
 import { getInvoiceById, updateInvoice } from '../../services/api';
 import './EditInvoiceModal.css';
 
@@ -126,32 +130,36 @@ const EditInvoiceModal = ({ invoiceId, onClose, onSuccess }) => {
     return months[month - 1] || '';
   };
 
-  if (loading) {
-    return (
-      <div className="modal-overlay">
-        <div className="modal-content edit-invoice-modal">
-          <div className="modal-header">
-            <h2>Loading...</h2>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const statusOptions = [
+    { label: 'Draft', value: 'Draft' },
+    { label: 'Submitted', value: 'Submitted' },
+    { label: 'Approved', value: 'Approved' },
+    { label: 'Paid', value: 'Paid' },
+    { label: 'Cancelled', value: 'Cancelled' }
+  ];
 
-  if (!invoice) {
+  if (!invoice && !loading) {
     return null;
   }
 
-  const totals = calculateGrandTotals();
+  const totals = invoice ? calculateGrandTotals() : { billing: '0.0', leave: '0.0', amount: '0.00' };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content edit-invoice-modal" onClick={(e) => e.stopPropagation()}>
+    <Dialog
+      header="Edit Invoice"
+      visible={true}
+      onHide={onClose}
+      style={{ width: '90vw' }}
+      maximizable
+      modal
+    >
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          <i className="pi pi-spin pi-spinner" style={{ fontSize: '2rem' }}></i>
+          <p>Loading invoice details...</p>
+        </div>
+      ) : (
         <form onSubmit={handleSubmit}>
-          <div className="modal-header">
-            <h2>Edit Invoice</h2>
-            <button type="button" className="close-button" onClick={onClose}>×</button>
-          </div>
 
           <div className="modal-body">
             {/* Invoice Info */}
@@ -185,18 +193,16 @@ const EditInvoiceModal = ({ invoiceId, onClose, onSuccess }) => {
 
               <div className="status-select-group">
                 <label htmlFor="status">Status:</label>
-                <select
+                <Dropdown
                   id="status"
                   value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  required
-                >
-                  <option value="Draft">Draft</option>
-                  <option value="Submitted">Submitted</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Paid">Paid</option>
-                  <option value="Cancelled">Cancelled</option>
-                </select>
+                  options={statusOptions}
+                  onChange={(e) => setStatus(e.value)}
+                  placeholder="Select Status"
+                  filter
+                  filterPlaceholder="Search status"
+                  className="w-full"
+                />
               </div>
             </div>
 
@@ -233,36 +239,44 @@ const EditInvoiceModal = ({ invoiceId, onClose, onSuccess }) => {
                           )}
                         </td>
                         <td>
-                          <input
-                            type="number"
-                            step="0.5"
-                            min="0"
-                            value={item.billing_hours}
-                            onChange={(e) => handleItemChange(index, 'billing_hours', e.target.value)}
-                            required
+                          <InputNumber
+                            value={parseFloat(item.billing_hours)}
+                            onValueChange={(e) => handleItemChange(index, 'billing_hours', e.value)}
+                            min={0}
+                            max={744}
+                            minFractionDigits={1}
+                            maxFractionDigits={1}
+                            placeholder="0.0"
+                            className="w-full"
                           />
                         </td>
                         <td>
-                          <input
-                            type="number"
-                            step="0.5"
-                            min="0"
-                            value={item.leave_hours}
-                            onChange={(e) => handleItemChange(index, 'leave_hours', e.target.value)}
-                            required
+                          <InputNumber
+                            value={parseFloat(item.leave_hours)}
+                            onValueChange={(e) => handleItemChange(index, 'leave_hours', e.value)}
+                            min={0}
+                            max={744}
+                            minFractionDigits={1}
+                            maxFractionDigits={1}
+                            placeholder="0.0"
+                            className="w-full"
                           />
                         </td>
                         <td className="balance-hours-cell">
                           <strong>{(parseFloat(item.billing_hours || 0) - parseFloat(item.leave_hours || 0)).toFixed(1)}</strong>
                         </td>
                         <td>
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={item.cost_per_hour}
-                            onChange={(e) => handleItemChange(index, 'cost_per_hour', e.target.value)}
-                            required
+                          <InputNumber
+                            value={parseFloat(item.cost_per_hour)}
+                            onValueChange={(e) => handleItemChange(index, 'cost_per_hour', e.value)}
+                            min={0}
+                            minFractionDigits={2}
+                            maxFractionDigits={2}
+                            mode="currency"
+                            currency="USD"
+                            locale="en-US"
+                            placeholder="$0.00"
+                            className="w-full"
                           />
                         </td>
                         <td className="total-cell">{formatCurrency(calculateTotal(item))}</td>
@@ -285,16 +299,25 @@ const EditInvoiceModal = ({ invoiceId, onClose, onSuccess }) => {
           </div>
 
           <div className="modal-footer">
-            <button type="button" className="btn-secondary" onClick={onClose} disabled={saving}>
-              Cancel
-            </button>
-            <button type="submit" className="btn-primary" disabled={saving}>
-              {saving ? 'Saving...' : 'Save Changes'}
-            </button>
+            <Button
+              type="button"
+              label="Cancel"
+              icon="pi pi-times"
+              onClick={onClose}
+              disabled={saving}
+              className="p-button-text"
+            />
+            <Button
+              type="submit"
+              label={saving ? 'Saving...' : 'Save Changes'}
+              icon="pi pi-check"
+              loading={saving}
+              disabled={saving}
+            />
           </div>
         </form>
-      </div>
-    </div>
+      )}
+    </Dialog>
   );
 };
 

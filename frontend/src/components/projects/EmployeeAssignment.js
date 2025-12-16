@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { InputText } from 'primereact/inputtext';
+import { Button } from 'primereact/button';
 import { getProjectById, getAllEmployees, assignEmployeesToTeam, removeEmployeeFromTeam } from '../../services/api';
 import './EmployeeAssignment.css';
 
@@ -293,9 +295,13 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
             <p style={{ fontSize: '0.9rem', color: '#6c757d', marginTop: '0.5rem' }}>
               Please create teams in the project edit form before assigning employees.
             </p>
-            <button className="btn btn-cancel" onClick={onClose} style={{ marginTop: '1rem' }}>
-              Close
-            </button>
+            <Button
+              label="Close"
+              icon="pi pi-times"
+              className="p-button-text"
+              onClick={onClose}
+              style={{ marginTop: '1rem' }}
+            />
           </div>
         ) : (
           <>
@@ -305,7 +311,7 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
               </label>
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {teams.map((team) => (
-                  <button
+                  <Button
                     key={team.id}
                     type="button"
                     onClick={() => {
@@ -313,17 +319,9 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
                       // Immediately load employees for the clicked team
                       loadTeamEmployees(team);
                     }}
-                    className={`team-tab ${selectedTeam?.id === team.id ? 'active' : ''}`}
+                    className={selectedTeam?.id === team.id ? 'p-button-primary' : 'p-button-outlined'}
                     style={{
-                      padding: '0.5rem 1rem',
-                      border: selectedTeam?.id === team.id ? '2px solid #007bff' : '1px solid #ced4da',
-                      backgroundColor: selectedTeam?.id === team.id ? '#007bff' : 'white',
-                      color: selectedTeam?.id === team.id ? 'white' : '#333',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem',
-                      fontWeight: selectedTeam?.id === team.id ? '600' : '400',
-                      transition: 'all 0.2s'
+                      fontSize: '0.9rem'
                     }}
                   >
                     {team.agile_board_name}
@@ -338,7 +336,7 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
                         {team.employees.length}
                       </span>
                     )}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -348,8 +346,7 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
                 <div className="employee-selector">
                   <label htmlFor="employee-search">Add Employee to {selectedTeam?.agile_board_name}</label>
               <div className="searchable-dropdown">
-                <input
-                  type="text"
+                <InputText
                   id="employee-search"
                   placeholder="Search and select an employee..."
                   value={searchTerm}
@@ -425,17 +422,17 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
                           <td>{emp.employee_sso || 'N/A'}</td>
                           <td>{emp.employee_role || 'N/A'}</td>
                           <td>
-                            <button
+                            <Button
                               type="button"
-                              className="btn-remove"
+                              label="Remove"
+                              icon="pi pi-trash"
+                              className="p-button-danger p-button-sm"
                               onClick={() => {
                                 console.log(`Remove button clicked for employee_id: ${emp.employee_id}, assignment_id: ${emp.assignment_id}`);
                                 handleRemoveEmployee(emp.employee_id, emp.assignment_id);
                               }}
                               title={emp.assignment_id ? `Remove from database (ID: ${emp.assignment_id})` : 'Remove from list'}
-                            >
-                              Remove
-                            </button>
+                            />
                           </td>
                         </tr>
                       );
@@ -451,12 +448,20 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
           </div>
 
           <div className="form-actions">
-            <button type="button" className="btn btn-cancel" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={submitting || !selectedTeam}>
-              {submitting ? 'Saving...' : 'Save Assignments'}
-            </button>
+            <Button
+              type="button"
+              label="Cancel"
+              icon="pi pi-times"
+              className="p-button-text"
+              onClick={onClose}
+            />
+            <Button
+              type="submit"
+              label={submitting ? 'Saving...' : 'Save Assignments'}
+              icon="pi pi-check"
+              loading={submitting}
+              disabled={submitting || !selectedTeam}
+            />
           </div>
         </form>
           </>
