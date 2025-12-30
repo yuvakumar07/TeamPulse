@@ -12,6 +12,9 @@ router.use(attachPermissions);
 // Get employees for invoice generation
 router.get('/employees', invoiceController.getEmployeesForInvoice);
 
+// Get employees by Purchase Order
+router.get('/employees-by-po', invoiceController.getEmployeesByPo);
+
 // Check if invoice exists
 router.get('/check-exists', invoiceController.checkInvoiceExists);
 

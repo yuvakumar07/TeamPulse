@@ -134,6 +134,18 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
     return <span>{teamCount} {teamCount === 1 ? 'team' : 'teams'}</span>;
   };
 
+  const poBodyTemplate = (rowData) => {
+    if (rowData.po_number) {
+      return (
+        <div>
+          <div style={{ fontWeight: 'bold' }}>{rowData.po_number}</div>
+          <div style={{ fontSize: '0.875rem', color: '#6c757d' }}>{rowData.po_owner_name}</div>
+        </div>
+      );
+    }
+    return <span style={{ color: '#6c757d' }}>-</span>;
+  };
+
   const actionBodyTemplate = (rowData) => {
     return (
       <div className="flex gap-2">
@@ -288,6 +300,7 @@ const ProjectListPrime = ({ onEdit, onAdd }) => {
         <Column field="project_team_name" header="Project Team Name" sortable style={{ minWidth: '200px' }} />
         <Column field="team_count" header="Teams" body={teamsBodyTemplate} style={{ minWidth: '100px' }} />
         <Column field="project_status" header="Status" body={statusBodyTemplate} sortable style={{ minWidth: '120px' }} />
+        <Column field="po_number" header="Purchase Order" body={poBodyTemplate} style={{ minWidth: '180px' }} />
         <Column field="employee_count" header="Employees" style={{ minWidth: '100px' }} />
         <Column header="Actions" body={actionBodyTemplate} exportable={false} style={{ minWidth: '200px' }} />
       </DataTable>

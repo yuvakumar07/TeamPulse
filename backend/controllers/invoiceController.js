@@ -968,8 +968,136 @@ const generateInvoicePDF = async (req, res) => {
   }
 };
 
+// Get employees for invoice by Purchase Order
+const getEmployeesByPo = async (req, res) => {
+  try {
+    const { poId } = req.query;
+
+    if (!poId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Purchase Order ID is required'
+      });
+    }
+
+    // Get PO details
+    const [pos] = await db.query(
+      'SELECT id, po_number, po_owner_name, status FROM pos WHERE id = ?',
+      [poId]
+    );
+
+    if (pos.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Purchase Order not found'
+      });
+    }
+
+    // Get all projects associated with this PO
+    const [projects] = await db.query(
+      'SELECT id, project_team_name FROM projects WHERE po_id = ?',
+      [poId]
+    );
+
+    if (projects.length === 0) {
+      return res.json({
+        success: true,
+        data: [],
+        projects: [],
+        po: pos[0],
+        message: 'No projects found for this Purchase Order'
+      });
+    }
+
+    const projectIds = projects.map(p => p.id);
+
+    // Get all employees from these projects, excluding managers
+    const [employees] = await db.query(
+      `SELECT DISTINCT e.id, e.name, e.sso, e.role, e.role_type,
+              p.project_team_name, p.id as project_id,
+              pt.agile_board_name as team_name
+       FROM project_employees pe
+       JOIN employees e ON pe.employee_id = e.id
+       JOIN projects p ON pe.project_id = p.id
+       LEFT JOIN project_teams pt ON pe.team_id = pt.id
+       WHERE pe.project_id IN (?)
+       AND e.status = 'Active'
+       AND e.id NOT IN (
+         SELECT offshore_manager_id FROM projects WHERE po_id = ? AND offshore_manager_id IS NOT NULL
+         UNION
+         SELECT onsite_manager_id FROM projects WHERE po_id = ? AND onsite_manager_id IS NOT NULL
+       )
+       ORDER BY p.project_team_name, e.name`,
+      [projectIds, poId, poId]
+    );
+
+    // Get all team leads from projects associated with this PO
+    const [teamLeads] = await db.query(
+      `SELECT DISTINCT
+              e.id, e.name, e.sso, e.role, e.role_type,
+              p.project_team_name, p.id as project_id,
+              pt.agile_board_name as team_name
+       FROM project_teams pt
+       JOIN projects p ON pt.project_id = p.id
+       LEFT JOIN employees e ON (pt.offshore_team_lead_id = e.id OR pt.onsite_team_lead_id = e.id)
+       WHERE p.po_id = ?
+       AND e.id IS NOT NULL
+       AND e.status = 'Active'
+       AND e.id NOT IN (
+         SELECT offshore_manager_id FROM projects WHERE po_id = ? AND offshore_manager_id IS NOT NULL
+         UNION
+         SELECT onsite_manager_id FROM projects WHERE po_id = ? AND onsite_manager_id IS NOT NULL
+       )
+       ORDER BY p.project_team_name, e.name`,
+      [poId, poId, poId]
+    );
+
+    // Combine employees and team leads
+    const allEmployees = [...employees];
+    teamLeads.forEach(tl => {
+      if (!allEmployees.some(emp => emp.id === tl.id && emp.project_id === tl.project_id)) {
+        allEmployees.push(tl);
+      }
+    });
+
+    // Get managers from projects associated with this PO
+    const [managers] = await db.query(
+      `SELECT DISTINCT
+              e.id, e.name, e.role, e.role_type,
+              p.project_team_name, p.id as project_id,
+              CASE
+                WHEN p.offshore_manager_id = e.id THEN 'offshore'
+                WHEN p.onsite_manager_id = e.id THEN 'onsite'
+              END as manager_type
+       FROM projects p
+       LEFT JOIN employees e ON (p.offshore_manager_id = e.id OR p.onsite_manager_id = e.id)
+       WHERE p.po_id = ?
+       AND e.id IS NOT NULL
+       AND e.status = 'Active'
+       ORDER BY p.project_team_name, e.name`,
+      [poId]
+    );
+
+    res.json({
+      success: true,
+      data: allEmployees,
+      managers: managers,
+      projects: projects,
+      po: pos[0]
+    });
+  } catch (error) {
+    console.error('Error fetching employees by PO:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching employees',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getEmployeesForInvoice,
+  getEmployeesByPo,
   checkInvoiceExists,
   createInvoice,
   getAllInvoices,

@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 import { InputText } from 'primereact/inputtext';
 import { Dropdown } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
-import { createProject, updateProject, getProjectById, createProjectTeam, updateProjectTeam, deleteProjectTeam, getAllEmployees, getAllTeams } from '../../services/api';
+import { createProject, updateProject, getProjectById, createProjectTeam, updateProjectTeam, deleteProjectTeam, getAllEmployees, getAllTeams, getAllPos } from '../../services/api';
 import './ProjectForm.css';
 
 const ProjectForm = ({ project, onClose, onSuccess }) => {
@@ -11,17 +11,20 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
     project_team_name: '',
     project_status: 'Planning',
     offshore_manager_id: '',
-    onsite_manager_id: ''
+    onsite_manager_id: '',
+    po_id: ''
   });
   const [teams, setTeams] = useState([]);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [employees, setEmployees] = useState([]);
   const [allTeamsGlobal, setAllTeamsGlobal] = useState([]);
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
 
   useEffect(() => {
     fetchEmployees();
     fetchAllTeamsGlobal();
+    fetchPurchaseOrders();
     if (project) {
       loadProjectData();
     }
@@ -47,6 +50,16 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
     }
   };
 
+  const fetchPurchaseOrders = async () => {
+    try {
+      const response = await getAllPos(1, 1000, 'All');
+      setPurchaseOrders(response.data.data || []);
+    } catch (err) {
+      console.error('Error fetching purchase orders:', err);
+      toast.error('Failed to load purchase orders list');
+    }
+  };
+
   const loadProjectData = async () => {
     try {
       const response = await getProjectById(project.id);
@@ -56,7 +69,8 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
         project_team_name: projectData.project_team_name || '',
         project_status: projectData.project_status || 'Planning',
         offshore_manager_id: projectData.offshore_manager_id || '',
-        onsite_manager_id: projectData.onsite_manager_id || ''
+        onsite_manager_id: projectData.onsite_manager_id || '',
+        po_id: projectData.po_id || ''
       });
 
       setTeams(projectData.teams || []);
@@ -223,6 +237,16 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
       }))
   ];
 
+  const purchaseOrderOptions = [
+    { label: 'Select Purchase Order (Optional)', value: '' },
+    ...purchaseOrders
+      .filter(po => po.status === 'Active' || (formData.po_id && po.id === formData.po_id))
+      .map(po => ({
+        label: `${po.po_number} - ${po.po_owner_name}`,
+        value: po.id
+      }))
+  ];
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content project-form" onClick={(e) => e.stopPropagation()}>
@@ -257,6 +281,21 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                 value={formData.project_status}
                 options={projectStatusOptions}
                 onChange={(e) => handleDropdownChange('project_status', e.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="po_id">Purchase Order</label>
+              <Dropdown
+                id="po_id"
+                name="po_id"
+                value={formData.po_id}
+                options={purchaseOrderOptions}
+                onChange={(e) => handleDropdownChange('po_id', e.value)}
+                showClear
+                filter
+                filterPlaceholder="Search PO..."
+                placeholder="Select Purchase Order (Optional)"
               />
             </div>
 

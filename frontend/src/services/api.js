@@ -151,6 +151,10 @@ export const getEmployeesForInvoice = (projectId, teamId = null) => {
   }
   return api.get('/invoices/employees', { params });
 };
+
+export const getEmployeesByPo = (poId) => {
+  return api.get('/invoices/employees-by-po', { params: { poId } });
+};
 export const getAllInvoices = (page = 1, limit = 10, status = null, projectId = null, teamId = null, month = null, year = null) => {
   const params = { page, limit };
   if (status && status !== 'All') {

@@ -23,10 +23,14 @@ const getAllProjects = async (req, res) => {
       SELECT p.*,
              COUNT(DISTINCT CASE WHEN ee.status = 'Active' THEN pe.employee_id END) as employee_count,
              0 as total_allocation,
-             (SELECT COUNT(*) FROM project_teams pt WHERE pt.project_id = p.id) as team_count
+             (SELECT COUNT(*) FROM project_teams pt WHERE pt.project_id = p.id) as team_count,
+             po.po_number,
+             po.po_owner_name,
+             po.status as po_status
       FROM projects p
       LEFT JOIN project_employees pe ON p.id = pe.project_id
       LEFT JOIN employees ee ON ee.id = pe.employee_id
+      LEFT JOIN pos po ON p.po_id = po.id
     `;
     const queryParams = [];
     const countParams = [];
@@ -93,17 +97,21 @@ const getProjectById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Get project details with manager information
+    // Get project details with manager and PO information
     const [projects] = await db.query(
       `SELECT p.*,
               om.id as offshore_manager_emp_id, om.sso as offshore_manager_sso,
               om.name as offshore_manager_name, om.role as offshore_manager_role,
+              po.po_number,
+              po.po_owner_name,
+              po.status as po_status,
               osm.id as onsite_manager_emp_id, osm.sso as onsite_manager_sso,
               osm.name as onsite_manager_name, osm.role as onsite_manager_role,
               p.temp_offshore_manager_name, p.temp_onsite_manager_name
        FROM projects p
        LEFT JOIN employees om ON p.offshore_manager_id = om.id
        LEFT JOIN employees osm ON p.onsite_manager_id = osm.id
+       LEFT JOIN pos po ON p.po_id = po.id
        WHERE p.id = ?`,
       [id]
     );
@@ -316,6 +324,7 @@ const createProject = async (req, res) => {
       project_status,
       offshore_manager_id,
       onsite_manager_id,
+      po_id,
       employees // Array of {employee_id}
     } = req.body;
 
@@ -331,13 +340,14 @@ const createProject = async (req, res) => {
     // Insert project
     const [result] = await connection.query(
       `INSERT INTO projects
-      (project_team_name, project_status, offshore_manager_id, onsite_manager_id)
-      VALUES (?, ?, ?, ?)`,
+      (project_team_name, project_status, offshore_manager_id, onsite_manager_id, po_id)
+      VALUES (?, ?, ?, ?, ?)`,
       [
         project_team_name,
         project_status || 'Planning',
         offshore_manager_id || null,
-        onsite_manager_id || null
+        onsite_manager_id || null,
+        po_id || null
       ]
     );
 
@@ -409,6 +419,7 @@ const updateProject = async (req, res) => {
       project_status,
       offshore_manager_id,
       onsite_manager_id,
+      po_id,
       employees // Array of {employee_id}
     } = req.body;
 
@@ -429,13 +440,14 @@ const updateProject = async (req, res) => {
     // Update project
     await connection.query(
       `UPDATE projects
-      SET project_team_name = ?, project_status = ?, offshore_manager_id = ?, onsite_manager_id = ?
+      SET project_team_name = ?, project_status = ?, offshore_manager_id = ?, onsite_manager_id = ?, po_id = ?
       WHERE id = ?`,
       [
         project_team_name,
         project_status,
         offshore_manager_id || null,
         onsite_manager_id || null,
+        po_id || null,
         id
       ]
     );

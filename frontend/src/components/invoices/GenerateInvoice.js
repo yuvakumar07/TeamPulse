@@ -6,7 +6,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
-import { getEmployeesForInvoice, createInvoice, getAllProjects, checkInvoiceExists } from '../../services/api';
+import { getEmployeesForInvoice, getEmployeesByPo, createInvoice, getAllProjects, getAllPos, checkInvoiceExists } from '../../services/api';
 import { getProjectById } from '../../services/api';
 import './GenerateInvoice.css';
 
@@ -15,10 +15,13 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     invoice_month: new Date().getMonth() + 1,
     invoice_year: new Date().getFullYear(),
+    po_id: '',
     project_id: '',
     team_id: ''
   });
   const [projects, setProjects] = useState([]);
+  const [allProjects, setAllProjects] = useState([]);
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [teams, setTeams] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [employeeBilling, setEmployeeBilling] = useState([]);
@@ -32,7 +35,21 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
 
   useEffect(() => {
     fetchProjects();
+    fetchPurchaseOrders();
   }, []);
+
+  useEffect(() => {
+    if (formData.po_id) {
+      // Filter projects by PO
+      const filteredProjects = allProjects.filter(p => p.po_id === parseInt(formData.po_id));
+      setProjects(filteredProjects);
+      setFormData(prev => ({ ...prev, project_id: '', team_id: '' }));
+      setTeams([]);
+    } else {
+      // Show all projects
+      setProjects(allProjects);
+    }
+  }, [formData.po_id, allProjects]);
 
   useEffect(() => {
     if (formData.project_id) {
@@ -46,10 +63,22 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
   const fetchProjects = async () => {
     try {
       const response = await getAllProjects(1, 1000, 'All');
-      setProjects(response.data.data || []);
+      const projectsList = response.data.data || [];
+      setAllProjects(projectsList);
+      setProjects(projectsList);
     } catch (err) {
       console.error('Error fetching projects:', err);
       toast.error('Failed to load projects');
+    }
+  };
+
+  const fetchPurchaseOrders = async () => {
+    try {
+      const response = await getAllPos(1, 1000, 'All');
+      setPurchaseOrders(response.data.data || []);
+    } catch (err) {
+      console.error('Error fetching purchase orders:', err);
+      toast.error('Failed to load purchase orders');
     }
   };
 
@@ -75,42 +104,61 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
   const handleNext = async (e) => {
     e.preventDefault();
 
-    if (!formData.project_id || !formData.invoice_month || !formData.invoice_year) {
-      toast.error('Please fill in all required fields');
+    // Validate: Either PO or Project must be selected
+    if ((!formData.po_id && !formData.project_id) || !formData.invoice_month || !formData.invoice_year) {
+      toast.error('Please select a Purchase Order or Project, and fill in invoice period');
       return;
     }
 
     setLoading(true);
     try {
-      // Check if invoice already exists
-      const checkResponse = await checkInvoiceExists(
-        formData.project_id,
-        formData.team_id || null,
-        formData.invoice_month,
-        formData.invoice_year
-      );
+      let response;
+      let employeeList = [];
+      let managersData = { offshore_manager: 'N/A', onsite_manager: 'N/A' };
+      let managerDetails = [];
 
-      if (checkResponse.data.exists) {
-        const invoiceNumber = checkResponse.data.data.invoice_number;
-        toast.warning(
-          `Invoice already exists for this period! Invoice Number: ${invoiceNumber}`,
-          { autoClose: 5000 }
+      // If PO is selected without specific project, fetch all employees from PO-associated projects
+      if (formData.po_id && !formData.project_id) {
+        response = await getEmployeesByPo(formData.po_id);
+        employeeList = response.data.data || [];
+        managerDetails = response.data.managers || [];
+
+        if (employeeList.length === 0 && managerDetails.length === 0) {
+          toast.warning('No employees or managers found for the selected Purchase Order');
+          setLoading(false);
+          return;
+        }
+      } else {
+        // Original flow: check if invoice exists for specific project/team
+        const checkResponse = await checkInvoiceExists(
+          formData.project_id,
+          formData.team_id || null,
+          formData.invoice_month,
+          formData.invoice_year
         );
-        setLoading(false);
-        return;
+
+        if (checkResponse.data.exists) {
+          const invoiceNumber = checkResponse.data.data.invoice_number;
+          toast.warning(
+            `Invoice already exists for this period! Invoice Number: ${invoiceNumber}`,
+            { autoClose: 5000 }
+          );
+          setLoading(false);
+          return;
+        }
+
+        response = await getEmployeesForInvoice(
+          formData.project_id,
+          formData.team_id || null
+        );
+
+        employeeList = response.data.data || [];
+        managersData = response.data.managers || {
+          offshore_manager: 'N/A',
+          onsite_manager: 'N/A'
+        };
+        managerDetails = response.data.managerDetails || [];
       }
-
-      const response = await getEmployeesForInvoice(
-        formData.project_id,
-        formData.team_id || null
-      );
-
-      const employeeList = response.data.data || [];
-      const managersData = response.data.managers || {
-        offshore_manager: 'N/A',
-        onsite_manager: 'N/A'
-      };
-      const managerDetails = response.data.managerDetails || [];
 
       if (employeeList.length === 0 && managerDetails.length === 0) {
         toast.warning('No employees or managers found for the selected project/team');
@@ -128,6 +176,7 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
         employee_role: emp.role,
         role_type: emp.role_type,
         team_name: emp.team_name,
+        project_team_name: emp.project_team_name || null,
         billing_hours: 0,
         leave_hours: 0,
         cost_per_hour: 0,
@@ -141,6 +190,7 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
         employee_role: mgr.role,
         role_type: mgr.role_type,
         team_name: mgr.team_name,
+        project_team_name: mgr.project_team_name || null,
         manager_type: mgr.manager_type === 'offshore' ? 'Offshore' : 'Onsite',
         billing_hours: 0,
         leave_hours: 0,
@@ -329,6 +379,16 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
     }))
   ];
 
+  const poOptions = [
+    { label: 'All Purchase Orders', value: '' },
+    ...purchaseOrders
+      .filter(po => po.status === 'Active')
+      .map(po => ({
+        label: `${po.po_number} - ${po.po_owner_name}`,
+        value: po.id
+      }))
+  ];
+
   return (
     <Dialog
       header={`Generate Invoice - ${step === 1 ? 'Step 1: Select Period' : 'Step 2: Enter Billing Details'}`}
@@ -374,20 +434,45 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
             </div>
 
             <div className="form-group">
+              <label htmlFor="po_id">
+                Purchase Order (Filter)
+              </label>
+              <Dropdown
+                id="po_id"
+                value={formData.po_id}
+                options={poOptions}
+                onChange={(e) => handleChange({ target: { name: 'po_id', value: e.value } })}
+                placeholder="All Purchase Orders"
+                filter
+                filterPlaceholder="Search POs..."
+                showClear
+                className="w-full"
+              />
+              <small className="p-text-secondary" style={{ display: 'block', marginTop: '0.25rem' }}>
+                {formData.po_id ? 'Projects filtered by selected PO' : 'Optional: Filter projects by PO'}
+              </small>
+            </div>
+
+            <div className="form-group">
               <label htmlFor="project_id">
-                Project <span className="required">*</span>
+                Project {!formData.po_id && <span className="required">*</span>}
               </label>
               <Dropdown
                 id="project_id"
                 value={formData.project_id}
                 options={projectOptions}
                 onChange={(e) => handleChange({ target: { name: 'project_id', value: e.value } })}
-                placeholder="Select Project"
+                placeholder={formData.po_id ? "All Projects in PO (Optional)" : "Select Project"}
                 filter
                 filterPlaceholder="Search projects"
                 showClear
                 className="w-full"
               />
+              {formData.po_id && !formData.project_id && (
+                <small className="p-text-secondary" style={{ display: 'block', marginTop: '0.25rem' }}>
+                  Leave empty to include all employees from PO-associated projects
+                </small>
+              )}
             </div>
 
             <div className="form-group">
@@ -428,8 +513,15 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
         ) : (
           <form onSubmit={handleSubmit}>
             <div className="invoice-summary">
+              {formData.po_id && (
+                <div className="summary-item">
+                  <strong>Purchase Order:</strong> {purchaseOrders.find(po => po.id === parseInt(formData.po_id))?.po_number}
+                  {' - '}
+                  {purchaseOrders.find(po => po.id === parseInt(formData.po_id))?.po_owner_name}
+                </div>
+              )}
               <div className="summary-item">
-                <strong>Project:</strong> {projects.find(p => p.id === parseInt(formData.project_id))?.project_team_name}
+                <strong>Project:</strong> {formData.project_id ? projects.find(p => p.id === parseInt(formData.project_id))?.project_team_name : 'All Projects in PO'}
               </div>
               {formData.team_id && (
                 <div className="summary-item">
@@ -477,6 +569,14 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
                   body={(rowData) => rowData.role_type || 'N/A'}
                   style={{ minWidth: '120px' }}
                 />
+                {formData.po_id && !formData.project_id && (
+                  <Column
+                    field="project_team_name"
+                    header="Project"
+                    body={(rowData) => rowData.project_team_name || 'N/A'}
+                    style={{ minWidth: '150px' }}
+                  />
+                )}
                 <Column
                   field="team_name"
                   header="Project Team"
@@ -593,6 +693,14 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
                     body={(rowData) => rowData.role_type || 'N/A'}
                     style={{ minWidth: '120px' }}
                   />
+                  {formData.po_id && !formData.project_id && (
+                    <Column
+                      field="project_team_name"
+                      header="Project"
+                      body={(rowData) => rowData.project_team_name || 'N/A'}
+                      style={{ minWidth: '150px' }}
+                    />
+                  )}
                   <Column
                     field="team_name"
                     header="Project Team"
