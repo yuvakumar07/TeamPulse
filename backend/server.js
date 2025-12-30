@@ -12,6 +12,7 @@ const visaRoutes = require('./routes/visaRoutes');
 const assetRoutes = require('./routes/assetRoutes');
 const invoiceRoutes = require('./routes/invoiceRoutes');
 const lookupRoutes = require('./routes/lookupRoutes');
+const poRoutes = require('./routes/poRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -31,6 +32,7 @@ app.use('/api/visa', visaRoutes);
 app.use('/api/assets', assetRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/lookups', lookupRoutes);
+app.use('/api/pos', poRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -47,7 +49,8 @@ app.get('/', (req, res) => {
       visa: '/api/visa',
       assets: '/api/assets',
       invoices: '/api/invoices',
-      lookups: '/api/lookups'
+      lookups: '/api/lookups',
+      pos: '/api/pos'
     }
   });
 });

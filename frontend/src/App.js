@@ -20,6 +20,7 @@ import EditEmployeePage from './pages/EditEmployeePage';
 import ProjectsPage from './pages/ProjectsPage';
 import AssetsPage from './pages/AssetsPage';
 import InvoicesPage from './pages/InvoicesPage';
+import PosPage from './pages/PosPage';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsersManagement from './pages/AdminUsersManagement';
@@ -102,6 +103,14 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <InvoicesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/pos"
+              element={
+                <ProtectedRoute>
+                  <PosPage />
                 </ProtectedRoute>
               }
             />

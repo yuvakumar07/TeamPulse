@@ -214,4 +214,36 @@ export const createLookup = (data) => api.post('/lookups', data);
 export const updateLookup = (id, data) => api.put(`/lookups/${id}`, data);
 export const deleteLookup = (id) => api.delete(`/lookups/${id}`);
 
+// PO Management API calls
+export const getAllPos = (page = 1, limit = 10, status = null, sortField = 'created_at', sortOrder = 'DESC', search = null) => {
+  const params = { page, limit };
+  if (status && status !== 'All') {
+    params.status = status;
+  }
+  if (sortField) {
+    params.sortField = sortField;
+  }
+  if (sortOrder) {
+    params.sortOrder = sortOrder;
+  }
+  if (search && search.trim() !== '') {
+    params.search = search.trim();
+  }
+  return api.get('/pos', { params });
+};
+export const getPoById = (id) => api.get(`/pos/${id}`);
+export const createPo = (data) => api.post('/pos', data);
+export const updatePo = (id, data) => api.put(`/pos/${id}`, data);
+export const deletePo = (id) => api.delete(`/pos/${id}`);
+export const getPosByProject = (projectId) => api.get(`/pos/project/${projectId}`);
+export const importPos = (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return api.post('/pos/import', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+};
+
 export default api;

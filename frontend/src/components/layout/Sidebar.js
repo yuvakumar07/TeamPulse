@@ -78,6 +78,15 @@ const Sidebar = () => {
             </li>
           </PermissionGuard>
 
+          <PermissionGuard permissions={['pos.view', 'pos.create', 'pos.update', 'pos.delete']} requireAll={false}>
+            <li className="sidebar-item">
+              <Link to="/admin/pos" className={`sidebar-link ${isActive('/admin/pos')}`} title="Purchase Orders">
+                <i className="pi pi-shopping-cart sidebar-icon"></i>
+                <span className="sidebar-text">Purchase Orders</span>
+              </Link>
+            </li>
+          </PermissionGuard>
+
           <PermissionGuard permission="admin_users.view">
             <li className="sidebar-item">
               <Link to="/admin/users" className={`sidebar-link ${isActive('/admin/users')}`} title="Admin Users">
