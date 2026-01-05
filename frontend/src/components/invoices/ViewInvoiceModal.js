@@ -91,7 +91,7 @@ const ViewInvoiceModal = ({ invoiceId, onClose }) => {
               </div>
               <div className="info-item">
                 <label>Project:</label>
-                <span>{invoice.project_team_name}</span>
+                <span>{invoice.project_team_name || 'Multiple Projects'}</span>
               </div>
               <div className="info-item">
                 <label>Team:</label>

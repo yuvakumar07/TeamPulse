@@ -19,6 +19,7 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
     project_id: '',
     team_id: ''
   });
+  const [noOfDays, setNoOfDays] = useState(20);
   const [projects, setProjects] = useState([]);
   const [allProjects, setAllProjects] = useState([]);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
@@ -101,6 +102,28 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
     }));
   };
 
+  // Calculate billing hours based on number of days and employee location
+  const calculateBillingHours = (roleTypeOrLocation, noOfDays) => {
+    if (!noOfDays || noOfDays === 0) return 0;
+
+    // Default to 9 hours if no location specified
+    if (!roleTypeOrLocation) return noOfDays * 9;
+
+    const locationStr = String(roleTypeOrLocation).toLowerCase().trim();
+
+    // Check if location contains "onsite" - use 8 hours per day (check this first)
+    if (locationStr.includes('onsite') || locationStr === 'onsite') {
+      return noOfDays * 8;
+    }
+    // Check if location contains "offshore" - use 9 hours per day
+    else if (locationStr.includes('offshore') || locationStr === 'offshore') {
+      return noOfDays * 9;
+    }
+
+    // Default to offshore (9 hours) if location not clearly specified
+    return noOfDays * 9;
+  };
+
   const handleNext = async (e) => {
     e.preventDefault();
 
@@ -169,19 +192,45 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
       setEmployees(employeeList);
       setManagers(managersData);
 
-      // Initialize billing data for regular employees (managers are already excluded by backend)
-      const initialBilling = employeeList.map(emp => ({
-        employee_id: emp.id,
-        employee_name: emp.name,
-        employee_role: emp.role,
-        role_type: emp.role_type,
-        team_name: emp.team_name,
-        project_team_name: emp.project_team_name || null,
-        billing_hours: 0,
-        leave_hours: 0,
-        cost_per_hour: 0,
-        notes: ''
-      }));
+      // Separate team leads from regular employees
+      const teamLeads = [];
+      const regularEmployees = [];
+
+      employeeList.forEach(emp => {
+        const roleStr = (emp.role || '').toLowerCase();
+        const roleTypeStr = (emp.role_type || '').toLowerCase();
+
+        // Check if this is a team lead
+        if (roleStr.includes('lead') || roleTypeStr.includes('lead') ||
+            roleStr.includes('team lead') || roleTypeStr.includes('team lead')) {
+          teamLeads.push(emp);
+        } else {
+          regularEmployees.push(emp);
+        }
+      });
+
+      // Initialize billing data for regular employees only (excluding team leads and managers)
+      const initialBilling = regularEmployees.map(emp => {
+        // Debug logging for P, Saikiran
+        if (emp.name && emp.name.includes('Saikiran')) {
+          console.log('P, Saikiran work_location:', emp.work_location);
+          console.log('P, Saikiran role_type:', emp.role_type);
+        }
+
+        return {
+          employee_id: emp.id,
+          employee_name: emp.name,
+          employee_role: emp.role,
+          role_type: emp.role_type,
+          work_location: emp.work_location,
+          team_name: emp.team_name,
+          project_team_name: emp.project_team_name || null,
+          billing_hours: calculateBillingHours(emp.work_location, noOfDays),
+          leave_hours: 0,
+          cost_per_hour: 0,
+          notes: ''
+        };
+      });
 
       // Initialize billing data for managers from managerDetails array
       const initialManagerBilling = managerDetails.map(mgr => ({
@@ -192,11 +241,42 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
         team_name: mgr.team_name,
         project_team_name: mgr.project_team_name || null,
         manager_type: mgr.manager_type === 'offshore' ? 'Offshore' : 'Onsite',
-        billing_hours: 0,
+        billing_hours: calculateBillingHours(mgr.manager_type, noOfDays),
         leave_hours: 0,
         cost_per_hour: 0,
         notes: ''
       }));
+
+      // Add team leads to manager billing with their work location
+      teamLeads.forEach(tl => {
+        // Debug logging
+        if (tl.name && tl.name.includes('Saikiran')) {
+          console.log('Team Lead Saikiran work_location:', tl.work_location);
+          console.log('Team Lead Saikiran role:', tl.role);
+          console.log('Team Lead Saikiran role_type:', tl.role_type);
+        }
+
+        // Case-insensitive check for work location
+        const workLoc = String(tl.work_location || '').toLowerCase().trim();
+        const isOnsite = workLoc.includes('onsite');
+
+        console.log(`Team Lead: ${tl.name}, work_location: "${tl.work_location}", isOnsite: ${isOnsite}`);
+
+        initialManagerBilling.push({
+          employee_id: tl.id,
+          employee_name: tl.name,
+          employee_role: tl.role,
+          role_type: tl.role_type,
+          team_name: tl.team_name,
+          project_team_name: tl.project_team_name || null,
+          manager_type: isOnsite ? 'Onsite' : 'Offshore',
+          work_location: tl.work_location, // Keep original work_location
+          billing_hours: calculateBillingHours(tl.work_location, noOfDays),
+          leave_hours: 0,
+          cost_per_hour: 0,
+          notes: ''
+        });
+      });
 
       setEmployeeBilling(initialBilling);
       setManagerBilling(initialManagerBilling);
@@ -229,6 +309,31 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
     );
   };
 
+  // Recalculate all billing hours when No of Days changes
+  const handleNoOfDaysChange = (newDays) => {
+    // Ensure newDays is a valid number
+    const daysValue = newDays || 0;
+    setNoOfDays(daysValue);
+
+    if (daysValue <= 0) return;
+
+    // Recalculate employee billing hours
+    setEmployeeBilling(prev =>
+      prev.map(emp => ({
+        ...emp,
+        billing_hours: calculateBillingHours(emp.work_location, daysValue)
+      }))
+    );
+
+    // Recalculate manager billing hours
+    setManagerBilling(prev =>
+      prev.map(mgr => ({
+        ...mgr,
+        billing_hours: calculateBillingHours(mgr.work_location || mgr.manager_type, daysValue)
+      }))
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -254,7 +359,7 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
 
     try {
       const invoiceData = {
-        project_id: formData.project_id,
+        project_id: formData.project_id || null,
         team_id: formData.team_id || null,
         invoice_month: parseInt(formData.invoice_month),
         invoice_year: parseInt(formData.invoice_year),
@@ -536,6 +641,48 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
               </div>
               <div className="summary-item">
                 <strong>Onsite Manager:</strong> {managers.onsite_manager}
+              </div>
+            </div>
+
+            {/* Common No of Days Field */}
+            <div style={{
+              background: 'linear-gradient(135deg, #FFC500 0%, #FFD700 100%)',
+              padding: '1.5rem',
+              borderRadius: '8px',
+              marginBottom: '1.5rem',
+              boxShadow: '0 2px 8px rgba(255, 197, 0, 0.2)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                <label htmlFor="no_of_days_common" style={{
+                  fontSize: '1.1rem',
+                  fontWeight: '600',
+                  color: '#323232',
+                  margin: 0
+                }}>
+                  <i className="pi pi-calendar" style={{ marginRight: '0.5rem' }}></i>
+                  No of Days:
+                </label>
+                <InputNumber
+                  id="no_of_days_common"
+                  value={noOfDays}
+                  onValueChange={(e) => handleNoOfDaysChange(e.value)}
+                  min={1}
+                  max={31}
+                  placeholder="Enter days"
+                  style={{
+                    width: '150px',
+                    fontSize: '1.1rem'
+                  }}
+                  className="no-of-days-input"
+                />
+                <span style={{
+                  fontSize: '0.9rem',
+                  color: '#323232',
+                  fontStyle: 'italic'
+                }}>
+                  <i className="pi pi-info-circle" style={{ marginRight: '0.3rem' }}></i>
+                  Offshore: 9 hrs/day | Onsite: 8 hrs/day
+                </span>
               </div>
             </div>
 

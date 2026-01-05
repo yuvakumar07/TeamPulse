@@ -41,8 +41,10 @@ const getEmployeesForInvoice = async (req, res) => {
         `SELECT pt.*, p.project_team_name,
                 otl.id as offshore_tl_id, otl.name as offshore_tl_name,
                 otl.role as offshore_tl_role, otl.role_type as offshore_tl_role_type,
+                otl.work_location as offshore_tl_work_location,
                 ostl.id as onsite_tl_id, ostl.name as onsite_tl_name,
-                ostl.role as onsite_tl_role, ostl.role_type as onsite_tl_role_type
+                ostl.role as onsite_tl_role, ostl.role_type as onsite_tl_role_type,
+                ostl.work_location as onsite_tl_work_location
          FROM project_teams pt
          JOIN projects p ON pt.project_id = p.id
          LEFT JOIN employees otl ON pt.offshore_team_lead_id = otl.id AND otl.status = 'Active'
@@ -60,7 +62,7 @@ const getEmployeesForInvoice = async (req, res) => {
 
       // Get team employees, excluding managers
       const [teamEmployees] = await db.query(
-        `SELECT DISTINCT e.id, e.name, e.sso, e.role, e.role_type, pt.agile_board_name as team_name
+        `SELECT DISTINCT e.id, e.name, e.sso, e.role, e.role_type, e.work_location, pt.agile_board_name as team_name
          FROM project_employees pe
          JOIN employees e ON pe.employee_id = e.id
          LEFT JOIN project_teams pt ON pe.team_id = pt.id
@@ -85,6 +87,7 @@ const getEmployeesForInvoice = async (req, res) => {
           sso: null,
           role: team[0].offshore_tl_role,
           role_type: team[0].offshore_tl_role_type,
+          work_location: team[0].offshore_tl_work_location,
           team_name: team[0].agile_board_name
         });
       }
@@ -96,6 +99,7 @@ const getEmployeesForInvoice = async (req, res) => {
           sso: null,
           role: team[0].onsite_tl_role,
           role_type: team[0].onsite_tl_role_type,
+          work_location: team[0].onsite_tl_work_location,
           team_name: team[0].agile_board_name
         });
       }
@@ -116,7 +120,7 @@ const getEmployeesForInvoice = async (req, res) => {
 
       // Get all employees assigned to the project, excluding managers
       const [projectEmployees] = await db.query(
-        `SELECT DISTINCT e.id, e.name, e.sso, e.role, e.role_type, pt.agile_board_name as team_name
+        `SELECT DISTINCT e.id, e.name, e.sso, e.role, e.role_type, e.work_location, pt.agile_board_name as team_name
          FROM project_employees pe
          JOIN employees e ON pe.employee_id = e.id
          LEFT JOIN project_teams pt ON pe.team_id = pt.id
@@ -139,13 +143,13 @@ const getEmployeesForInvoice = async (req, res) => {
       // Get all team leads for the project
       const [teamLeads] = await db.query(
         `SELECT DISTINCT
-                otl.id as id, otl.name as name, otl.role as role, otl.role_type as role_type, pt.agile_board_name as team_name
+                otl.id as id, otl.name as name, otl.role as role, otl.role_type as role_type, otl.work_location as work_location, pt.agile_board_name as team_name
          FROM project_teams pt
          LEFT JOIN employees otl ON pt.offshore_team_lead_id = otl.id
          WHERE pt.project_id = ? AND otl.id IS NOT NULL AND otl.status = 'Active'
          UNION
          SELECT DISTINCT
-                ostl.id as id, ostl.name as name, ostl.role as role, ostl.role_type as role_type, pt.agile_board_name as team_name
+                ostl.id as id, ostl.name as name, ostl.role as role, ostl.role_type as role_type, ostl.work_location as work_location, pt.agile_board_name as team_name
          FROM project_teams pt
          LEFT JOIN employees ostl ON pt.onsite_team_lead_id = ostl.id
          WHERE pt.project_id = ? AND ostl.id IS NOT NULL AND ostl.status = 'Active'`,
@@ -161,6 +165,7 @@ const getEmployeesForInvoice = async (req, res) => {
             sso: null,
             role: tl.role,
             role_type: tl.role_type,
+            work_location: tl.work_location,
             team_name: tl.team_name
           });
         }
@@ -288,11 +293,11 @@ const createInvoice = async (req, res) => {
     } = req.body;
 
     // Validation
-    if (!project_id || !invoice_month || !invoice_year) {
+    if (!invoice_month || !invoice_year) {
       await connection.rollback();
       return res.status(400).json({
         success: false,
-        message: 'Project, month, and year are required'
+        message: 'Month and year are required'
       });
     }
 
@@ -305,12 +310,22 @@ const createInvoice = async (req, res) => {
     }
 
     // Check for duplicate invoice
-    const [existingInvoice] = await connection.query(
-      `SELECT id FROM invoices
-       WHERE project_id = ? AND invoice_month = ? AND invoice_year = ?
-       AND (team_id = ? OR (team_id IS NULL AND ? IS NULL))`,
-      [project_id, invoice_month, invoice_year, team_id, team_id]
-    );
+    let duplicateCheckQuery;
+    let duplicateCheckParams;
+
+    if (project_id) {
+      duplicateCheckQuery = `SELECT id FROM invoices
+         WHERE project_id = ? AND invoice_month = ? AND invoice_year = ?
+         AND (team_id = ? OR (team_id IS NULL AND ? IS NULL))`;
+      duplicateCheckParams = [project_id, invoice_month, invoice_year, team_id, team_id];
+    } else {
+      // When no project_id, check for duplicate across all projects for the same period
+      duplicateCheckQuery = `SELECT id FROM invoices
+         WHERE project_id IS NULL AND invoice_month = ? AND invoice_year = ?`;
+      duplicateCheckParams = [invoice_month, invoice_year];
+    }
+
+    const [existingInvoice] = await connection.query(duplicateCheckQuery, duplicateCheckParams);
 
     if (existingInvoice.length > 0) {
       await connection.rollback();
@@ -321,7 +336,7 @@ const createInvoice = async (req, res) => {
     }
 
     // Generate invoice number
-    const invoiceNumber = generateInvoiceNumber(project_id, invoice_month, invoice_year);
+    const invoiceNumber = generateInvoiceNumber(project_id || 'ALL', invoice_month, invoice_year);
 
     // Calculate totals
     let totalBillingHours = 0;
@@ -353,7 +368,7 @@ const createInvoice = async (req, res) => {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         invoiceNumber,
-        project_id,
+        project_id || null,
         team_id || null,
         invoice_month,
         invoice_year,
@@ -460,7 +475,7 @@ const getAllInvoices = async (req, res) => {
              p.project_team_name,
              pt.agile_board_name as team_name
       FROM invoices i
-      JOIN projects p ON i.project_id = p.id
+      LEFT JOIN projects p ON i.project_id = p.id
       LEFT JOIN project_teams pt ON i.team_id = pt.id
     `;
 
@@ -546,7 +561,7 @@ const getInvoiceById = async (req, res) => {
               p.project_team_name,
               pt.agile_board_name as team_name
        FROM invoices i
-       JOIN projects p ON i.project_id = p.id
+       LEFT JOIN projects p ON i.project_id = p.id
        LEFT JOIN project_teams pt ON i.team_id = pt.id
        WHERE i.id = ?`,
       [id]
@@ -663,7 +678,7 @@ const updateInvoice = async (req, res) => {
               p.project_team_name,
               pt.agile_board_name as team_name
        FROM invoices i
-       JOIN projects p ON i.project_id = p.id
+       LEFT JOIN projects p ON i.project_id = p.id
        LEFT JOIN project_teams pt ON i.team_id = pt.id
        WHERE i.id = ?`,
       [id]
@@ -754,7 +769,7 @@ const generateInvoicePDF = async (req, res) => {
               p.project_team_name,
               pt.agile_board_name as team_name
        FROM invoices i
-       JOIN projects p ON i.project_id = p.id
+       LEFT JOIN projects p ON i.project_id = p.id
        LEFT JOIN project_teams pt ON i.team_id = pt.id
        WHERE i.id = ?`,
       [id]
@@ -833,7 +848,7 @@ const generateInvoicePDF = async (req, res) => {
 
     yPosition += 20;
     doc.font('Helvetica-Bold').text('Project:', 50, yPosition);
-    doc.font('Helvetica').text(invoice.project_team_name, 200, yPosition);
+    doc.font('Helvetica').text(invoice.project_team_name || 'Multiple Projects', 200, yPosition);
 
     yPosition += 20;
     doc.font('Helvetica-Bold').text('Team:', 50, yPosition);
@@ -1013,7 +1028,7 @@ const getEmployeesByPo = async (req, res) => {
 
     // Get all employees from these projects, excluding managers
     const [employees] = await db.query(
-      `SELECT DISTINCT e.id, e.name, e.sso, e.role, e.role_type,
+      `SELECT DISTINCT e.id, e.name, e.sso, e.role, e.role_type, e.work_location,
               p.project_team_name, p.id as project_id,
               pt.agile_board_name as team_name
        FROM project_employees pe
@@ -1034,7 +1049,7 @@ const getEmployeesByPo = async (req, res) => {
     // Get all team leads from projects associated with this PO
     const [teamLeads] = await db.query(
       `SELECT DISTINCT
-              e.id, e.name, e.sso, e.role, e.role_type,
+              e.id, e.name, e.sso, e.role, e.role_type, e.work_location,
               p.project_team_name, p.id as project_id,
               pt.agile_board_name as team_name
        FROM project_teams pt

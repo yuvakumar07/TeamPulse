@@ -421,7 +421,12 @@ const InvoicesPage = () => {
         responsiveLayout="scroll"
       >
         <Column field="invoice_number" header="Invoice Number" body={invoiceNumberTemplate} sortable />
-        <Column field="project_team_name" header="Project" sortable />
+        <Column
+          field="project_team_name"
+          header="Project"
+          body={(rowData) => rowData.project_team_name || 'Multiple Projects'}
+          sortable
+        />
         <Column header="Team" body={teamTemplate} />
         <Column header="Period" body={periodTemplate} />
         <Column field="total_billing_hours" header="Billing Hours" sortable />
