@@ -821,9 +821,7 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
                     body={(rowData) => (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span style={{ fontWeight: '600' }}>{rowData.employee_name}</span>
-                        <span className="manager-type-badge">
-                          {rowData.manager_type} Manager
-                        </span>
+                       
                       </div>
                     )}
                     style={{ minWidth: '200px' }}

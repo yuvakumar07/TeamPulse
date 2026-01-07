@@ -60,7 +60,9 @@ const createProjectTeam = async (req, res) => {
       agile_board_name,
       agile_team_jira_key,
       offshore_team_lead_id,
-      onsite_team_lead_id
+      offshore_team_lead_allocation,
+      onsite_team_lead_id,
+      onsite_team_lead_allocation
     } = req.body;
 
     // Validation
@@ -90,14 +92,17 @@ const createProjectTeam = async (req, res) => {
     const [result] = await connection.query(
       `INSERT INTO project_teams
        (project_id, agile_board_name, agile_team_jira_key,
-        offshore_team_lead_id, onsite_team_lead_id)
-       VALUES (?, ?, ?, ?, ?)`,
+        offshore_team_lead_id, offshore_team_lead_allocation,
+        onsite_team_lead_id, onsite_team_lead_allocation)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         projectId,
         agile_board_name.trim(),
         agile_team_jira_key?.trim() || null,
         offshore_team_lead_id || null,
-        onsite_team_lead_id || null
+        offshore_team_lead_allocation || 0,
+        onsite_team_lead_id || null,
+        onsite_team_lead_allocation || 0
       ]
     );
 
@@ -157,7 +162,9 @@ const updateProjectTeam = async (req, res) => {
       agile_board_name,
       agile_team_jira_key,
       offshore_team_lead_id,
-      onsite_team_lead_id
+      offshore_team_lead_allocation,
+      onsite_team_lead_id,
+      onsite_team_lead_allocation
     } = req.body;
 
     // Validation
@@ -192,13 +199,16 @@ const updateProjectTeam = async (req, res) => {
     await connection.query(
       `UPDATE project_teams
        SET agile_board_name = ?, agile_team_jira_key = ?,
-           offshore_team_lead_id = ?, onsite_team_lead_id = ?
+           offshore_team_lead_id = ?, offshore_team_lead_allocation = ?,
+           onsite_team_lead_id = ?, onsite_team_lead_allocation = ?
        WHERE id = ?`,
       [
         agile_board_name.trim(),
         agile_team_jira_key?.trim() || null,
         offshore_team_lead_id || null,
+        offshore_team_lead_allocation || 0,
         onsite_team_lead_id || null,
+        onsite_team_lead_allocation || 0,
         teamId
       ]
     );

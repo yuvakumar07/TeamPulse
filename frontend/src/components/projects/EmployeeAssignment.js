@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { InputText } from 'primereact/inputtext';
+import { InputNumber } from 'primereact/inputnumber';
 import { Button } from 'primereact/button';
 import { getProjectById, getAllEmployees, assignEmployeesToTeam, removeEmployeeFromTeam } from '../../services/api';
 import './EmployeeAssignment.css';
@@ -112,7 +113,8 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
         employee_id: emp.id,
         employee_name: emp.name,
         employee_sso: emp.sso,
-        employee_role: emp.role
+        employee_role: emp.role,
+        allocation_percentage: emp.allocation_percentage || 0
       }));
 
     console.log('Mapped employee assignments:', assignments);
@@ -144,7 +146,8 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
       employee_id: employee.id,
       employee_name: employee.name,
       employee_sso: employee.sso,
-      employee_role: employee.role
+      employee_role: employee.role,
+      allocation_percentage: 0
     }]);
 
     // Reset search and close dropdown
@@ -159,6 +162,16 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
     setShowDropdown(true);
+  };
+
+  const handleAllocationChange = (employeeId, value) => {
+    setSelectedEmployees(prev =>
+      prev.map(emp =>
+        emp.employee_id === employeeId
+          ? { ...emp, allocation_percentage: value }
+          : emp
+      )
+    );
   };
 
   const handleRemoveEmployee = async (employeeId, assignmentId) => {
@@ -222,7 +235,8 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
     try {
       const dataToSubmit = {
         employees: selectedEmployees.map(emp => ({
-          employee_id: emp.employee_id
+          employee_id: emp.employee_id,
+          allocation_percentage: emp.allocation_percentage || 0
         }))
       };
 
@@ -410,6 +424,7 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
                       <th>Employee</th>
                       <th>SSO</th>
                       <th>Role</th>
+                      <th>Allocation %</th>
                       <th>Action</th>
                     </tr>
                   </thead>
@@ -421,6 +436,20 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
                           <td>{emp.employee_name}</td>
                           <td>{emp.employee_sso || 'N/A'}</td>
                           <td>{emp.employee_role || 'N/A'}</td>
+                          <td>
+                            <InputNumber
+                              value={emp.allocation_percentage || 0}
+                              onValueChange={(e) => handleAllocationChange(emp.employee_id, e.value)}
+                              min={0}
+                              max={100}
+                              suffix="%"
+                              showButtons
+                              mode="decimal"
+                              minFractionDigits={0}
+                              maxFractionDigits={2}
+                              style={{ width: '130px' }}
+                            />
+                          </td>
                           <td>
                             <Button
                               type="button"

@@ -23,7 +23,7 @@ const getTeamEmployees = async (req, res) => {
 
     // Get assigned employees with their details
     const [employees] = await db.query(
-      `SELECT pe.id as assignment_id, pe.team_id,
+      `SELECT pe.id as assignment_id, pe.team_id, pe.allocation_percentage,
               e.id, e.sso, e.name, e.role, e.role_type, e.location,
               0 as total_allocation
        FROM project_employees pe
@@ -102,11 +102,14 @@ const assignEmployeesToTeam = async (req, res) => {
           [team.project_id, emp.employee_id]
         );
 
-        // Insert the new team assignment
+        // Get allocation percentage, default to 0 if not provided
+        const allocationPercentage = emp.allocation_percentage || 0;
+
+        // Insert the new team assignment with allocation percentage
         await connection.query(
-          `INSERT INTO project_employees (project_id, team_id, employee_id)
-           VALUES (?, ?, ?)`,
-          [team.project_id, teamId, emp.employee_id]
+          `INSERT INTO project_employees (project_id, team_id, employee_id, allocation_percentage)
+           VALUES (?, ?, ?, ?)`,
+          [team.project_id, teamId, emp.employee_id, allocationPercentage]
         );
       }
     }

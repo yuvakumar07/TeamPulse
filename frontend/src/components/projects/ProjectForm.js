@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { InputText } from 'primereact/inputtext';
+import { InputNumber } from 'primereact/inputnumber';
 import { Dropdown } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
 import { createProject, updateProject, getProjectById, createProjectTeam, updateProjectTeam, deleteProjectTeam, getAllEmployees, getAllTeams, getAllPos } from '../../services/api';
@@ -12,6 +13,8 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
     project_status: 'Planning',
     offshore_manager_id: '',
     onsite_manager_id: '',
+    offshore_manager_allocation: 0,
+    onsite_manager_allocation: 0,
     po_id: ''
   });
   const [teams, setTeams] = useState([]);
@@ -70,6 +73,8 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
         project_status: projectData.project_status || 'Planning',
         offshore_manager_id: projectData.offshore_manager_id || '',
         onsite_manager_id: projectData.onsite_manager_id || '',
+        offshore_manager_allocation: projectData.offshore_manager_allocation || 0,
+        onsite_manager_allocation: projectData.onsite_manager_allocation || 0,
         po_id: projectData.po_id || ''
       });
 
@@ -122,7 +127,9 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
       agile_board_name: '',
       agile_team_jira_key: '',
       offshore_team_lead_id: '',
+      offshore_team_lead_allocation: 0,
       onsite_team_lead_id: '',
+      onsite_team_lead_allocation: 0,
       isNew: true
     }]);
   };
@@ -183,7 +190,9 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
           agile_board_name: team.agile_board_name,
           agile_team_jira_key: team.agile_team_jira_key,
           offshore_team_lead_id: team.offshore_team_lead_id || null,
-          onsite_team_lead_id: team.onsite_team_lead_id || null
+          offshore_team_lead_allocation: team.offshore_team_lead_allocation || 0,
+          onsite_team_lead_id: team.onsite_team_lead_id || null,
+          onsite_team_lead_allocation: team.onsite_team_lead_allocation || 0
         };
 
         if (team.isNew) {
@@ -319,6 +328,23 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
             </div>
 
             <div className="form-group">
+              <label htmlFor="offshore_manager_allocation">Offshore Manager Allocation %</label>
+              <InputNumber
+                id="offshore_manager_allocation"
+                name="offshore_manager_allocation"
+                value={formData.offshore_manager_allocation}
+                onValueChange={(e) => handleDropdownChange('offshore_manager_allocation', e.value)}
+                min={0}
+                max={100}
+                suffix="%"
+                showButtons
+                mode="decimal"
+                minFractionDigits={0}
+                maxFractionDigits={2}
+              />
+            </div>
+
+            <div className="form-group">
               <label htmlFor="onsite_manager_id">Onsite Manager</label>
               <select
                 id="onsite_manager_id"
@@ -335,6 +361,23 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                     </option>
                   ))}
               </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="onsite_manager_allocation">Onsite Manager Allocation %</label>
+              <InputNumber
+                id="onsite_manager_allocation"
+                name="onsite_manager_allocation"
+                value={formData.onsite_manager_allocation}
+                onValueChange={(e) => handleDropdownChange('onsite_manager_allocation', e.value)}
+                min={0}
+                max={100}
+                suffix="%"
+                showButtons
+                mode="decimal"
+                minFractionDigits={0}
+                maxFractionDigits={2}
+              />
             </div>
           </div>
 
@@ -391,7 +434,7 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                         />
                       </div>
 
-                      <div className="form-grid m-0" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '0 15px' }}>
+                      <div className="form-grid m-0" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '0 15px' }}>
                         <div className="form-group">
                           <label>Agile Board Name</label>
                           <InputText
@@ -422,6 +465,21 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                         </div>
 
                         <div className="form-group">
+                          <label>Offshore Team Lead Allocation %</label>
+                          <InputNumber
+                            value={team.offshore_team_lead_allocation || 0}
+                            onValueChange={(e) => updateTeam(index, 'offshore_team_lead_allocation', e.value)}
+                            min={0}
+                            max={100}
+                            suffix="%"
+                            showButtons
+                            mode="decimal"
+                            minFractionDigits={0}
+                            maxFractionDigits={2}
+                          />
+                        </div>
+
+                        <div className="form-group">
                           <label>Onsite Team Lead</label>
                           <Dropdown
                             value={team.onsite_team_lead_id || ''}
@@ -430,6 +488,21 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                             filter
                             showClear
                             placeholder="Select Onsite Team Lead"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label>Onsite Team Lead Allocation %</label>
+                          <InputNumber
+                            value={team.onsite_team_lead_allocation || 0}
+                            onValueChange={(e) => updateTeam(index, 'onsite_team_lead_allocation', e.value)}
+                            min={0}
+                            max={100}
+                            suffix="%"
+                            showButtons
+                            mode="decimal"
+                            minFractionDigits={0}
+                            maxFractionDigits={2}
                           />
                         </div>
                       </div>

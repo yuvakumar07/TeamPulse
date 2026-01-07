@@ -409,18 +409,19 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
 
     setSubmitting(true);
 
-    // Build projects array - create entries for each team with allocation set to 0
+    // Build projects array - create entries for each team with their allocation percentages
     const projectsArray = [];
     selectedProjects.forEach(projectId => {
       const selectedTeams = projectTeamSelections[projectId] || [];
 
       if (selectedTeams.length > 0) {
-        // Create an entry for each selected team with allocation set to 0
+        // Create an entry for each selected team with their allocation percentage
         selectedTeams.forEach(teamId => {
+          const allocation = projectTeamAllocations[projectId]?.[teamId] || 0;
           projectsArray.push({
             project_id: projectId,
             team_id: teamId,
-            allocation_percentage: 0
+            allocation_percentage: allocation
           });
         });
       } else {
@@ -833,6 +834,46 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                                   Select one or more teams to assign this employee
                                 </small>
                               </div>
+
+                              {/* Show allocation inputs for selected teams */}
+                              {projectTeamSelections[projectId] && projectTeamSelections[projectId].length > 0 && (
+                                <div className="col-12">
+                                  <h6 className="mb-2" style={{ color: '#495057' }}>Team Allocations (%)</h6>
+                                  <div className="grid">
+                                    {projectTeamSelections[projectId].map(teamId => {
+                                      const team = projectTeams.find(t => t.id === teamId);
+                                      const currentAllocation = projectTeamAllocations[projectId]?.[teamId] || 0;
+
+                                      return team ? (
+                                        <div key={teamId} className="col-12 md:col-6 mb-2">
+                                          <label htmlFor={`allocation-${projectId}-${teamId}`} className="block mb-1" style={{ fontSize: '0.9rem' }}>
+                                            <i className="pi pi-users mr-2" style={{ fontSize: '0.8rem' }}></i>
+                                            {team.agile_board_name}
+                                          </label>
+                                          <InputNumber
+                                            id={`allocation-${projectId}-${teamId}`}
+                                            value={currentAllocation}
+                                            onValueChange={(e) => handleTeamAllocationChange(projectId, teamId, e.value)}
+                                            min={0}
+                                            max={100}
+                                            suffix="%"
+                                            showButtons
+                                            mode="decimal"
+                                            minFractionDigits={0}
+                                            maxFractionDigits={2}
+                                            className="w-full"
+                                            placeholder="Enter allocation %"
+                                          />
+                                        </div>
+                                      ) : null;
+                                    })}
+                                  </div>
+                                  <small className="text-muted block mt-2">
+                                    <i className="pi pi-info-circle mr-1"></i>
+                                    Total allocation across all teams cannot exceed 100%
+                                  </small>
+                                </div>
+                              )}
 
                             </div>
                           </div>

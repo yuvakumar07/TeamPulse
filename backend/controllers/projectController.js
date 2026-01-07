@@ -143,7 +143,7 @@ const getProjectById = async (req, res) => {
     for (const team of teams) {
       // Get regular team employees (only active employees)
       const [employees] = await db.query(
-        `SELECT pe.id as assignment_id, pe.team_id,
+        `SELECT pe.id as assignment_id, pe.team_id, pe.allocation_percentage,
                 e.id, e.sso, e.name, e.role, e.role_type, e.location,
                 0 as total_allocation,
                 FALSE as is_team_lead,
@@ -324,6 +324,8 @@ const createProject = async (req, res) => {
       project_status,
       offshore_manager_id,
       onsite_manager_id,
+      offshore_manager_allocation,
+      onsite_manager_allocation,
       po_id,
       employees // Array of {employee_id}
     } = req.body;
@@ -340,13 +342,15 @@ const createProject = async (req, res) => {
     // Insert project
     const [result] = await connection.query(
       `INSERT INTO projects
-      (project_team_name, project_status, offshore_manager_id, onsite_manager_id, po_id)
-      VALUES (?, ?, ?, ?, ?)`,
+      (project_team_name, project_status, offshore_manager_id, offshore_manager_allocation, onsite_manager_id, onsite_manager_allocation, po_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         project_team_name,
         project_status || 'Planning',
         offshore_manager_id || null,
+        offshore_manager_allocation || 0,
         onsite_manager_id || null,
+        onsite_manager_allocation || 0,
         po_id || null
       ]
     );
@@ -419,6 +423,8 @@ const updateProject = async (req, res) => {
       project_status,
       offshore_manager_id,
       onsite_manager_id,
+      offshore_manager_allocation,
+      onsite_manager_allocation,
       po_id,
       employees // Array of {employee_id}
     } = req.body;
@@ -440,13 +446,15 @@ const updateProject = async (req, res) => {
     // Update project
     await connection.query(
       `UPDATE projects
-      SET project_team_name = ?, project_status = ?, offshore_manager_id = ?, onsite_manager_id = ?, po_id = ?
+      SET project_team_name = ?, project_status = ?, offshore_manager_id = ?, offshore_manager_allocation = ?, onsite_manager_id = ?, onsite_manager_allocation = ?, po_id = ?
       WHERE id = ?`,
       [
         project_team_name,
         project_status,
         offshore_manager_id || null,
+        offshore_manager_allocation || 0,
         onsite_manager_id || null,
+        onsite_manager_allocation || 0,
         po_id || null,
         id
       ]
