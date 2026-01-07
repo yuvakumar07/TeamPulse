@@ -680,34 +680,88 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
               {employee && formData.role_type === 'Manager' && employee.managed_projects && employee.managed_projects.length > 0 && (
                 <div className="col-12 mb-3">
                   <div className="p-3" style={{ background: '#e7f3ff', borderRadius: '6px', border: '1px solid #b3d9ff' }}>
-                    <h4 className="mt-0 mb-3" style={{ color: '#0066cc' }}>
-                      <i className="pi pi-briefcase mr-2"></i>
-                      Managed Projects
-                    </h4>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                      <h4 className="mt-0 mb-0" style={{ color: '#0066cc' }}>
+                        <i className="pi pi-briefcase mr-2"></i>
+                        Managed Projects
+                      </h4>
+                      {(() => {
+                        // Calculate total manager allocation from all projects
+                        const totalAllocation = employee.managed_projects.reduce((sum, project) => {
+                          const offshoreAlloc = parseFloat(project.offshore_manager_allocation) || 0;
+                          const onsiteAlloc = parseFloat(project.onsite_manager_allocation) || 0;
+                          return sum + offshoreAlloc + onsiteAlloc;
+                        }, 0);
+                        return totalAllocation > 0 ? (
+                          <span style={{
+                            padding: '4px 12px',
+                            borderRadius: '16px',
+                            fontSize: '0.9rem',
+                            fontWeight: '700',
+                            backgroundColor: totalAllocation >= 100 ? '#fff3cd' : totalAllocation >= 80 ? '#ffe5b4' : '#d1ecf1',
+                            color: totalAllocation >= 100 ? '#856404' : totalAllocation >= 80 ? '#996515' : '#0c5460'
+                          }}>
+                            Total: {totalAllocation.toFixed(1)}% allocated
+                          </span>
+                        ) : null;
+                      })()}
+                    </div>
                     <div className="grid">
-                      {employee.managed_projects.map((project, idx) => (
-                        <div key={idx} className="col-12 md:col-6 mb-2">
-                          <div className="p-2" style={{ background: 'white', borderRadius: '4px', border: '1px solid #dee2e6' }}>
-                            <div style={{ fontWeight: '600', color: '#323232', marginBottom: '0.5rem' }}>
-                              {project.project_team_name}
-                            </div>
-                            <div style={{ fontSize: '0.85rem', color: '#495057', marginLeft: '1rem' }}>
-                              {project.offshore_manager_name && (
-                                <div style={{ marginBottom: '0.25rem' }}>
-                                  <i className="pi pi-user mr-2" style={{ fontSize: '0.75rem', color: '#FFC500' }}></i>
-                                  <strong>Offshore Manager:</strong> {project.offshore_manager_name}
-                                </div>
-                              )}
-                              {project.onsite_manager_name && (
-                                <div style={{ marginBottom: '0.25rem' }}>
-                                  <i className="pi pi-user mr-2" style={{ fontSize: '0.75rem', color: '#FFC500' }}></i>
-                                  <strong>Onsite Manager:</strong> {project.onsite_manager_name}
-                                </div>
-                              )}
+                      {employee.managed_projects.map((project, idx) => {
+                        const offshoreAlloc = parseFloat(project.offshore_manager_allocation) || 0;
+                        const onsiteAlloc = parseFloat(project.onsite_manager_allocation) || 0;
+                        const totalProjectAlloc = offshoreAlloc + onsiteAlloc;
+
+                        return (
+                          <div key={idx} className="col-12 md:col-6 mb-2">
+                            <div className="p-2" style={{ background: 'white', borderRadius: '4px', border: '1px solid #dee2e6' }}>
+                              <div style={{ fontWeight: '600', color: '#323232', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>{project.project_team_name}</span>
+                                {totalProjectAlloc > 0 && (
+                                  <span style={{
+                                    padding: '2px 8px',
+                                    borderRadius: '12px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: '600',
+                                    backgroundColor: '#d1ecf1',
+                                    color: '#0c5460'
+                                  }}>
+                                    {totalProjectAlloc}%
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: '0.85rem', color: '#495057', marginLeft: '1rem' }}>
+                                {project.offshore_manager_name && (
+                                  <div style={{ marginBottom: '0.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                      <i className="pi pi-user mr-2" style={{ fontSize: '0.75rem', color: '#FFC500' }}></i>
+                                      <strong>Offshore Manager:</strong> {project.offshore_manager_name}
+                                    </div>
+                                    {offshoreAlloc > 0 && (
+                                      <span style={{ fontSize: '0.75rem', color: '#6c757d', fontWeight: '600' }}>
+                                        {offshoreAlloc}%
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                                {project.onsite_manager_name && (
+                                  <div style={{ marginBottom: '0.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                      <i className="pi pi-user mr-2" style={{ fontSize: '0.75rem', color: '#FFC500' }}></i>
+                                      <strong>Onsite Manager:</strong> {project.onsite_manager_name}
+                                    </div>
+                                    {onsiteAlloc > 0 && (
+                                      <span style={{ fontSize: '0.75rem', color: '#6c757d', fontWeight: '600' }}>
+                                        {onsiteAlloc}%
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -717,10 +771,29 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
               {employee && formData.role_type !== 'Manager' && employee.project_assignments && employee.project_assignments.length > 0 && (
                 <div className="col-12 mb-3">
                   <div className="p-3" style={{ background: '#e7f3ff', borderRadius: '6px', border: '1px solid #b3d9ff' }}>
-                    <h4 className="mt-0 mb-3" style={{ color: '#0066cc' }}>
-                      <i className="pi pi-briefcase mr-2"></i>
-                      Current Project Assignments
-                    </h4>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                      <h4 className="mt-0 mb-0" style={{ color: '#0066cc' }}>
+                        <i className="pi pi-briefcase mr-2"></i>
+                        Current Project Assignments
+                      </h4>
+                      {(() => {
+                        const totalAllocation = employee.project_assignments.reduce((sum, assignment) => {
+                          return sum + (parseFloat(assignment.allocation_percentage) || 0);
+                        }, 0);
+                        return (
+                          <span style={{
+                            padding: '4px 12px',
+                            borderRadius: '16px',
+                            fontSize: '0.9rem',
+                            fontWeight: '700',
+                            backgroundColor: totalAllocation >= 100 ? '#fff3cd' : totalAllocation >= 80 ? '#ffe5b4' : '#d1ecf1',
+                            color: totalAllocation >= 100 ? '#856404' : totalAllocation >= 80 ? '#996515' : '#0c5460'
+                          }}>
+                            Total: {totalAllocation.toFixed(1)}% allocated
+                          </span>
+                        );
+                      })()}
+                    </div>
                     <div className="grid">
                       {/* Group assignments by project */}
                       {(() => {
@@ -761,11 +834,26 @@ const EmployeeForm = ({ employee, onSuccess, onCancel }) => {
                                   </div>
                                 )}
                               </div>
-                              {/* Display teams */}
+                              {/* Display teams with allocation */}
                               {projectGroup.teams.map((team, teamIdx) => (
-                                <div key={teamIdx} style={{ fontSize: '0.9rem', color: '#6c757d', marginLeft: '1rem', marginBottom: '0.25rem' }}>
-                                  <i className="pi pi-users mr-2" style={{ fontSize: '0.8rem' }}></i>
-                                  {team.team_name}
+                                <div key={teamIdx} style={{ fontSize: '0.9rem', color: '#6c757d', marginLeft: '1rem', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                  <div>
+                                    <i className="pi pi-users mr-2" style={{ fontSize: '0.8rem' }}></i>
+                                    {team.team_name}
+                                  </div>
+                                  {team.allocation > 0 && (
+                                    <span style={{
+                                      padding: '2px 8px',
+                                      borderRadius: '12px',
+                                      fontSize: '0.75rem',
+                                      fontWeight: '600',
+                                      backgroundColor: '#d1ecf1',
+                                      color: '#0c5460',
+                                      marginLeft: '8px'
+                                    }}>
+                                      {team.allocation}%
+                                    </span>
+                                  )}
                                 </div>
                               ))}
                             </div>

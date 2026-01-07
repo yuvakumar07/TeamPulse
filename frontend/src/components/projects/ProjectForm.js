@@ -229,21 +229,55 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
   const offshoreManagerOptions = [
     { label: 'Select Offshore Manager', value: '' },
     ...employees
-      .filter(emp => emp.work_location === 'Offshore' && emp.role_type === 'Manager')
-      .map(emp => ({
-        label: `${emp.name} (${emp.sso || 'N/A'})`,
-        value: emp.id
-      }))
+      .filter(emp => {
+        // Filter by location and role
+        if (emp.work_location !== 'Offshore' || emp.role_type !== 'Manager') {
+          return false;
+        }
+        // Exclude if already 100% allocated, unless this manager is already selected
+        if (emp.total_allocation >= 100 && emp.id !== formData.offshore_manager_id) {
+          return false;
+        }
+        return true;
+      })
+      .map(emp => {
+        const totalAllocation = emp.total_allocation || 0;
+        const availableCapacity = 100 - totalAllocation;
+        const label = totalAllocation > 0 && totalAllocation < 100
+          ? `${emp.name} (${emp.sso || 'N/A'}) - ${availableCapacity}% available`
+          : `${emp.name} (${emp.sso || 'N/A'})`;
+        return {
+          label: label,
+          value: emp.id
+        };
+      })
   ];
 
   const onsiteManagerOptions = [
     { label: 'Select Onsite Manager', value: '' },
     ...employees
-      .filter(emp => emp.work_location === 'Onsite' && emp.role_type === 'Manager')
-      .map(emp => ({
-        label: `${emp.name} (${emp.sso || 'N/A'})`,
-        value: emp.id
-      }))
+      .filter(emp => {
+        // Filter by location and role
+        if (emp.work_location !== 'Onsite' || emp.role_type !== 'Manager') {
+          return false;
+        }
+        // Exclude if already 100% allocated, unless this manager is already selected
+        if (emp.total_allocation >= 100 && emp.id !== formData.onsite_manager_id) {
+          return false;
+        }
+        return true;
+      })
+      .map(emp => {
+        const totalAllocation = emp.total_allocation || 0;
+        const availableCapacity = 100 - totalAllocation;
+        const label = totalAllocation > 0 && totalAllocation < 100
+          ? `${emp.name} (${emp.sso || 'N/A'}) - ${availableCapacity}% available`
+          : `${emp.name} (${emp.sso || 'N/A'})`;
+        return {
+          label: label,
+          value: emp.id
+        };
+      })
   ];
 
   const purchaseOrderOptions = [
@@ -404,21 +438,55 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                   const offshoreTeamLeadOptions = [
                     { label: 'Select Offshore Team Lead', value: '' },
                     ...employees
-                      .filter(emp => emp.work_location === 'Offshore' && emp.role_type === 'Team Lead')
-                      .map(emp => ({
-                        label: `${emp.name} (${emp.sso || 'N/A'})`,
-                        value: emp.id
-                      }))
+                      .filter(emp => {
+                        // Filter by location and role
+                        if (emp.work_location !== 'Offshore' || emp.role_type !== 'Team Lead') {
+                          return false;
+                        }
+                        // Exclude if already 100% allocated, unless this team lead is already selected
+                        if (emp.total_allocation >= 100 && emp.id !== team.offshore_team_lead_id) {
+                          return false;
+                        }
+                        return true;
+                      })
+                      .map(emp => {
+                        const totalAllocation = emp.total_allocation || 0;
+                        const availableCapacity = 100 - totalAllocation;
+                        const label = totalAllocation > 0 && totalAllocation < 100
+                          ? `${emp.name} (${emp.sso || 'N/A'}) - ${availableCapacity}% available`
+                          : `${emp.name} (${emp.sso || 'N/A'})`;
+                        return {
+                          label: label,
+                          value: emp.id
+                        };
+                      })
                   ];
 
                   const onsiteTeamLeadOptions = [
                     { label: 'Select Onsite Team Lead', value: '' },
                     ...employees
-                      .filter(emp => emp.work_location === 'Onsite' && emp.role_type === 'Team Lead')
-                      .map(emp => ({
-                        label: `${emp.name} (${emp.sso || 'N/A'})`,
-                        value: emp.id
-                      }))
+                      .filter(emp => {
+                        // Filter by location and role
+                        if (emp.work_location !== 'Onsite' || emp.role_type !== 'Team Lead') {
+                          return false;
+                        }
+                        // Exclude if already 100% allocated, unless this team lead is already selected
+                        if (emp.total_allocation >= 100 && emp.id !== team.onsite_team_lead_id) {
+                          return false;
+                        }
+                        return true;
+                      })
+                      .map(emp => {
+                        const totalAllocation = emp.total_allocation || 0;
+                        const availableCapacity = 100 - totalAllocation;
+                        const label = totalAllocation > 0 && totalAllocation < 100
+                          ? `${emp.name} (${emp.sso || 'N/A'}) - ${availableCapacity}% available`
+                          : `${emp.name} (${emp.sso || 'N/A'})`;
+                        return {
+                          label: label,
+                          value: emp.id
+                        };
+                      })
                   ];
 
                   return (

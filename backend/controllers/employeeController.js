@@ -65,7 +65,21 @@ const getAllEmployees = async (req, res) => {
     `;
     let dataQuery = `
       SELECT e.*,
-             0 as total_allocation,
+             COALESCE((SELECT SUM(pe2.allocation_percentage)
+                       FROM project_employees pe2
+                       WHERE pe2.employee_id = e.id), 0) +
+             COALESCE((SELECT SUM(p2.offshore_manager_allocation)
+                       FROM projects p2
+                       WHERE p2.offshore_manager_id = e.id), 0) +
+             COALESCE((SELECT SUM(p2.onsite_manager_allocation)
+                       FROM projects p2
+                       WHERE p2.onsite_manager_id = e.id), 0) +
+             COALESCE((SELECT SUM(pt2.offshore_team_lead_allocation)
+                       FROM project_teams pt2
+                       WHERE pt2.offshore_team_lead_id = e.id), 0) +
+             COALESCE((SELECT SUM(pt2.onsite_team_lead_allocation)
+                       FROM project_teams pt2
+                       WHERE pt2.onsite_team_lead_id = e.id), 0) as total_allocation,
              GROUP_CONCAT(
                DISTINCT CONCAT(p.project_team_name, ':', IFNULL(pt.agile_board_name, 'Not Assigned'))
                ORDER BY p.project_team_name
@@ -204,7 +218,7 @@ const getEmployeeById = async (req, res) => {
 
     // Fetch employee's project and team assignments with manager information
     const [projectAssignments] = await db.query(
-      `SELECT pe.project_id, pe.team_id,
+      `SELECT pe.project_id, pe.team_id, pe.allocation_percentage,
               p.project_team_name,
               pt.agile_board_name,
               om.id as offshore_manager_id,
@@ -226,6 +240,7 @@ const getEmployeeById = async (req, res) => {
     // Fetch projects where employee is a manager (offshore or onsite)
     const [managedProjects] = await db.query(
       `SELECT p.id, p.project_team_name, p.offshore_manager_id, p.onsite_manager_id,
+              p.offshore_manager_allocation, p.onsite_manager_allocation,
               om.name as offshore_manager_name,
               osm.name as onsite_manager_name
        FROM projects p

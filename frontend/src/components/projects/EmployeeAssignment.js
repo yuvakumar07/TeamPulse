@@ -285,6 +285,11 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
       return false;
     }
 
+    // Exclude employees who are already 100% allocated
+    if (emp.total_allocation >= 100) {
+      return false;
+    }
+
     // Apply search filter
     if (searchTerm === '') return true;
 
@@ -379,6 +384,9 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
                       );
                       const isInOtherTeams = assignedTeams.length > 0;
 
+                      const totalAllocation = emp.total_allocation || 0;
+                      const availableCapacity = 100 - totalAllocation;
+
                       return (
                         <div
                           key={emp.id}
@@ -388,6 +396,19 @@ const EmployeeAssignment = ({ project, onClose, onSuccess }) => {
                           <div className="dropdown-item-main">
                             <span className="employee-name-dropdown">{emp.name}</span>
                             <span className="employee-sso-dropdown">({emp.sso || 'N/A'})</span>
+                            {totalAllocation > 0 && (
+                              <span style={{
+                                marginLeft: '8px',
+                                padding: '2px 8px',
+                                borderRadius: '12px',
+                                fontSize: '0.75rem',
+                                fontWeight: '600',
+                                backgroundColor: totalAllocation >= 80 ? '#fff3cd' : '#d1ecf1',
+                                color: totalAllocation >= 80 ? '#856404' : '#0c5460'
+                              }}>
+                                {availableCapacity}% available
+                              </span>
+                            )}
                           </div>
                           <div className="dropdown-item-sub">
                             {emp.role || 'N/A'} • {emp.location || 'N/A'}
