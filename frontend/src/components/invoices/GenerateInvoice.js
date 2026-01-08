@@ -19,7 +19,8 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
     project_id: '',
     team_id: ''
   });
-  const [noOfDays, setNoOfDays] = useState(20);
+  const [offshoreDays, setOffshoreDays] = useState(20);
+  const [onsiteDays, setOnsiteDays] = useState(20);
   const [projects, setProjects] = useState([]);
   const [allProjects, setAllProjects] = useState([]);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
@@ -103,25 +104,26 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
   };
 
   // Calculate billing hours based on number of days and employee location
-  const calculateBillingHours = (roleTypeOrLocation, noOfDays) => {
-    if (!noOfDays || noOfDays === 0) return 0;
-
-    // Default to 9 hours if no location specified
-    if (!roleTypeOrLocation) return noOfDays * 9;
+  const calculateBillingHours = (roleTypeOrLocation, offshoreDaysParam, onsiteDaysParam) => {
+    // Default to 0 if no location specified
+    if (!roleTypeOrLocation) return 0;
 
     const locationStr = String(roleTypeOrLocation).toLowerCase().trim();
 
-    // Check if location contains "onsite" - use 8 hours per day (check this first)
+    // Check if location contains "onsite" - use 8 hours per day
     if (locationStr.includes('onsite') || locationStr === 'onsite') {
-      return noOfDays * 8;
+      const days = onsiteDaysParam || 0;
+      return days * 8;
     }
     // Check if location contains "offshore" - use 9 hours per day
     else if (locationStr.includes('offshore') || locationStr === 'offshore') {
-      return noOfDays * 9;
+      const days = offshoreDaysParam || 0;
+      return days * 8;
     }
 
     // Default to offshore (9 hours) if location not clearly specified
-    return noOfDays * 9;
+    const days = offshoreDaysParam || 0;
+    return days * 8;
   };
 
   const handleNext = async (e) => {
@@ -225,7 +227,7 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
           work_location: emp.work_location,
           team_name: emp.team_name,
           project_team_name: emp.project_team_name || null,
-          billing_hours: calculateBillingHours(emp.work_location, noOfDays),
+          billing_hours: calculateBillingHours(emp.work_location, offshoreDays, onsiteDays),
           leave_hours: 0,
           cost_per_hour: 0,
           notes: ''
@@ -241,7 +243,7 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
         team_name: mgr.team_name,
         project_team_name: mgr.project_team_name || null,
         manager_type: mgr.manager_type === 'offshore' ? 'Offshore' : 'Onsite',
-        billing_hours: calculateBillingHours(mgr.manager_type, noOfDays),
+        billing_hours: calculateBillingHours(mgr.manager_type, offshoreDays, onsiteDays),
         leave_hours: 0,
         cost_per_hour: 0,
         notes: ''
@@ -271,7 +273,7 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
           project_team_name: tl.project_team_name || null,
           manager_type: isOnsite ? 'Onsite' : 'Offshore',
           work_location: tl.work_location, // Keep original work_location
-          billing_hours: calculateBillingHours(tl.work_location, noOfDays),
+          billing_hours: calculateBillingHours(tl.work_location, offshoreDays, onsiteDays),
           leave_hours: 0,
           cost_per_hour: 0,
           notes: ''
@@ -310,26 +312,44 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
   };
 
   // Recalculate all billing hours when No of Days changes
-  const handleNoOfDaysChange = (newDays) => {
-    // Ensure newDays is a valid number
+  const handleOffshoreDaysChange = (newDays) => {
     const daysValue = newDays || 0;
-    setNoOfDays(daysValue);
+    setOffshoreDays(daysValue);
 
-    if (daysValue <= 0) return;
-
-    // Recalculate employee billing hours
+    // Recalculate employee billing hours for offshore employees
     setEmployeeBilling(prev =>
       prev.map(emp => ({
         ...emp,
-        billing_hours: calculateBillingHours(emp.work_location, daysValue)
+        billing_hours: calculateBillingHours(emp.work_location, daysValue, onsiteDays)
       }))
     );
 
-    // Recalculate manager billing hours
+    // Recalculate manager billing hours for offshore managers
     setManagerBilling(prev =>
       prev.map(mgr => ({
         ...mgr,
-        billing_hours: calculateBillingHours(mgr.work_location || mgr.manager_type, daysValue)
+        billing_hours: calculateBillingHours(mgr.work_location || mgr.manager_type, daysValue, onsiteDays)
+      }))
+    );
+  };
+
+  const handleOnsiteDaysChange = (newDays) => {
+    const daysValue = newDays || 0;
+    setOnsiteDays(daysValue);
+
+    // Recalculate employee billing hours for onsite employees
+    setEmployeeBilling(prev =>
+      prev.map(emp => ({
+        ...emp,
+        billing_hours: calculateBillingHours(emp.work_location, offshoreDays, daysValue)
+      }))
+    );
+
+    // Recalculate manager billing hours for onsite managers
+    setManagerBilling(prev =>
+      prev.map(mgr => ({
+        ...mgr,
+        billing_hours: calculateBillingHours(mgr.work_location || mgr.manager_type, offshoreDays, daysValue)
       }))
     );
   };
@@ -644,7 +664,7 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
               </div>
             </div>
 
-            {/* Common No of Days Field */}
+            {/* Offshore and Onsite Days Fields */}
             <div style={{
               background: 'linear-gradient(135deg, #FFC500 0%, #FFD700 100%)',
               padding: '1.5rem',
@@ -652,37 +672,74 @@ const GenerateInvoice = ({ onClose, onSuccess }) => {
               marginBottom: '1.5rem',
               boxShadow: '0 2px 8px rgba(255, 197, 0, 0.2)'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                <label htmlFor="no_of_days_common" style={{
-                  fontSize: '1.1rem',
-                  fontWeight: '600',
-                  color: '#323232',
-                  margin: 0
-                }}>
-                  <i className="pi pi-calendar" style={{ marginRight: '0.5rem' }}></i>
-                  No of Days:
-                </label>
-                <InputNumber
-                  id="no_of_days_common"
-                  value={noOfDays}
-                  onValueChange={(e) => handleNoOfDaysChange(e.value)}
-                  min={1}
-                  max={31}
-                  placeholder="Enter days"
-                  style={{
-                    width: '150px',
-                    fontSize: '1.1rem'
-                  }}
-                  className="no-of-days-input"
-                />
-                <span style={{
-                  fontSize: '0.9rem',
-                  color: '#323232',
-                  fontStyle: 'italic'
-                }}>
-                  <i className="pi pi-info-circle" style={{ marginRight: '0.3rem' }}></i>
-                  Offshore: 9 hrs/day | Onsite: 8 hrs/day
-                </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <label htmlFor="offshore_days" style={{
+                    fontSize: '1.1rem',
+                    fontWeight: '600',
+                    color: '#323232',
+                    margin: 0,
+                    whiteSpace: 'nowrap'
+                  }}>
+                    <i className="pi pi-calendar" style={{ marginRight: '0.5rem' }}></i>
+                    Offshore Days:
+                  </label>
+                  <InputNumber
+                    id="offshore_days"
+                    value={offshoreDays}
+                    onValueChange={(e) => handleOffshoreDaysChange(e.value)}
+                    min={0}
+                    max={31}
+                    placeholder="Enter days"
+                    style={{
+                      width: '120px',
+                      fontSize: '1rem'
+                    }}
+                    className="no-of-days-input"
+                  />
+                  <span style={{
+                    fontSize: '0.85rem',
+                    color: '#323232',
+                    fontStyle: 'italic',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    (8 hrs/day)
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <label htmlFor="onsite_days" style={{
+                    fontSize: '1.1rem',
+                    fontWeight: '600',
+                    color: '#323232',
+                    margin: 0,
+                    whiteSpace: 'nowrap'
+                  }}>
+                    <i className="pi pi-calendar" style={{ marginRight: '0.5rem' }}></i>
+                    Onsite Days:
+                  </label>
+                  <InputNumber
+                    id="onsite_days"
+                    value={onsiteDays}
+                    onValueChange={(e) => handleOnsiteDaysChange(e.value)}
+                    min={0}
+                    max={31}
+                    placeholder="Enter days"
+                    style={{
+                      width: '120px',
+                      fontSize: '1rem'
+                    }}
+                    className="no-of-days-input"
+                  />
+                  <span style={{
+                    fontSize: '0.85rem',
+                    color: '#323232',
+                    fontStyle: 'italic',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    (8 hrs/day)
+                  </span>
+                </div>
               </div>
             </div>
 
