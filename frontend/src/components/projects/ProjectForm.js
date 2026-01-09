@@ -36,7 +36,13 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
   const fetchEmployees = async () => {
     try {
       const response = await getAllEmployees(1, 1000, 'All');
-      setEmployees(response.data.data || []);
+      const employeesData = response.data.data || [];
+      console.log('Fetched employees with allocations:', employeesData.filter(e => e.role_type === 'Manager' || e.role_type === 'Team Lead').map(e => ({
+        name: e.name,
+        role_type: e.role_type,
+        total_allocation: e.total_allocation
+      })));
+      setEmployees(employeesData);
     } catch (err) {
       console.error('Error fetching employees:', err);
       toast.error('Failed to load employees list');
@@ -226,59 +232,80 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
     { label: 'Cancelled', value: 'Cancelled' }
   ];
 
-  const offshoreManagerOptions = [
-    { label: 'Select Offshore Manager', value: '' },
-    ...employees
-      .filter(emp => {
-        // Filter by location and role
-        if (emp.work_location !== 'Offshore' || emp.role_type !== 'Manager') {
-          return false;
-        }
-        // Exclude if already 100% allocated, unless this manager is already selected
-        if (emp.total_allocation >= 100 && emp.id !== formData.offshore_manager_id) {
-          return false;
-        }
-        return true;
-      })
-      .map(emp => {
-        const totalAllocation = emp.total_allocation || 0;
-        const availableCapacity = 100 - totalAllocation;
-        const label = totalAllocation > 0 && totalAllocation < 100
-          ? `${emp.name} (${emp.sso || 'N/A'}) - ${availableCapacity}% available`
-          : `${emp.name} (${emp.sso || 'N/A'})`;
-        return {
-          label: label,
-          value: emp.id
-        };
-      })
-  ];
+  const offshoreManagerOptions = React.useMemo(() => {
+    console.log('=== Building Offshore Manager Options ===');
+    console.log('Currently selected offshore_manager_id:', formData.offshore_manager_id);
 
-  const onsiteManagerOptions = [
-    { label: 'Select Onsite Manager', value: '' },
-    ...employees
-      .filter(emp => {
-        // Filter by location and role
-        if (emp.work_location !== 'Onsite' || emp.role_type !== 'Manager') {
+    const filtered = employees.filter(emp => {
+      // Filter by location and role
+      if (emp.work_location !== 'Offshore' || emp.role_type !== 'Manager') {
+        return false;
+      }
+      // Exclude if already 100% allocated, unless this manager is already selected
+      const totalAlloc = parseFloat(emp.total_allocation) || 0;
+
+      if (totalAlloc >= 100) {
+        if (emp.id === formData.offshore_manager_id) {
+          console.log(`⚠️ KEEPING ${emp.name} (allocation ${totalAlloc}%) - currently selected`);
+          return true;
+        } else {
+          console.log(`❌ FILTERING OUT ${emp.name} (allocation ${totalAlloc}%)`);
           return false;
         }
-        // Exclude if already 100% allocated, unless this manager is already selected
-        if (emp.total_allocation >= 100 && emp.id !== formData.onsite_manager_id) {
-          return false;
-        }
-        return true;
-      })
-      .map(emp => {
-        const totalAllocation = emp.total_allocation || 0;
+      }
+
+      console.log(`✓ Including ${emp.name} (allocation ${totalAlloc}%)`);
+      return true;
+    });
+
+    console.log('Total offshore managers in dropdown:', filtered.length);
+
+    return [
+      { label: 'Select Offshore Manager', value: '' },
+      ...filtered.map(emp => {
+        const totalAllocation = parseFloat(emp.total_allocation) || 0;
         const availableCapacity = 100 - totalAllocation;
         const label = totalAllocation > 0 && totalAllocation < 100
-          ? `${emp.name} (${emp.sso || 'N/A'}) - ${availableCapacity}% available`
+          ? `${emp.name} (${emp.sso || 'N/A'}) - ${availableCapacity.toFixed(1)}% available`
           : `${emp.name} (${emp.sso || 'N/A'})`;
         return {
           label: label,
           value: emp.id
         };
       })
-  ];
+    ];
+  }, [employees, formData.offshore_manager_id]);
+
+  const onsiteManagerOptions = React.useMemo(() => {
+    const filtered = employees.filter(emp => {
+      // Filter by location and role
+      if (emp.work_location !== 'Onsite' || emp.role_type !== 'Manager') {
+        return false;
+      }
+      // Exclude if already 100% allocated, unless this manager is already selected
+      const totalAlloc = parseFloat(emp.total_allocation) || 0;
+      if (totalAlloc >= 100 && emp.id !== formData.onsite_manager_id) {
+        console.log(`Filtering out onsite manager ${emp.name} with allocation ${totalAlloc}%`);
+        return false;
+      }
+      return true;
+    });
+
+    return [
+      { label: 'Select Onsite Manager', value: '' },
+      ...filtered.map(emp => {
+        const totalAllocation = parseFloat(emp.total_allocation) || 0;
+        const availableCapacity = 100 - totalAllocation;
+        const label = totalAllocation > 0 && totalAllocation < 100
+          ? `${emp.name} (${emp.sso || 'N/A'}) - ${availableCapacity.toFixed(1)}% available`
+          : `${emp.name} (${emp.sso || 'N/A'})`;
+        return {
+          label: label,
+          value: emp.id
+        };
+      })
+    ];
+  }, [employees, formData.onsite_manager_id]);
 
   const purchaseOrderOptions = [
     { label: 'Select Purchase Order (Optional)', value: '' },
@@ -344,21 +371,17 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
 
             <div className="form-group">
               <label htmlFor="offshore_manager_id">Offshore Manager</label>
-              <select
+              <Dropdown
                 id="offshore_manager_id"
                 name="offshore_manager_id"
                 value={formData.offshore_manager_id}
-                onChange={handleChange}
-              >
-                <option value="">Select Offshore Manager</option>
-                {employees
-                  .filter(emp => emp.work_location === 'Offshore' && emp.role_type === 'Manager')
-                  .map(emp => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.name} ({emp.sso || 'N/A'})
-                    </option>
-                  ))}
-              </select>
+                options={offshoreManagerOptions}
+                onChange={(e) => handleDropdownChange('offshore_manager_id', e.value)}
+                filter
+                showClear
+                filterPlaceholder="Search managers..."
+                placeholder="Select Offshore Manager"
+              />
             </div>
 
             <div className="form-group">
@@ -380,21 +403,17 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
 
             <div className="form-group">
               <label htmlFor="onsite_manager_id">Onsite Manager</label>
-              <select
+              <Dropdown
                 id="onsite_manager_id"
                 name="onsite_manager_id"
                 value={formData.onsite_manager_id}
-                onChange={handleChange}
-              >
-                <option value="">Select Onsite Manager</option>
-                {employees
-                  .filter(emp => emp.work_location === 'Onsite' && emp.role_type === 'Manager')
-                  .map(emp => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.name} ({emp.sso || 'N/A'})
-                    </option>
-                  ))}
-              </select>
+                options={onsiteManagerOptions}
+                onChange={(e) => handleDropdownChange('onsite_manager_id', e.value)}
+                filter
+                showClear
+                filterPlaceholder="Search managers..."
+                placeholder="Select Onsite Manager"
+              />
             </div>
 
             <div className="form-group">
@@ -444,16 +463,18 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                           return false;
                         }
                         // Exclude if already 100% allocated, unless this team lead is already selected
-                        if (emp.total_allocation >= 100 && emp.id !== team.offshore_team_lead_id) {
+                        const totalAlloc = parseFloat(emp.total_allocation) || 0;
+                        if (totalAlloc >= 100 && emp.id !== team.offshore_team_lead_id) {
+                          console.log(`Filtering out offshore team lead ${emp.name} with allocation ${totalAlloc}%`);
                           return false;
                         }
                         return true;
                       })
                       .map(emp => {
-                        const totalAllocation = emp.total_allocation || 0;
+                        const totalAllocation = parseFloat(emp.total_allocation) || 0;
                         const availableCapacity = 100 - totalAllocation;
                         const label = totalAllocation > 0 && totalAllocation < 100
-                          ? `${emp.name} (${emp.sso || 'N/A'}) - ${availableCapacity}% available`
+                          ? `${emp.name} (${emp.sso || 'N/A'}) - ${availableCapacity.toFixed(1)}% available`
                           : `${emp.name} (${emp.sso || 'N/A'})`;
                         return {
                           label: label,
@@ -471,16 +492,18 @@ const ProjectForm = ({ project, onClose, onSuccess }) => {
                           return false;
                         }
                         // Exclude if already 100% allocated, unless this team lead is already selected
-                        if (emp.total_allocation >= 100 && emp.id !== team.onsite_team_lead_id) {
+                        const totalAlloc = parseFloat(emp.total_allocation) || 0;
+                        if (totalAlloc >= 100 && emp.id !== team.onsite_team_lead_id) {
+                          console.log(`Filtering out onsite team lead ${emp.name} with allocation ${totalAlloc}%`);
                           return false;
                         }
                         return true;
                       })
                       .map(emp => {
-                        const totalAllocation = emp.total_allocation || 0;
+                        const totalAllocation = parseFloat(emp.total_allocation) || 0;
                         const availableCapacity = 100 - totalAllocation;
                         const label = totalAllocation > 0 && totalAllocation < 100
-                          ? `${emp.name} (${emp.sso || 'N/A'}) - ${availableCapacity}% available`
+                          ? `${emp.name} (${emp.sso || 'N/A'}) - ${availableCapacity.toFixed(1)}% available`
                           : `${emp.name} (${emp.sso || 'N/A'})`;
                         return {
                           label: label,

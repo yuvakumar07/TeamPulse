@@ -498,6 +498,36 @@ const EmployeeListPrime = ({ onViewAssets }) => {
     );
   };
 
+  const allocationBodyTemplate = (rowData) => {
+    const allocation = parseFloat(rowData.total_allocation) || 0;
+
+    // Determine severity based on allocation percentage
+    const getSeverity = () => {
+      if (allocation === 0) return 'secondary';
+      if (allocation < 50) return 'success';
+      if (allocation < 80) return 'info';
+      if (allocation < 100) return 'warning';
+      return 'danger';
+    };
+
+    const getIcon = () => {
+      if (allocation >= 100) return 'pi pi-exclamation-triangle';
+      if (allocation >= 80) return 'pi pi-info-circle';
+      return 'pi pi-check-circle';
+    };
+
+    return (
+      <div className="flex align-items-center gap-2">
+        <Tag
+          value={`${allocation.toFixed(1)}%`}
+          severity={getSeverity()}
+          icon={getIcon()}
+          style={{ fontWeight: '600' }}
+        />
+      </div>
+    );
+  };
+
   const actionBodyTemplate = (rowData) => {
     return (
       <div className="flex gap-2">
@@ -747,6 +777,13 @@ const EmployeeListPrime = ({ onViewAssets }) => {
           style={{ minWidth: '180px' }}
         />
         <Column field="role_type" header="Role Type" sortable style={{ minWidth: '120px' }} />
+        <Column
+          field="total_allocation"
+          header="Work Allocation %"
+          body={allocationBodyTemplate}
+          sortable
+          style={{ minWidth: '160px' }}
+        />
         <Column
           field="joining_date"
           header="Joining Date"
